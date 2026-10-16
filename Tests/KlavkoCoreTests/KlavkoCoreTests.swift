@@ -1,0 +1,627 @@
+import XCTest
+@testable import KlavkoCore
+
+final class TextRulesTests: XCTestCase {
+    func testCoreWordTrimsPunctuationAndNormalizesApostrophe() {
+        XCTAssertEqual(TextRules.coreWord("привіт."), "привіт")
+        XCTAssertEqual(TextRules.coreWord("«слово»,"), "слово")
+        XCTAssertEqual(TextRules.coreWord("м’ята"), "м'ята")
+        XCTAssertEqual(TextRules.coreWord(",./"), "")
+    }
+}
+
+final class WordAnalyzerTests: XCTestCase {
+    let analyzer = WordAnalyzer(spellChecker: MacSpellChecker())
+
+    func testConvertsEnglishGibberishToUkrainian() {
+        XCTAssertTrue(analyzer.shouldConvert(typed: "ghbdsn", typedLanguage: "en",
+                                             alternative: "привіт", alternativeLanguage: "uk"))
+    }
+
+    func testConvertsUkrainianGibberishToEnglish() {
+        XCTAssertTrue(analyzer.shouldConvert(typed: "руддщ", typedLanguage: "uk",
+                                             alternative: "hello", alternativeLanguage: "en"))
+    }
+
+    func testKeepsValidWords() {
+        XCTAssertFalse(analyzer.shouldConvert(typed: "hello", typedLanguage: "en",
+                                              alternative: "руддщ", alternativeLanguage: "uk"))
+        XCTAssertFalse(analyzer.shouldConvert(typed: "м'ята", typedLanguage: "uk",
+                                              alternative: "v'znf", alternativeLanguage: "en"))
+    }
+
+    func testSkipsWordsWithDigitsAndIgnoredWords() {
+        XCTAssertFalse(analyzer.shouldConvert(typed: "ghbdsn1", typedLanguage: "en",
+                                              alternative: "привіт1", alternativeLanguage: "uk"))
+        var ignoring = analyzer
+        ignoring.exceptions = ["ghbdsn"]
+        XCTAssertFalse(ignoring.shouldConvert(typed: "ghbdsn", typedLanguage: "en",
+                                              alternative: "привіт", alternativeLanguage: "uk"))
+    }
+}
+
+/// Uses the layouts enabled on this Mac; skipped when ABC/Ukrainian are missing.
+final class SystemLayoutsTests: XCTestCase {
+    func testRendersSameKeystrokesInBothLayouts() throws {
+        let layouts = SystemLayouts.enabledLayouts().map(\.map)
+        let english = try XCTUnwrap(layouts.first { $0.language == "en" }, "No English layout enabled")
+        let ukrainian = try XCTUnwrap(layouts.first { $0.language == "uk" }, "No Ukrainian layout enabled")
+
+        // Physical keys G H B D S N on an ANSI keyboard.
+        let keystrokes = [5, 4, 11, 2, 1, 45].map { Keystroke(keyCode: UInt16($0)) }
+        XCTAssertEqual(english.render(keystrokes), "ghbdsn")
+        XCTAssertEqual(ukrainian.render(keystrokes), "привіт")
+
+        let shifted = Keystroke(keyCode: 5, shift: true)
+        XCTAssertEqual(english.character(for: shifted), "G")
+        XCTAssertEqual(ukrainian.character(for: shifted), "П")
+    }
+
+    func testConvertsSelectedTextBothWays() throws {
+        let layouts = SystemLayouts.enabledLayouts().map(\.map)
+        let english = try XCTUnwrap(layouts.first { $0.language == "en" })
+        let ukrainian = try XCTUnwrap(layouts.first { $0.language == "uk" })
+
+        XCTAssertEqual(LayoutConverter.sourceLayout(of: "Ghbdsn cdsn", among: layouts)?.language, "en")
+        XCTAssertEqual(LayoutConverter.convert("Ghbdsn cdsn", from: english, to: ukrainian), "Привіт світ")
+        XCTAssertEqual(LayoutConverter.sourceLayout(of: "Руддщ 123", among: layouts)?.language, "uk")
+        XCTAssertEqual(LayoutConverter.convert("Руддщ 123", from: ukrainian, to: english), "Hello 123")
+        XCTAssertNil(LayoutConverter.sourceLayout(of: "123 !", among: layouts))
+    }
+}
+
+final class PrefixAnalyzerTests: XCTestCase {
+    let analyzer = WordAnalyzer(spellChecker: MacSpellChecker())
+
+    func testSwitchesWhileTypingWhenOnlyTheOtherLayoutHasSuchWords() {
+        XCTAssertTrue(analyzer.shouldConvertPrefix(typed: "ghb", typedLanguage: "en",
+                                                   alternative: "при", alternativeLanguage: "uk"))
+        XCTAssertTrue(analyzer.shouldConvertPrefix(typed: "рудд", typedLanguage: "uk",
+                                                   alternative: "hell", alternativeLanguage: "en"))
+    }
+
+    func testDoesNotSwitchPlausiblePrefixes() {
+        // "руд" starts real Ukrainian words (руда, рудий).
+        XCTAssertFalse(analyzer.shouldConvertPrefix(typed: "руд", typedLanguage: "uk",
+                                                    alternative: "hel", alternativeLanguage: "en"))
+        XCTAssertFalse(analyzer.shouldConvertPrefix(typed: "the", typedLanguage: "en",
+                                                    alternative: "еру", alternativeLanguage: "uk"))
+        // Too short to tell.
+        XCTAssertFalse(analyzer.shouldConvertPrefix(typed: "gh", typedLanguage: "en",
+                                                    alternative: "пр", alternativeLanguage: "uk"))
+    }
+
+    func testRespectsExceptionsWhileTyping() {
+        // "ghb" could still grow into the exception "ghbdsn", so wait for the whole word.
+        var ignoring = analyzer
+        ignoring.exceptions = ["ghbdsn"]
+        XCTAssertFalse(ignoring.shouldConvertPrefix(typed: "ghb", typedLanguage: "en",
+                                                    alternative: "при", alternativeLanguage: "uk"))
+    }
+}
+
+final class AbbreviationTests: XCTestCase {
+    func testSkipsAllCapsWordsUnlessEnabled() {
+        var analyzer = WordAnalyzer(spellChecker: MacSpellChecker())
+        XCTAssertTrue(TextRules.isAllCaps("ЗСУ"))
+        XCTAssertFalse(TextRules.isAllCaps("Привіт"))
+        XCTAssertFalse(TextRules.isAllCaps("A"))
+        XCTAssertFalse(analyzer.shouldConvert(typed: "GHBDSN", typedLanguage: "en",
+                                              alternative: "ПРИВІТ", alternativeLanguage: "uk"))
+        XCTAssertFalse(analyzer.shouldConvertPrefix(typed: "GHB", typedLanguage: "en",
+                                                    alternative: "ПРИ", alternativeLanguage: "uk"))
+        analyzer.convertAbbreviations = true
+        XCTAssertTrue(analyzer.shouldConvert(typed: "GHBDSN", typedLanguage: "en",
+                                             alternative: "ПРИВІТ", alternativeLanguage: "uk"))
+    }
+}
+
+final class ShortcutTests: XCTestCase {
+    func testComboMatchingIgnoresModifierOrder() {
+        let shortcut = Shortcut(keyCode: 49, modifiers: [.shift, .control])
+        XCTAssertTrue(shortcut.matches(keyCode: 49, modifiers: [.control, .shift]))
+        XCTAssertFalse(shortcut.matches(keyCode: 49, modifiers: [.control]))
+        XCTAssertEqual(shortcut.displayName(layout: nil), "⌃⇧Space")
+    }
+
+    func testModifierTapShortcuts() {
+        let chord = Shortcut(modifiers: [.command, .option], double: false)
+        XCTAssertTrue(chord.matches(.single([.option, .command])))
+        XCTAssertFalse(chord.matches(.double([.option, .command])))
+        XCTAssertEqual(chord.displayName(layout: nil), "⌥⌘")
+        XCTAssertEqual(Shortcut(modifiers: [.shift], double: true).displayName(layout: nil), "⇧⇧")
+        XCTAssertEqual(Shortcut(modifiers: [.option, .command], double: true).parts(layout: nil), ["двічі", "⌥", "⌘"])
+    }
+
+    func testShortcutsSurviveJSONRoundTrip() throws {
+        let stored: [String: Shortcut?] = ["a": Shortcut(modifiers: [.option], double: true),
+                                           "b": Shortcut(keyCode: 6, modifiers: [.command]), "c": nil]
+        let decoded = try JSONDecoder().decode([String: Shortcut?].self, from: JSONEncoder().encode(stored))
+        XCTAssertEqual(decoded, stored)
+    }
+}
+
+final class ModifierTapDetectorTests: XCTestCase {
+    /// Presses the modifiers one after another, then releases them all.
+    private func tap(_ detector: inout ModifierTapDetector, _ keys: [ModifierKey], at time: TimeInterval) -> [ModifierTap] {
+        var held: Set<ModifierKey> = []
+        for (index, key) in keys.enumerated() {
+            held.insert(key)
+            _ = detector.modifiersChanged(held, at: time + Double(index) * 0.02)
+        }
+        return detector.modifiersChanged([], at: time + 0.1)
+    }
+
+    func testDetectsQuickDoubleTap() {
+        var detector = ModifierTapDetector()
+        XCTAssertEqual(tap(&detector, [.shift], at: 0), [.single([.shift])])
+        XCTAssertEqual(tap(&detector, [.shift], at: 0.3), [.single([.shift]), .double([.shift])])
+    }
+
+    func testDetectsChordOfSeveralModifiers() {
+        var detector = ModifierTapDetector()
+        XCTAssertEqual(tap(&detector, [.command, .option], at: 0), [.single([.command, .option])])
+    }
+
+    func testIgnoresSlowTapsAndTapsInterruptedByTyping() {
+        var slow = ModifierTapDetector()
+        _ = tap(&slow, [.shift], at: 0)
+        XCTAssertEqual(tap(&slow, [.shift], at: 2), [.single([.shift])])
+
+        var typing = ModifierTapDetector()
+        _ = typing.modifiersChanged([.shift], at: 0)
+        typing.interrupt() // a capital letter typed while Shift is held
+        XCTAssertEqual(typing.modifiersChanged([], at: 0.1), [])
+    }
+
+    func testDifferentChordsDoNotCombine() {
+        var detector = ModifierTapDetector()
+        _ = tap(&detector, [.shift], at: 0)
+        XCTAssertEqual(tap(&detector, [.option], at: 0.2), [.single([.option])])
+    }
+}
+
+/// A tiny dictionary with known word frequencies, to test ranking and confidence rules exactly.
+private final class FakeSpellChecker: SpellChecking {
+    /// Words, most common first.
+    let words: [String]
+    /// Valid but too rare to show up in completions.
+    var rare: Set<String> = []
+    var systemFix: [String: String] = [:]
+
+    init(_ words: [String], rare: Set<String> = []) {
+        self.words = words + rare
+        self.rare = rare
+    }
+
+    func isValid(_ word: String, language: String) -> Bool { words.contains(word.lowercased()) }
+    func hasCompletions(_ prefix: String, language: String) -> Bool { !completions(for: prefix, language: language).isEmpty }
+    func completions(for prefix: String, language: String) -> [String] {
+        words.filter { $0.hasPrefix(prefix) && !rare.contains($0) }
+    }
+    func correction(for word: String, language: String, context: String) -> String? { systemFix[word] }
+    func guesses(for word: String, language: String, context: String) -> [String] { [] }
+    func validWords(among candidates: [String], language: String) -> Set<String> { Set(candidates.filter(words.contains)) }
+}
+
+final class TypoRankingTests: XCTestCase {
+    private func fix(_ word: String, _ checker: FakeSpellChecker, capitalized: Bool = true) -> String? {
+        TypoCorrector(spellChecker: checker).correction(for: word, language: "uk", layout: nil, allowCapitalized: capitalized)
+    }
+
+    func testFindsWordWithMissingLetterEvenWithoutSystemSuggestions() {
+        XCTAssertEqual(fix("дкую", FakeSpellChecker(["дякую"])), "дякую")
+        XCTAssertEqual(fix("робта", FakeSpellChecker(["робота"])), "робота")
+    }
+
+    func testCommonWordBeatsRareOneAtTheSameDistance() {
+        // "робота" (letter missing) vs "рота" (letter extra): frequency decides.
+        // Fillers push "рота" down the completion lists without being near "робта" themselves.
+        let fillers = (1...15).flatMap { ["розмова\($0)", "ротонда\($0)"] }
+        let common = ["робота"] + fillers + ["рота"]
+        XCTAssertEqual(fix("робта", FakeSpellChecker(common)), "робота")
+    }
+
+    func testLeavesAmbiguousWordsAlone() {
+        // Two equally common words, each one missing letter away.
+        let checker = FakeSpellChecker(["мовою", "мовлю"])
+        XCTAssertNil(fix("мовю", checker))
+    }
+
+    func testLeavesWordsWithoutFrequencyOrContextAlone() {
+        // A rare dictionary word one letter away: found, but nothing says the user meant it.
+        let checker = FakeSpellChecker([], rare: ["абвгд"])
+        let corrector = TypoCorrector(spellChecker: checker)
+        XCTAssertEqual(corrector.rankedCandidates(for: "абгд", language: "uk", layout: nil).first?.word, "абвгд")
+        XCTAssertNil(fix("абгд", checker))
+        // The same word suggested by the system for this sentence is enough.
+        checker.systemFix = ["абгд": "абвгд"]
+        XCTAssertEqual(fix("абгд", checker), "абвгд")
+    }
+
+    func testNeverChangesValidWords() {
+        // "людна" is a word; "людина" (one letter more) is more common but must not replace it.
+        XCTAssertNil(fix("людна", FakeSpellChecker(["людина", "людна"])))
+    }
+
+    func testRespectsCaseNamesAndExceptions() {
+        let checker = FakeSpellChecker(["привіт"])
+        XCTAssertEqual(fix("Привт", checker), "Привіт")
+        XCTAssertNil(fix("Привт", checker, capitalized: false), "capitalized mid-sentence: maybe a name")
+        XCTAssertNil(fix("ПРИВТ", checker), "all caps: an abbreviation")
+        XCTAssertNil(fix("прuвт", checker), "Latin and Cyrillic mixed")
+        XCTAssertNil(fix("привт2", checker), "digits")
+        var withException = TypoCorrector(spellChecker: checker)
+        withException.exceptions = ["привт"]
+        XCTAssertNil(withException.correction(for: "привт", language: "uk", layout: nil, allowCapitalized: true))
+    }
+
+    func testKeepsSurroundingPunctuation() {
+        XCTAssertEqual(fix("«привт»", FakeSpellChecker(["привіт"])), "«привіт»")
+    }
+
+    func testSingleEditsIncludeEveryMissingLetter() {
+        let edits = TypoCorrector.singleEdits(of: "дкую", alphabet: Array("абвгґдеєжзиіїйклмнопрстуфхцчшщьюя'"))
+        XCTAssertTrue(edits.contains("дякую"))
+        XCTAssertFalse(edits.contains("'дкую"), "no apostrophe at the edges")
+        XCTAssertFalse(edits.contains("дкую"))
+    }
+}
+
+/// The same rules against the real macOS dictionaries.
+final class TypoCorrectorTests: XCTestCase {
+    let corrector = TypoCorrector(spellChecker: MacSpellChecker())
+    lazy var layouts = SystemLayouts.enabledLayouts().map(\.map)
+
+    private func fix(_ word: String, _ language: String, capitalized: Bool = true, context: String = "") -> String? {
+        corrector.correction(for: word, language: language, layout: layouts.first { $0.language == language },
+                             allowCapitalized: capitalized, context: context)
+    }
+
+    func testFixesMissingLetters() {
+        let cases = ["привт": "привіт", "дкую": "дякую", "робта": "робота", "сьогоні": "сьогодні",
+                     "написв": "написав", "питаня": "питання", "звичйно": "звичайно", "прогрма": "програма",
+                     "потрібо": "потрібно", "дбре": "добре", "слво": "слово", "говрити": "говорити",
+                     "прцює": "працює", "помика": "помилка", "текс": "текст", "вчра": "вчора",
+                     "клавітура": "клавіатура", "Привт": "Привіт"]
+        for (typed, expected) in cases {
+            XCTAssertEqual(fix(typed, "uk"), expected, typed)
+        }
+        XCTAssertEqual(fix("becuase", "en"), "because")
+    }
+
+    func testFixesOtherSlips() {
+        XCTAssertEqual(fix("рлбиш", "uk", context: "що ти тут"), "робиш", "л is next to о, у is far")
+        XCTAssertEqual(fix("recieve", "en"), "receive")
+        XCTAssertEqual(fix("wrok", "en"), "work")
+        XCTAssertEqual(fix("definately", "en"), "definitely")
+    }
+
+    func testFixesStuckShift() {
+        XCTAssertEqual(fix("ПРивіт", "uk"), "Привіт")
+        XCTAssertEqual(fix("ПРивт", "uk"), "Привіт")
+        XCTAssertEqual(fix("HEllo", "en"), "Hello")
+        XCTAssertNil(TypoCorrector.stuckShiftFix("SQLite"), "three capitals: a name, not a slip")
+        XCTAssertNil(TypoCorrector.stuckShiftFix("IDs"))
+    }
+
+    func testLeavesCorrectWordsAlone() {
+        // Each is one letter away from a more common word (людина, піти→іти, сама, зроби, from).
+        for word in ["людна", "пишу", "мама", "зробиш", "піти", "Сергій", "Київ"] {
+            XCTAssertNil(fix(word, "uk"), word)
+        }
+        for word in ["cat", "form", "teh"] {
+            XCTAssertNil(fix(word, "en"), word)
+        }
+    }
+
+    func testLeavesAmbiguousWordsAlone() {
+        XCTAssertNil(fix("хочш", "uk"), "хочеш, хоч or хочу")
+        XCTAssertNil(fix("мовю", "uk"), "мовою, мою or мову")
+        XCTAssertNil(fix("helo", "en"), "help or hello")
+        XCTAssertNil(fix("tset", "en"), "test or set")
+        XCTAssertNil(fix("украна", "uk"), "no confident lowercase candidate")
+    }
+
+    func testLeavesShortAndUnsafeWordsAlone() {
+        XCTAssertNil(fix("npm", "en"), "too short")
+        XCTAssertNil(fix("ПРТВІТ", "uk"), "all caps")
+        XCTAssertNil(fix("Пртвіт", "uk", capitalized: false), "capitalized mid-sentence: maybe a name")
+    }
+
+    func testSlipDistancePrefersMissingLetters() {
+        let ukrainian = layouts.first { $0.language == "uk" }
+        let missing = TypoCorrector.slipDistance(typed: "сьогоні", intended: "сьогодні", layout: ukrainian)
+        let neighbour = TypoCorrector.slipDistance(typed: "сьогоні", intended: "стогоні", layout: ukrainian)
+        XCTAssertLessThan(missing, neighbour)
+        let english = layouts.first { $0.language == "en" }
+        XCTAssertEqual(TypoCorrector.slipDistance(typed: "helo", intended: "hello", layout: english), 0.5, accuracy: 0.001)
+        XCTAssertEqual(TypoCorrector.slipDistance(typed: "wrok", intended: "work", layout: english), 0.7, accuracy: 0.001)
+    }
+}
+
+final class ShortWordTests: XCTestCase {
+    let analyzer = WordAnalyzer(spellChecker: MacSpellChecker())
+    lazy var layouts = SystemLayouts.enabledLayouts().map(\.map)
+
+    /// Types `word` as if in the other layout and asks whether Klavko would switch it back.
+    private func switches(_ word: String, from language: String, context: String? = nil) -> Bool {
+        let intended = layouts.first { $0.language == language }!
+        let other = layouts.first { $0.language != language }!
+        let typed = LayoutConverter.convert(word, from: intended, to: other)
+        return analyzer.shouldConvert(typed: typed, typedLanguage: other.language,
+                                      alternative: word, alternativeLanguage: language, contextLanguage: context)
+    }
+
+    func testSwitchesCommonTwoLetterWords() {
+        // ye, ot, jq, wt, db, pf: some are "valid" English, none is a common English word.
+        for word in ["ну", "ще", "ой", "це", "ви", "за", "як", "та", "не", "що"] {
+            XCTAssertTrue(switches(word, from: "uk"), word)
+        }
+        XCTAssertTrue(switches("the", from: "en", context: "en"))
+    }
+
+    func testKeepsCommonWordsOfTheTypedLanguage() {
+        // Typed on purpose: their other-layout versions aren't common words.
+        for typed in ["we", "to", "is", "it", "on", "at", "no", "me", "ok", "a"] {
+            let english = layouts.first { $0.language == "en" }!
+            let ukrainian = layouts.first { $0.language == "uk" }!
+            let alternative = LayoutConverter.convert(typed, from: english, to: ukrainian)
+            XCTAssertFalse(analyzer.shouldConvert(typed: typed, typedLanguage: "en",
+                                                  alternative: alternative, alternativeLanguage: "uk",
+                                                  contextLanguage: "uk"), typed)
+        }
+    }
+
+    func testSingleLettersNeedContext() {
+        XCTAssertFalse(switches("я", from: "uk"))
+        XCTAssertTrue(switches("я", from: "uk", context: "uk"))
+        XCTAssertTrue(switches("і", from: "uk", context: "uk"))
+    }
+
+    func testLoneLetterCandidates() {
+        // z = я, s = і, d = в, p = з: wait for the next word.
+        for (typed, letter) in [("z", "я"), ("s", "і"), ("d", "в"), ("p", "з"), ("e", "у")] {
+            XCTAssertTrue(ShortWords.isLoneLetterCandidate(typed: typed, typedLanguage: "en",
+                                                           alternative: letter, alternativeLanguage: "uk"), typed)
+        }
+        // "a" and "I" are English words; "ф" and "ш" aren't Ukrainian ones.
+        XCTAssertFalse(ShortWords.isLoneLetterCandidate(typed: "a", typedLanguage: "en", alternative: "ф", alternativeLanguage: "uk"))
+        XCTAssertFalse(ShortWords.isLoneLetterCandidate(typed: "я", typedLanguage: "uk", alternative: "z", alternativeLanguage: "en"))
+    }
+
+    func testNoCommonWordIsAnotherLanguagesCommonWordInDisguise() {
+        let english = layouts.first { $0.language == "en" }!
+        let ukrainian = layouts.first { $0.language == "uk" }!
+        for word in ShortWords.common["uk"]! where word.count >= 2 {
+            let typed = LayoutConverter.convert(word, from: ukrainian, to: english)
+            XCTAssertFalse(ShortWords.isCommon(typed, language: "en"), "\(word) = \(typed)")
+        }
+        for word in ShortWords.common["en"]! where word.count >= 2 {
+            let typed = LayoutConverter.convert(word, from: english, to: ukrainian)
+            XCTAssertFalse(ShortWords.isCommon(typed, language: "uk"), "\(word) = \(typed)")
+        }
+    }
+}
+
+final class SpacingTests: XCTestCase {
+    private func spaced(_ before: String, _ next: Character) -> Bool { Spacing.needsSpace(before: before, next: next) }
+
+    func testAddsForgottenSpace() {
+        XCTAssertTrue(spaced("Привіт,", "я"))
+        XCTAssertTrue(spaced("Увага:", "т"))
+        XCTAssertTrue(spaced("Так;", "н"))
+        XCTAssertTrue(spaced("Що?", "Н"))
+        XCTAssertTrue(spaced("Ого!?", "т"))
+        XCTAssertTrue(spaced("Ну…", "д"))
+        XCTAssertTrue(spaced("Так.", "Н"), "a full stop before a capital")
+        XCTAssertTrue(spaced("Чекай...", "Я"))
+        XCTAssertTrue(spaced("так —", "н"), "a dash set off by a space")
+        XCTAssertTrue(spaced("«Так»,", "с"), "after a closing quote")
+        XCTAssertTrue(spaced("Hello,", "w"))
+    }
+
+    func testLeavesOtherTextAlone() {
+        XCTAssertFalse(spaced("google.", "c"), "domain")
+        XCTAssertFalse(spaced("file.", "t"), "file name")
+        XCTAssertFalse(spaced("т.", "д"), "abbreviation")
+        XCTAssertFalse(spaced("U.S.", "A"), "initials")
+        XCTAssertFalse(spaced("3,", "5"), "a number, not a letter")
+        XCTAssertFalse(spaced("10:", "3"), "time")
+        XCTAssertFalse(spaced("https:", "a"), "address scheme")
+        XCTAssertFalse(spaced("user_name,", "a"), "code")
+        XCTAssertFalse(spaced("привіт :", "D"), "emoticon")
+        XCTAssertFalse(spaced("будь-", "я"), "hyphen")
+        XCTAssertFalse(spaced("(", "т"), "bracket")
+        XCTAssertFalse(spaced("«", "т"), "quote")
+        XCTAssertFalse(spaced("Привіт,", "1"), "digits after")
+        XCTAssertFalse(spaced("", "т"))
+    }
+}
+
+final class VocativeTests: XCTestCase {
+    let corrector = TypoCorrector(spellChecker: MacSpellChecker())
+    lazy var ukrainian = SystemLayouts.enabledLayouts().map(\.map).first { $0.language == "uk" }
+
+    private func fix(_ word: String) -> String? {
+        corrector.correction(for: word, language: "uk", layout: ukrainian, allowCapitalized: true)
+    }
+
+    func testKeepsNamesInTheVocative() {
+        // "Валентине" isn't in the macOS dictionary; it used to become "Валентина".
+        for name in ["Валентине", "Іване", "Олеже", "Сергію", "Миколо", "Маріє", "Петре", "Василю", "Ігорю"] {
+            XCTAssertNil(fix(name), name)
+        }
+        XCTAssertEqual(fix("ВАлентине"), "Валентине", "stuck Shift fixed, vocative kept")
+    }
+
+    func testVocativeBases() {
+        XCTAssertTrue(UkrainianForms.vocativeBases(of: "Валентине").contains("Валентин"))
+        XCTAssertTrue(UkrainianForms.vocativeBases(of: "Олеже").contains("Олег"))
+        XCTAssertTrue(UkrainianForms.vocativeBases(of: "Сергію").contains("Сергій"))
+        XCTAssertTrue(UkrainianForms.vocativeBases(of: "Миколо").contains("Микола"))
+    }
+
+    func testStillFixesRealTypos() {
+        XCTAssertEqual(fix("Привт"), "Привіт")
+        XCTAssertEqual(fix("сьогоні"), "сьогодні")
+    }
+}
+
+final class TextFormattingTests: XCTestCase {
+    func testCapitalizesSentenceStarts() {
+        XCTAssertTrue(Capitalization.startsSentence(before: "Так. ", atFieldStart: false))
+        XCTAssertTrue(Capitalization.startsSentence(before: "Що? ", atFieldStart: false))
+        XCTAssertTrue(Capitalization.startsSentence(before: "Ура! ", atFieldStart: false))
+        XCTAssertTrue(Capitalization.startsSentence(before: "рядок\n", atFieldStart: false))
+        XCTAssertTrue(Capitalization.startsSentence(before: "", atFieldStart: true))
+        XCTAssertTrue(Capitalization.startsSentence(before: "1. ", atFieldStart: false), "numbered item")
+        XCTAssertFalse(Capitalization.startsSentence(before: "\n2) ", atFieldStart: false), "after a bracket")
+        XCTAssertFalse(Capitalization.startsSentence(before: "(так) ", atFieldStart: false), "after a bracket")
+    }
+
+    func testLeavesOtherPlacesLowercase() {
+        XCTAssertFalse(Capitalization.startsSentence(before: "", atFieldStart: false), "unknown start")
+        XCTAssertFalse(Capitalization.startsSentence(before: "так, ", atFieldStart: false))
+        XCTAssertFalse(Capitalization.startsSentence(before: "і т.д. ", atFieldStart: false), "abbreviation")
+        XCTAssertFalse(Capitalization.startsSentence(before: "див. ", atFieldStart: false))
+        XCTAssertFalse(Capitalization.startsSentence(before: "e.g. ", atFieldStart: false))
+        XCTAssertFalse(Capitalization.startsSentence(before: "Т. ", atFieldStart: false), "initial")
+        XCTAssertFalse(Capitalization.startsSentence(before: "ну... ", atFieldStart: false), "ellipsis")
+        XCTAssertFalse(Capitalization.startsSentence(before: "google.", atFieldStart: false), "no space")
+    }
+
+    func testImmediateTypography() {
+        XCTAssertEqual(Typography.immediateMatch(in: "Ну...", rules: Typography.builtIn)?.to, "…")
+        XCTAssertEqual(Typography.immediateMatch(in: "Klavko (c)", rules: Typography.builtIn)?.to, "©")
+        XCTAssertEqual(Typography.immediateMatch(in: "(tm)", rules: Typography.builtIn)?.to, "™")
+        XCTAssertNil(Typography.immediateMatch(in: "func(c)", rules: Typography.builtIn), "code")
+        XCTAssertNil(Typography.immediateMatch(in: "a..", rules: Typography.builtIn))
+    }
+
+    func testCustomReplacements() {
+        let rules = [Replacement(from: "сп", to: "спасибі"), Replacement(from: ":)", to: "🙂")]
+        XCTAssertEqual(Typography.wordMatch("сп", rules: rules)?.to, "спасибі")
+        XCTAssertNil(Typography.wordMatch("спати", rules: rules))
+        XCTAssertEqual(Typography.wordMatch("Сп", rules: rules)?.to, "спасибі", "any letter case")
+        XCTAssertEqual(Typography.immediateMatch(in: "ок :)", rules: rules)?.to, "🙂")
+    }
+
+    func testQuotesAndDashes() {
+        XCTAssertEqual(Typography.quote(after: "він сказав ", language: "uk"), "«")
+        XCTAssertEqual(Typography.quote(after: "«так", language: "uk"), "»")
+        XCTAssertEqual(Typography.quote(after: "", language: "en"), "“")
+        XCTAssertEqual(Typography.quote(after: "“yes", language: "en"), "”")
+        XCTAssertEqual(Typography.quote(after: "так «", language: "uk"), "»", "two presses give «»")
+        XCTAssertEqual(Typography.quote(after: "(", language: "uk"), "«")
+        XCTAssertEqual(Typography.dashHyphens(before: "так -"), 1)
+        XCTAssertEqual(Typography.dashHyphens(before: "так --"), 2)
+        XCTAssertEqual(Typography.dashHyphens(before: "-"), 0, "list marker")
+        XCTAssertEqual(Typography.dashHyphens(before: "рядок\n-"), 0, "list marker")
+        XCTAssertEqual(Typography.dashHyphens(before: "будь-"), 0, "hyphen in a word")
+        XCTAssertEqual(Typography.dashHyphens(before: "git commit --"), 2, "spaced -- is a dash; '--amend' never gets here")
+    }
+
+    func testListContinuation() {
+        XCTAssertEqual(ListContinuation.action(for: "- молоко"), .continueWith("- "))
+        XCTAssertEqual(ListContinuation.action(for: "  • хліб"), .continueWith("  • "))
+        XCTAssertEqual(ListContinuation.action(for: "1. перше"), .continueWith("2. "))
+        XCTAssertEqual(ListContinuation.action(for: "9) дев'яте"), .continueWith("10) "))
+        XCTAssertEqual(ListContinuation.action(for: "- "), .endList(deleting: 2))
+        XCTAssertEqual(ListContinuation.action(for: "3. "), .endList(deleting: 3))
+        XCTAssertNil(ListContinuation.action(for: "звичайний рядок"))
+        XCTAssertNil(ListContinuation.action(for: "-5 градусів"))
+        XCTAssertNil(ListContinuation.action(for: "1.5 літра"))
+    }
+
+    func testCaseCycle() {
+        XCTAssertEqual(CaseCycle.next("привіт світ"), "Привіт світ")
+        XCTAssertEqual(CaseCycle.next("Привіт світ"), "ПРИВІТ СВІТ")
+        XCTAssertEqual(CaseCycle.next("ПРИВІТ СВІТ"), "привіт світ")
+        XCTAssertEqual(CaseCycle.next("«hello»"), "«Hello»")
+        XCTAssertEqual(CaseCycle.next("123"), "123")
+    }
+}
+
+final class InflectionTests: XCTestCase {
+    let corrector = TypoCorrector(spellChecker: MacSpellChecker())
+
+    private func fix(_ word: String) -> String? {
+        corrector.correction(for: word, language: "uk", layout: nil, allowCapitalized: true)
+    }
+
+    func testKeepsPluralFormsMissingFromTheDictionary() {
+        // macOS lacks these; they used to become "налаштування" etc.
+        for word in ["налаштуваннях", "налаштуваннями", "перемиканнях"] {
+            XCTAssertNil(fix(word), word)
+        }
+    }
+
+    func testStillFixesTyposThatLookLikeForms() {
+        XCTAssertEqual(fix("питаня"), "питання", "ends in -я, but isn't a plural form")
+        XCTAssertEqual(fix("робта"), "робота")
+    }
+}
+
+final class AIPromptTests: XCTestCase {
+    func testMessageWrapsTheTextAndKeepsItIntact() {
+        let message = AIPrompt.message(instruction: "Translate the text into English.", text: "Привіт,\nсвіт")
+        XCTAssertTrue(message.hasPrefix("Instruction: Translate the text into English."))
+        XCTAssertTrue(message.contains("<text>\nПривіт,\nсвіт\n</text>"))
+    }
+
+    func testDefaultActionsAndModels() {
+        XCTAssertEqual(AIAction.defaults.count, 6)
+        XCTAssertTrue(AIAction.defaults.allSatisfy { !$0.title.isEmpty && !$0.instruction.isEmpty })
+        XCTAssertEqual(AIModel.opus.rawValue, "claude-opus-5-5")
+        XCTAssertFalse(AIModel.haiku.supportsFallback)
+    }
+}
+
+final class LanguageGuessTests: XCTestCase {
+    let checker = MacSpellChecker()
+
+    func testPicksTheRecognizerThatHeardRealWords() {
+        let candidates = [("uk", "Привіт це перевірка як воно працює"), ("en", "Prave, Prave, Kaya, Kona Praya")]
+        XCTAssertEqual(LanguageGuess.best(candidates.map { (language: $0.0, text: $0.1) }, preferred: "en",
+                                          spellChecker: checker)?.language, "uk")
+        let english = [("uk", "Хеллоу ворлд зіс із е тест"), ("en", "Hello world, this is a test")]
+        XCTAssertEqual(LanguageGuess.best(english.map { (language: $0.0, text: $0.1) }, preferred: "uk",
+                                          spellChecker: checker)?.language, "en")
+    }
+
+    func testMadeUpNamesGiveAwayTheWrongLanguage() {
+        // Real outputs of the macOS recognizers for the same Ukrainian recording.
+        let candidates = [
+            (language: "uk", text: "Привіт сьогодні я хочу перевірити довге речення Після паузи текст має залишитися повністю І ще 1 частина в самому кінці"),
+            (language: "en", text: "Previous Please text my Alicia She was not just enough some McKenzie"),
+        ]
+        XCTAssertEqual(LanguageGuess.best(candidates, preferred: "en", spellChecker: checker)?.language, "uk")
+        XCTAssertEqual(LanguageGuess.strayCapitalShare("Hello, this is a test. The weather is nice, I think."), 0)
+    }
+
+    func testCloseCallsGoToThePreferredLanguage() {
+        let candidates = [(language: "uk", text: "ок"), (language: "en", text: "ok")]
+        XCTAssertEqual(LanguageGuess.best(candidates, preferred: "uk", spellChecker: checker)?.language, "uk")
+        XCTAssertNil(LanguageGuess.best([(language: "uk", text: " ")], preferred: "uk", spellChecker: checker))
+    }
+}
+
+final class UtteranceJoinerTests: XCTestCase {
+    func testSpotsANewPhraseAfterAPause() {
+        XCTAssertTrue(UtteranceJoiner.isRestart(previous: "Привіт це перевірка як воно працює", next: "Сьогодні"))
+        XCTAssertFalse(UtteranceJoiner.isRestart(previous: "Привіт це", next: "Привіт це перевірка"), "growing")
+        XCTAssertFalse(UtteranceJoiner.isRestart(previous: "Привіт це перевірка", next: "Привіт"), "revised, same start")
+        XCTAssertEqual(UtteranceJoiner.join("Привіт", "", " світ "), "Привіт світ")
+    }
+}
+
+final class RussianGuardTests: XCTestCase {
+    func testSpotsRussianText() {
+        XCTAssertTrue(LanguageGuess.looksRussian("Привет, это проверка, как оно работает"))
+        XCTAssertTrue(LanguageGuess.looksRussian("сегодня хорошая погода и мы идем гулять"), "long, no і/ї/є/ґ")
+        XCTAssertFalse(LanguageGuess.looksRussian("Привіт, це перевірка, як воно працює"))
+        XCTAssertFalse(LanguageGuess.looksRussian("Hello, this is a test"))
+        XCTAssertFalse(LanguageGuess.looksRussian("так"), "too short to tell")
+    }
+}
