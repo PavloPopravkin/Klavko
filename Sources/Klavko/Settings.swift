@@ -16,6 +16,7 @@ final class Settings: ObservableObject {
         static let excludedApps = "excludedApps"
         static let shortcuts = "shortcuts.v2"
         static let loginItemConfigured = "loginItemConfigured"
+        static let loginItemPath = "loginItemPath"
         static let convertAbbreviations = "convertAbbreviations"
         static let exceptions = "exceptions"
         static let correctSpelling = "correctTypos"
@@ -215,7 +216,17 @@ final class Settings: ObservableObject {
                 Log.engine.error("Login item registration failed: \(error.localizedDescription, privacy: .public)")
             }
             launchAtLogin = SMAppService.mainApp.status == .enabled
+        } else if installed && launchAtLogin && defaults.string(forKey: Key.loginItemPath) != Bundle.main.bundlePath {
+            // The app was moved (e.g. ~/Applications → /Applications): point the login item at this copy.
+            try? SMAppService.mainApp.unregister()
+            do {
+                try SMAppService.mainApp.register()
+            } catch {
+                Log.engine.error("Login item re-registration failed: \(error.localizedDescription, privacy: .public)")
+            }
+            launchAtLogin = SMAppService.mainApp.status == .enabled
         }
+        if installed && launchAtLogin { defaults.set(Bundle.main.bundlePath, forKey: Key.loginItemPath) }
     }
 
     func toggleTrigger(_ trigger: SwitchTrigger) {

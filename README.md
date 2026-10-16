@@ -61,10 +61,10 @@
 
 ```bash
 swift test               # тести логіки
-scripts/install.sh       # зібрати, встановити в ~/Applications і запустити
+scripts/install.sh       # зібрати, встановити в /Applications і запустити
 ```
 
-Встановлена копія (`~/Applications/Klavko.app`) запускається під час входу в систему. Для швидкої перевірки без встановлення: `scripts/build-app.sh && open build/Klavko.app`.
+Встановлена копія (`/Applications/Klavko.app`) запускається під час входу в систему. Для швидкої перевірки без встановлення: `scripts/build-app.sh && open build/Klavko.app`.
 
 Під час першого запуску дозвольте доступ у **System Settings → Privacy & Security → Accessibility**.
 

@@ -14,21 +14,21 @@ Klavko — безкоштовна програма для macOS (рядок ме
 | Що | Де |
 |---|---|
 | Вихідний код | цей репозиторій (Swift Package) |
-| Встановлена програма (запущена, у автозапуску) | `~/Applications/Klavko.app` |
-| Інсталяційний архів | `dist/Klavko-<версія>.zip` (після `scripts/package.sh`) (розпакувати → перенести `Klavko.app` в `~/Applications` → відкрити) |
+| Встановлена програма (запущена, у автозапуску) | `/Applications/Klavko.app` |
+| Інсталяційний архів | `dist/Klavko-<версія>.zip` (після `scripts/package.sh`) (розпакувати → перенести `Klavko.app` в `/Applications` → відкрити) |
 | Опис для користувача | `README.md` |
 
 Команди (з кореня репозиторію):
 
 ```bash
 swift test                    # 40 модульних тестів логіки (словники, ранжування, гарячі клавіші, пробіли)
-scripts/install.sh            # зібрати, встановити в ~/Applications і перезапустити
+scripts/install.sh            # зібрати, встановити в /Applications і перезапустити
 scripts/package.sh            # зібрати інсталяційний архів dist/Klavko-<версія>.zip
 scripts/klavko-type.sh …      # імітація набору — див. розділ 3
 ```
 
 Програма підписана сертифікатом Apple Development власника Mac; дозвіл «Універсальний доступ» (Accessibility) уже надано.
-Якщо іконки Klavko немає в рядку меню: `open ~/Applications/Klavko.app`.
+Якщо іконки Klavko немає в рядку меню: `open /Applications/Klavko.app`.
 
 ---
 
@@ -183,7 +183,7 @@ scripts/klavko-type.sh key 51                # Backspace; 36 — Return; 123/124
 | I3 | Налаштування → два звуки (розкладка / помилки), кнопка прослуховування | різні звуки, вимикаються окремо |
 | I4 | Запис гарячої клавіші: клік на поле → ⌥⌘ разом / двічі ⇧ / ⌃⇧Space; Esc скасовує | записується й одразу працює |
 | I5 | Виключити TextEdit через меню → A1 | без змін; гарячі клавіші працюють. Потім повернути |
-| I6 | Автозапуск: `sfltool dumpbtm \| grep -A8 "app.klavko.Klavko"` | `Disposition: [enabled, allowed…]`, URL `~/Applications/Klavko.app` |
+| I6 | Автозапуск: `sfltool dumpbtm \| grep -A8 "app.klavko.Klavko"` | `Disposition: [enabled, allowed…]`, URL `/Applications/Klavko.app` |
 | I7 | Поле пароля (наприклад, вхід на сайті в Safari) | іконка змінюється на замок; у меню «Захищене введення…»; після виходу з поля — знову прапор |
 
 ---
