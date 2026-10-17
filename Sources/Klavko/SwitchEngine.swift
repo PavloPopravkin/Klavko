@@ -54,6 +54,7 @@ final class SwitchEngine {
     var onFix: (FixKind) -> Void = { _ in }
     /// The AI actions hotkey was pressed.
     /// The voice input hotkey was pressed.
+    var onTranslate: () -> Void = {}
     var onVoice: () -> Void = {}
     /// Esc was pressed: true if something (voice input) used it, so it isn't passed on.
     var onEscape: () -> Bool = { false }
@@ -725,6 +726,9 @@ final class SwitchEngine {
             }
         case .changeCase:
             changeCase()
+        case .translate:
+            reset()
+            onTranslate()
         case .voice:
             reset()
             onVoice()

@@ -610,3 +610,19 @@ final class RussianGuardTests: XCTestCase {
         XCTAssertFalse(LanguageGuess.looksRussian("так"), "too short to tell")
     }
 }
+
+final class TranslationTests: XCTestCase {
+    func testDirectionFollowsTheScript() {
+        XCTAssertEqual(TranslationDirection(for: "Привіт, як справи?"), .ukrainianToEnglish)
+        XCTAssertEqual(TranslationDirection(for: "Hello, how are you?"), .englishToUkrainian)
+        XCTAssertEqual(TranslationDirection(for: "Відкрий GitHub і зроби commit"), .ukrainianToEnglish)
+        XCTAssertEqual(TranslationDirection(for: "12345"), .englishToUkrainian)
+        XCTAssertEqual(TranslationDirection.ukrainianToEnglish.reversed, .englishToUkrainian)
+    }
+
+    func testLinesKeepLayout() {
+        let lines = TranslationLines("  Привіт, світ \n\n- пункт\n")
+        XCTAssertEqual(lines.toTranslate, ["Привіт, світ", "- пункт"])
+        XCTAssertEqual(lines.assemble(["Hello, world", "- item"]), "  Hello, world \n\n- item\n")
+    }
+}

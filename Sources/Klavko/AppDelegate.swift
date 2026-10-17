@@ -11,6 +11,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private let recorder = ShortcutRecorder()
     private let engine = SwitchEngine()
     private let exceptionPrompt = ExceptionPrompt()
+    private let translator = Translator()
     private let dictation = VoiceDictation()
     private let parakeet = ParakeetEngine()
     private var monitor: KeyboardMonitor?
@@ -50,6 +51,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         dictation.onInserted = { [engine] in engine.reset() }
         // Used once its model is downloaded (opt-in, from Settings → Voice input); macOS recognition until then.
         dictation.parakeet = parakeet
+        engine.onTranslate = { [unowned self] in
+            MainActor.assumeIsolated { translator.start() }
+        }
         engine.onVoice = { [unowned self] in
             MainActor.assumeIsolated { dictation.toggle() }
         }
@@ -134,6 +138,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         if let index = CommandLine.arguments.firstIndex(of: "--snapshot-voice"), index + 1 < CommandLine.arguments.count {
             dictation.snapshot(to: URL(fileURLWithPath: CommandLine.arguments[index + 1]))
             NSApp.terminate(nil)
+        }
+        // Developer check of the translator: --translate-check <text> <out.txt> writes the translation and quits.
+        if let index = CommandLine.arguments.firstIndex(of: "--translate-check"), index + 2 < CommandLine.arguments.count {
+            translator.check(CommandLine.arguments[index + 1], writeTo: URL(fileURLWithPath: CommandLine.arguments[index + 2]))
         }
         // Developer check of the settings layout: --snapshot-settings <file.png> renders the window and quits.
         if let index = CommandLine.arguments.firstIndex(of: "--snapshot-settings"),
@@ -270,6 +278,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
         menu.addItem(.separator())
         menu.addItem(item("Голосовий ввід", #selector(toggleVoice)))
+        menu.addItem(item("Перекласти виділене", #selector(startTranslation)))
         menu.addItem(item("Налаштування…", #selector(showSettings), key: ","))
         menu.addItem(item("Вийти з Klavko", #selector(quit), key: "q"))
     }
@@ -333,6 +342,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     @objc private func toggleVoice() {
         // After the menu closes, so the text lands in the app that was in front.
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { [weak self] in self?.dictation.toggle() }
+    }
+
+    @objc private func startTranslation() {
+        // The menu has taken focus from the app with the selection; give it back first.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { [weak self] in self?.translator.start() }
     }
 
     @objc private func quit() {
