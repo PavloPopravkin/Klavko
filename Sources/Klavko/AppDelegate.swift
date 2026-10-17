@@ -218,6 +218,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     }
 
     private func applySettings() {
+        settingsWindow?.title = tr("Klavko — Налаштування", "Klavko Settings")
         engine.config = SwitchEngine.Config(shortcuts: settings.shortcuts,
                                             autoSwitch: settings.isEnabled,
                                             triggers: settings.triggers,
@@ -301,36 +302,36 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
         if monitor?.isRunning != true {
             menu.addItem(.separator())
-            menu.addItem(item("⚠️ Надайте доступ у «Універсальний доступ»…", #selector(openAccessibilitySettings)))
+            menu.addItem(item(tr("⚠️ Надайте доступ у «Універсальний доступ»…", "⚠️ Allow Accessibility access…"), #selector(openAccessibilitySettings)))
         } else if secureInputActive {
             menu.addItem(.separator())
-            let owner = Self.secureInputOwner().map { "«\($0)»" } ?? "іншій програмі"
-            menu.addItem(disabledItem("⚠️ Захищене введення в \(owner)"))
-            menu.addItem(disabledItem("     Klavko зараз не бачить клавіатуру"))
+            let owner = Self.secureInputOwner().map { "«\($0)»" } ?? tr("іншій програмі", "another app")
+            menu.addItem(disabledItem(tr("⚠️ Захищене введення в \(owner)", "⚠️ Secure input in \(owner)")))
+            menu.addItem(disabledItem(tr("     Klavko зараз не бачить клавіатуру", "     Klavko can’t see the keyboard now")))
         }
 
         menu.addItem(.separator())
-        let toggle = item("Автоматично виправляти розкладку", #selector(toggleEnabled))
+        let toggle = item(tr("Автоматично виправляти розкладку", "Fix Layout Automatically"), #selector(toggleEnabled))
         toggle.state = settings.isEnabled ? .on : .off
         menu.addItem(toggle)
-        let spelling = item("Виправляти помилки", #selector(toggleSpelling))
+        let spelling = item(tr("Виправляти помилки", "Fix Typos"), #selector(toggleSpelling))
         spelling.state = settings.correctSpelling ? .on : .off
         menu.addItem(spelling)
 
         if let app = NSWorkspace.shared.frontmostApplication, let bundleID = app.bundleIdentifier,
            bundleID != Bundle.main.bundleIdentifier {
-            let exclude = item("Не виправляти в «\(app.localizedName ?? bundleID)»", #selector(toggleExcluded(_:)))
+            let exclude = item(tr("Не виправляти в «\(app.localizedName ?? bundleID)»", "Don’t Fix in “\(app.localizedName ?? bundleID)”"), #selector(toggleExcluded(_:)))
             exclude.representedObject = bundleID
             exclude.state = settings.isExcluded(bundleID) ? .on : .off
             menu.addItem(exclude)
         }
 
         menu.addItem(.separator())
-        menu.addItem(item("Голосовий ввід", #selector(toggleVoice)))
-        menu.addItem(item("Перекласти виділене", #selector(startTranslation)))
-        menu.addItem(item("Історія буфера обміну", #selector(showClipboard)))
-        menu.addItem(item("Налаштування…", #selector(showSettings), key: ","))
-        menu.addItem(item("Вийти з Klavko", #selector(quit), key: "q"))
+        menu.addItem(item(tr("Голосовий ввід", "Voice Input"), #selector(toggleVoice)))
+        menu.addItem(item(tr("Перекласти виділене", "Translate Selection"), #selector(startTranslation)))
+        menu.addItem(item(tr("Історія буфера обміну", "Clipboard History"), #selector(showClipboard)))
+        menu.addItem(item(tr("Налаштування…", "Settings…"), #selector(showSettings), key: ","))
+        menu.addItem(item(tr("Вийти з Klavko", "Quit Klavko"), #selector(quit), key: "q"))
     }
 
     private func item(_ title: String, _ action: Selector, key: String = "") -> NSMenuItem {
@@ -364,7 +365,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                                     keyLayout: englishLayout(),
                                     previewSound: { [weak self] name in self?.playSound(named: name) })
             let window = NSWindow(contentViewController: NSHostingController(rootView: view))
-            window.title = "Klavko — Налаштування"
+            window.title = tr("Klavko — Налаштування", "Klavko Settings")
             window.styleMask = [.titled, .closable]
             window.isReleasedWhenClosed = false
             window.center()

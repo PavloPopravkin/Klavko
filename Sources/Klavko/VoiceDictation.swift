@@ -116,7 +116,8 @@ final class VoiceDictation: ObservableObject {
             let permitted = await Self.requestPermissions()
             guard session == current else { return }
             guard permitted else {
-                stage = .failed("Немає доступу до мікрофона або розпізнавання мовлення. Дозвольте його в System Settings → Privacy & Security.")
+                stage = .failed(tr("Немає доступу до мікрофона або розпізнавання мовлення. Дозвольте його в System Settings → Privacy & Security.",
+                                     "No access to the microphone or speech recognition. Allow it in System Settings → Privacy & Security."))
                 return
             }
             begin(first)
@@ -125,7 +126,8 @@ final class VoiceDictation: ObservableObject {
 
     private func begin(_ code: String) {
         guard let recognizer = Self.recognizer(code) else {
-            stage = .failed("Розпізнавання мовлення на пристрої недоступне. Увімкніть Диктування в System Settings → Keyboard, щоб macOS завантажила мовні моделі.")
+            stage = .failed(tr("Розпізнавання мовлення на пристрої недоступне. Увімкніть Диктування в System Settings → Keyboard, щоб macOS завантажила мовні моделі.",
+                           "On-device speech recognition isn’t available. Turn on Dictation in System Settings → Keyboard so macOS downloads the language models."))
             return
         }
         let recognition = Recognition(language: code, recognizer: recognizer, fanout: fanout,
@@ -143,7 +145,7 @@ final class VoiceDictation: ObservableObject {
         do {
             try audio.start()
         } catch {
-            stage = .failed("Не вдалося увімкнути мікрофон: \(error.localizedDescription)")
+            stage = .failed(tr("Не вдалося увімкнути мікрофон: ", "Couldn’t turn on the microphone: ") + error.localizedDescription)
             return
         }
         insertOnFinish = true
@@ -158,7 +160,8 @@ final class VoiceDictation: ObservableObject {
         if !(parakeet?.isDownloaded ?? false) { text = VoiceVocabulary.apply(live.text, rules: vocabulary()) }
         if live.failedForGood, stage == .listening {
             stopAudio()
-            stage = .failed("Розпізнавання мовлення не працює. Перевірте мікрофон і Диктування в System Settings → Keyboard.")
+            stage = .failed(tr("Розпізнавання мовлення не працює. Перевірте мікрофон і Диктування в System Settings → Keyboard.",
+                               "Speech recognition isn’t working. Check the microphone and Dictation in System Settings → Keyboard."))
             return
         }
         if stage == .finishing, live.isDone { liveFinished() }
@@ -259,7 +262,7 @@ final class VoiceDictation: ObservableObject {
             complete(with: first.text, language: first.language)
             return
         }
-        languageTitle = "перевіряю: \(Self.title(code))"
+        languageTitle = tr("перевіряю: ", "checking: ") + Self.title(code)
         secondPassRunning = true
         let current = session
         Task { [weak self] in
@@ -357,7 +360,7 @@ final class VoiceDictation: ObservableObject {
     }
 
     private static func title(_ code: String) -> String {
-        code == "uk" ? "українська" : "англійська"
+        code == "uk" ? tr("українська", "Ukrainian") : tr("англійська", "English")
     }
 
     // Audio and recognition callbacks come on background threads, so they're built outside the main actor.
@@ -517,7 +520,7 @@ private struct VoiceIndicator: View {
                     .foregroundStyle(Color(red: 1, green: 0.6, blue: 0.55))
                     .fixedSize(horizontal: false, vertical: true)
             } else {
-                Text(dictation.text.isEmpty ? "Говоріть…" : dictation.text)
+                Text(dictation.text.isEmpty ? tr("Говоріть…", "Speak…") : dictation.text)
                     .font(.system(size: 14))
                     .foregroundStyle(.white.opacity(dictation.text.isEmpty ? 0.55 : 0.96))
                     .lineLimit(4)
@@ -539,8 +542,8 @@ private struct VoiceIndicator: View {
 
     private var hint: String {
         switch dictation.stage {
-        case .finishing: "Розпізнаю…"
-        default: "Enter або гаряча клавіша — вставити · Esc — скасувати"
+        case .finishing: tr("Розпізнаю…", "Recognizing…")
+        default: tr("Enter або гаряча клавіша — вставити · Esc — скасувати", "Return or the hotkey — insert · Esc — cancel")
         }
     }
 
@@ -590,7 +593,7 @@ private struct VoiceIndicator: View {
                 .background(Circle().fill(.white.opacity(0.12)))
         }
         .buttonStyle(.plain)
-        .help("Скасувати (Esc)")
+        .help(tr("Скасувати (Esc)", "Cancel (Esc)"))
     }
 
     private var insertButton: some View {
@@ -604,7 +607,7 @@ private struct VoiceIndicator: View {
                 .shadow(color: Neon.sky.opacity(0.8), radius: 5)
         }
         .buttonStyle(.plain)
-        .help("Вставити (Enter)")
+        .help(tr("Вставити (Enter)", "Insert (Return)"))
     }
 }
 

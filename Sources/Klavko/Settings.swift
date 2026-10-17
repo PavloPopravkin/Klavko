@@ -26,6 +26,7 @@ final class Settings: ObservableObject {
         static let listContinuation = "listContinuation"
         static let replacements = "replacements"
         static let voiceVocabulary = "voiceVocabulary"
+        static let interfaceLanguage = "interfaceLanguage"
         static let offerVoiceCorrections = "offerVoiceCorrections"
         static let clipboardEnabled = "clipboardEnabled"
         static let clipboardKeepDays = "clipboardKeepDays"
@@ -87,6 +88,15 @@ final class Settings: ObservableObject {
 
     @Published var listContinuation: Bool {
         didSet { defaults.set(listContinuation, forKey: Key.listContinuation); onChange?() }
+    }
+
+    /// The language of Klavko's windows and menus.
+    @Published var interfaceLanguage: AppLanguage {
+        didSet {
+            defaults.set(interfaceLanguage.rawValue, forKey: Key.interfaceLanguage)
+            AppLanguage.current = interfaceLanguage
+            onChange?()
+        }
     }
 
     /// The languages the user speaks: "auto" (Ukrainian and English), "uk" or "en". Never Russian.
@@ -242,6 +252,10 @@ final class Settings: ObservableObject {
         autoCapitalize = defaults.bool(forKey: Key.autoCapitalize)
         typography = defaults.bool(forKey: Key.typography)
         listContinuation = defaults.bool(forKey: Key.listContinuation)
+        let language = defaults.string(forKey: Key.interfaceLanguage).flatMap(AppLanguage.init(rawValue:))
+            ?? .systemDefault
+        interfaceLanguage = language
+        AppLanguage.current = language
         let storedVoice = defaults.string(forKey: Key.voiceLanguage) ?? "auto"
         voiceLanguage = ["auto", "uk", "en"].contains(storedVoice) ? storedVoice : "auto"
         // Left over from the AI actions (removed in 0.10).

@@ -62,7 +62,7 @@ public enum Shortcut: Codable, Hashable, Sendable {
     public func parts(layout: LayoutMap?) -> [String] {
         switch self {
         case .modifierTap(let modifiers, let double):
-            return (double ? ["двічі"] : []) + modifiers.map(\.symbol)
+            return (double ? [tr("двічі", "twice")] : []) + modifiers.map(\.symbol)
         case .combo(let keyCode, let modifiers):
             return modifiers.map(\.symbol) + [KeyNames.name(for: keyCode, layout: layout)]
         }
@@ -74,7 +74,7 @@ public enum Shortcut: Codable, Hashable, Sendable {
         case .modifierTap(let modifiers, true) where modifiers.count == 1:
             return modifiers[0].symbol + modifiers[0].symbol
         case .modifierTap(let modifiers, true):
-            return "двічі " + modifiers.map(\.symbol).joined()
+            return tr("двічі ", "twice ") + modifiers.map(\.symbol).joined()
         default:
             return parts(layout: layout).joined()
         }
@@ -86,13 +86,13 @@ public enum HotkeyAction: String, Codable, CaseIterable, Sendable {
 
     public var title: String {
         switch self {
-        case .convertWord: "Змінити розкладку слова"
-        case .convertText: "Змінити розкладку виділеного або набраного"
-        case .undo: "Скасувати або повернути виправлення"
-        case .changeCase: "Змінити регістр (слово або виділене)"
-        case .translate: "Перекласти виділене (укр. ↔ англ.)"
-        case .clipboard: "Історія буфера обміну"
-        case .voice: "Голосовий ввід (почати / вставити)"
+        case .convertWord: tr("Змінити розкладку слова", "Switch the layout of the word")
+        case .convertText: tr("Змінити розкладку виділеного або набраного", "Switch the layout of the selection or typed text")
+        case .undo: tr("Скасувати або повернути виправлення", "Undo or redo a fix")
+        case .changeCase: tr("Змінити регістр (слово або виділене)", "Change case (word or selection)")
+        case .translate: tr("Перекласти виділене (укр. ↔ англ.)", "Translate the selection (Ukr. ↔ Eng.)")
+        case .clipboard: tr("Історія буфера обміну", "Clipboard history")
+        case .voice: tr("Голосовий ввід (почати / вставити)", "Voice input (start / insert)")
         }
     }
 

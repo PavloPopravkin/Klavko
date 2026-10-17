@@ -193,12 +193,12 @@ private struct ClipboardView: View {
     private var header: some View {
         HStack(spacing: 10) {
             Image(systemName: "magnifyingglass").foregroundStyle(.secondary).font(.system(size: 16))
-            TextField("", text: $window.query, prompt: Text("Шукати в історії буфера обміну…"))
+            TextField("", text: $window.query, prompt: Text(tr("Шукати в історії буфера обміну…", "Search clipboard history…")))
                 .textFieldStyle(.plain)
                 .font(.system(size: 17))
                 .focused($searchFocused)
             Picker("", selection: $window.kind) {
-                Text("Усе").tag(ClipItem.Kind?.none)
+                Text(tr("Усе", "All")).tag(ClipItem.Kind?.none)
                 Divider()
                 ForEach(ClipItem.Kind.allCases, id: \.self) { kind in
                     Label(kind.title, systemImage: kind.symbol).tag(ClipItem.Kind?.some(kind))
@@ -217,7 +217,8 @@ private struct ClipboardView: View {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 2) {
                     if items.isEmpty {
-                        Text(manager.history.items.isEmpty ? "Тут з’явиться все, що ви копіюєте." : "Нічого не знайдено")
+                        Text(manager.history.items.isEmpty ? tr("Тут з’явиться все, що ви копіюєте.", "Everything you copy will appear here.")
+                             : tr("Нічого не знайдено", "Nothing found"))
                             .foregroundStyle(.secondary)
                             .padding(16)
                     }
@@ -320,7 +321,7 @@ private struct ClipboardView: View {
         Grid(alignment: .leading, horizontalSpacing: 12, verticalSpacing: 4) {
             if let app = item.appName {
                 GridRow {
-                    Text("Звідки").foregroundStyle(.secondary)
+                    Text(tr("Звідки", "From")).foregroundStyle(.secondary)
                     HStack(spacing: 4) {
                         if let icon = ClipRow.appIcon(item.appBundleID) {
                             Image(nsImage: icon).resizable().frame(width: 14, height: 14)
@@ -330,9 +331,9 @@ private struct ClipboardView: View {
                 }
             }
             GridRow {
-                Text("Скопійовано").foregroundStyle(.secondary)
+                Text(tr("Скопійовано", "Copied")).foregroundStyle(.secondary)
                 Text(item.date.formatted(Date.FormatStyle(date: .abbreviated, time: .shortened)
-                    .locale(Locale(identifier: "uk_UA"))))
+                    .locale(AppLanguage.current.locale)))
             }
             GridRow {
                 Text(detailTitle(item)).foregroundStyle(.secondary)
@@ -344,9 +345,9 @@ private struct ClipboardView: View {
 
     private func detailTitle(_ item: ClipItem) -> String {
         switch item.kind {
-        case .text, .link: "Символів"
-        case .image: "Розмір"
-        case .files: "Файлів"
+        case .text, .link: tr("Символів", "Characters")
+        case .image: tr("Розмір", "Size")
+        case .files: tr("Файлів", "Files")
         }
     }
 
@@ -360,13 +361,13 @@ private struct ClipboardView: View {
 
     private var footer: some View {
         HStack(spacing: 14) {
-            Label("Історія буфера обміну", systemImage: "doc.on.clipboard")
+            Label(tr("Історія буфера обміну", "Clipboard History"), systemImage: "doc.on.clipboard")
                 .foregroundStyle(.secondary)
             Spacer()
-            hint("↩", "Вставити")
-            hint("⌘C", "Копіювати")
-            hint("⌘P", window.selected?.pinned == true ? "Відкріпити" : "Закріпити")
-            hint("⌘⌫", "Видалити")
+            hint("↩", tr("Вставити", "Paste"))
+            hint("⌘C", tr("Копіювати", "Copy"))
+            hint("⌘P", window.selected?.pinned == true ? tr("Відкріпити", "Unpin") : tr("Закріпити", "Pin"))
+            hint("⌘⌫", tr("Видалити", "Delete"))
         }
         .font(.system(size: 11))
         .padding(.horizontal, 14)
@@ -403,7 +404,7 @@ private struct LinkPreview: View {
                     if inside { NSCursor.pointingHand.push() } else { NSCursor.pop() }
                 }
                 .onTapGesture { open() }
-                .help("Відкрити в браузері")
+                .help(tr("Відкрити в браузері", "Open in browser"))
             if let host = URL(string: address)?.host {
                 Label(host, systemImage: "globe").font(.system(size: 11)).foregroundStyle(.secondary)
             }

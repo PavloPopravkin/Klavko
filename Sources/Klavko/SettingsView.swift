@@ -64,35 +64,39 @@ struct SettingsView: View {
                 switch tab {
                 case .general:
                     Section {
-                        Toggle("Запускати під час входу в систему", isOn: $settings.launchAtLogin)
-                        Toggle("Показувати прапор розкладки в меню", isOn: $settings.showFlag)
-                        soundRow("Звук під час зміни розкладки", isOn: $settings.playSound, sound: $settings.soundName)
-                        soundRow("Звук під час виправлення помилок", isOn: $settings.playSpellingSound,
+                        // Named in both languages, so it can be found whichever is on.
+                        Picker("Мова програми · Language", selection: $settings.interfaceLanguage) {
+                            ForEach(AppLanguage.allCases, id: \.self) { Text($0.title).tag($0) }
+                        }
+                        Toggle(tr("Запускати під час входу в систему", "Open at login"), isOn: $settings.launchAtLogin)
+                        Toggle(tr("Показувати прапор розкладки в меню", "Show the layout flag in the menu bar"), isOn: $settings.showFlag)
+                        soundRow(tr("Звук під час зміни розкладки", "Sound when the layout is fixed"), isOn: $settings.playSound, sound: $settings.soundName)
+                        soundRow(tr("Звук під час виправлення помилок", "Sound when a typo is fixed"), isOn: $settings.playSpellingSound,
                                  sound: $settings.spellingSoundName)
                     }
 
-                    Section("Не виправляти автоматично в програмах") {
+                    Section(tr("Не виправляти автоматично в програмах", "Don’t fix automatically in these apps")) {
                         if settings.excludedApps.isEmpty {
-                            Text("Немає").foregroundStyle(.secondary)
+                            Text(tr("Немає", "None")).foregroundStyle(.secondary)
                         }
                         ForEach(settings.excludedApps, id: \.self) { bundleID in
                             HStack {
                                 Text(Self.appName(bundleID))
                                 Spacer()
-                                Button("Прибрати") { settings.toggleExcluded(bundleID) }
+                                Button(tr("Прибрати", "Remove")) { settings.toggleExcluded(bundleID) }
                             }
                         }
                     }
 
                 case .layout:
                     Section {
-                        Toggle("Автоматично виправляти розкладку", isOn: $settings.isEnabled)
-                        Toggle("Перемикати вже під час набору слова", isOn: $settings.switchWhileTyping)
+                        Toggle(tr("Автоматично виправляти розкладку", "Fix the keyboard layout automatically"), isOn: $settings.isEnabled)
+                        Toggle(tr("Перемикати вже під час набору слова", "Switch while the word is still being typed"), isOn: $settings.switchWhileTyping)
                             .disabled(!settings.isEnabled)
-                        Toggle("Перемикати слова з великих літер (абревіатури)", isOn: $settings.convertAbbreviations)
+                        Toggle(tr("Перемикати слова з великих літер (абревіатури)", "Switch words in capitals (abbreviations)"), isOn: $settings.convertAbbreviations)
                             .disabled(!settings.isEnabled)
                         HStack {
-                            Text("Перевіряти слово після")
+                            Text(tr("Перевіряти слово після", "Check the word after"))
                             Spacer()
                             ForEach(SwitchTrigger.allCases, id: \.self) { trigger in
                                 ChipToggle(title: trigger.title, isOn: settings.triggers.contains(trigger)) {
@@ -100,26 +104,26 @@ struct SettingsView: View {
                                 }
                             }
                         }
-                        Toggle("Backspace одразу після виправлення скасовує його", isOn: $settings.backspaceUndo)
+                        Toggle(tr("Backspace одразу після виправлення скасовує його", "Backspace right after a fix undoes it"), isOn: $settings.backspaceUndo)
                     } header: {
-                        Text("Автоматичне перемикання розкладки")
+                        Text(tr("Автоматичне перемикання розкладки", "Automatic layout switching"))
                     } footer: {
-                        Text("Гарячі клавіші працюють, навіть коли автоматичні виправлення вимкнені.")
+                        Text(tr("Гарячі клавіші працюють, навіть коли автоматичні виправлення вимкнені.", "Hotkeys work even when automatic fixes are off."))
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
 
                     Section {
                         HStack {
-                            TextField("", text: $newException, prompt: Text("Нові слова через пробіл або кому"))
+                            TextField("", text: $newException, prompt: Text(tr("Нові слова через пробіл або кому", "New words, separated by spaces or commas")))
                                 .labelsHidden()
                                 .textFieldStyle(.roundedBorder)
                                 .onSubmit(addException)
-                            Button("Додати", action: addException)
+                            Button(tr("Додати", "Add"), action: addException)
                                 .disabled(newException.trimmingCharacters(in: .whitespaces).isEmpty)
                         }
                         if settings.exceptions.isEmpty {
-                            Text("Поки порожньо").foregroundStyle(.secondary)
+                            Text(tr("Поки порожньо", "Empty so far")).foregroundStyle(.secondary)
                         } else {
                             FlowLayout(spacing: 6) {
                                 ForEach(settings.exceptions, id: \.self) { word in
@@ -128,10 +132,12 @@ struct SettingsView: View {
                             }
                         }
                     } header: {
-                        Text("Винятки (\(settings.exceptions.count))")
+                        Text(tr("Винятки", "Exceptions") + " (\(settings.exceptions.count))")
                     } footer: {
-                        Text("Слова, які Klavko ніколи не змінює. Записуйте так, як набираєте їх (наприклад «ye» або «npm»). "
-                             + "Якщо ви двічі скасуєте виправлення одного слова, Klavko сам запропонує додати його сюди.")
+                        Text(tr("Слова, які Klavko ніколи не змінює. Записуйте так, як набираєте їх (наприклад «ye» або «npm»). "
+                                + "Якщо ви двічі скасуєте виправлення одного слова, Klavko сам запропонує додати його сюди.",
+                                "Words Klavko never changes. Write them the way you type them (for example “ye” or “npm”). "
+                                + "If you undo the fix of the same word twice, Klavko offers to add it here."))
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
@@ -139,46 +145,55 @@ struct SettingsView: View {
                 case .text:
                     Section {
                         Toggle(isOn: $settings.correctSpelling) {
-                            Text("Виправляти помилки")
-                            Text("Українська та англійська: пропущені й переставлені літери, сусідні клавіші "
-                                 + "(рлбиш → робиш), залипання Shift (ПРивіт → Привіт). "
-                                 + "Сумнівні слова, імена посеред речення та слова з цифрами не змінюються.")
+                            Text(tr("Виправляти помилки", "Fix typos"))
+                            Text(tr("Українська та англійська: пропущені й переставлені літери, сусідні клавіші "
+                                    + "(рлбиш → робиш), залипання Shift (ПРивіт → Привіт). "
+                                    + "Сумнівні слова, імена посеред речення та слова з цифрами не змінюються.",
+                                    "Ukrainian and English: missing and swapped letters, neighbouring keys "
+                                    + "(teh → the), a stuck Shift (HEllo → Hello). "
+                                    + "Doubtful words, names mid-sentence and words with digits stay as they are."))
                         }
                         Toggle(isOn: $settings.spaceAfterPunctuation) {
-                            Text("Додавати пропущений пробіл після розділових знаків")
-                            Text("«Привіт,як» → «Привіт, як». Після крапки — лише перед великою літерою; "
-                                 + "числа, адреси, дефіс, дужки й лапки не змінюються.")
+                            Text(tr("Додавати пропущений пробіл після розділових знаків", "Add a missing space after punctuation"))
+                            Text(tr("«Привіт,як» → «Привіт, як». Після крапки — лише перед великою літерою; "
+                                    + "числа, адреси, дефіс, дужки й лапки не змінюються.",
+                                    "“Hi,there” → “Hi, there”. After a full stop only before a capital letter; "
+                                    + "numbers, addresses, hyphens, brackets and quotes are left alone."))
                         }
                     } header: {
-                        Text("Помилки")
+                        Text(tr("Помилки", "Typos"))
                     }
 
                     Section {
                         Toggle(isOn: $settings.autoCapitalize) {
-                            Text("Велика літера на початку речення")
-                            Text("Після «.» «!» «?», на новому рядку та на початку тексту. Скорочення («т.д.», «напр.») не враховуються.")
+                            Text(tr("Велика літера на початку речення", "Capital letter at the start of a sentence"))
+                            Text(tr("Після «.» «!» «?», на новому рядку та на початку тексту. Скорочення («т.д.», «напр.») не враховуються.",
+                                    "After “.” “!” “?”, on a new line and at the start of the text. Abbreviations (“e.g.”, “etc.”) don’t count."))
                         }
                         Toggle(isOn: $settings.typography) {
-                            Text("Типографські символи")
-                            Text("... → …   \" → « » (укр.) / “ ” (англ.)   « - » → « — »   (c) (r) (tm) → © ® ™")
+                            Text(tr("Типографські символи", "Typographic characters"))
+                            Text(tr("... → …   \" → « » (укр.) / “ ” (англ.)   « - » → « — »   (c) (r) (tm) → © ® ™",
+                                    "... → …   \" → “ ” (Eng.) / « » (Ukr.)   « - » → « — »   (c) (r) (tm) → © ® ™"))
                         }
                         Toggle(isOn: $settings.listContinuation) {
-                            Text("Продовжувати списки")
-                            Text("Enter після «- пункт» або «1. пункт» додає наступний маркер; Enter на порожньому пункті завершує список. "
-                                 + "Не діє в програмах, що роблять це самі (Нотатки, Word, Notion…).")
+                            Text(tr("Продовжувати списки", "Continue lists"))
+                            Text(tr("Enter після «- пункт» або «1. пункт» додає наступний маркер; Enter на порожньому пункті завершує список. "
+                                    + "Не діє в програмах, що роблять це самі (Нотатки, Word, Notion…).",
+                                    "Return after “- item” or “1. item” adds the next marker; Return on an empty item ends the list. "
+                                    + "Off in apps that do this themselves (Notes, Word, Notion…)."))
                         }
                         // Fields without labels: in a Form a label would take a column of its own and push the field aside.
                         HStack(spacing: 8) {
-                            TextField("", text: $newReplacementFrom, prompt: Text("Набираю"))
+                            TextField("", text: $newReplacementFrom, prompt: Text(tr("Набираю", "I type")))
                                 .labelsHidden()
                                 .textFieldStyle(.roundedBorder)
                                 .frame(width: 140)
                             Image(systemName: "arrow.right").foregroundStyle(.secondary)
-                            TextField("", text: $newReplacementTo, prompt: Text("Замінити на"))
+                            TextField("", text: $newReplacementTo, prompt: Text(tr("Замінити на", "Replace with")))
                                 .labelsHidden()
                                 .textFieldStyle(.roundedBorder)
                                 .onSubmit(addReplacement)
-                            Button("Додати", action: addReplacement)
+                            Button(tr("Додати", "Add"), action: addReplacement)
                                 .disabled(newReplacementFrom.trimmingCharacters(in: .whitespaces).isEmpty || newReplacementTo.isEmpty)
                         }
                         if !settings.replacements.isEmpty {
@@ -189,70 +204,78 @@ struct SettingsView: View {
                             }
                         }
                     } header: {
-                        Text("Оформлення тексту")
+                        Text(tr("Оформлення тексту", "Text formatting"))
                     } footer: {
-                        Text("Власні заміни: слово («сп» → «спасибі») змінюється, коли воно закінчене; "
-                             + "послідовність символів («:)» → «🙂») — щойно набрана.")
+                        Text(tr("Власні заміни: слово («сп» → «спасибі») змінюється, коли воно закінчене; "
+                                + "послідовність символів («:)» → «🙂») — щойно набрана.",
+                                "Your replacements: a word (“ty” → “thank you”) is replaced when it’s finished; "
+                                + "a sequence of characters (“:)” → “🙂”) as soon as it’s typed."))
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
 
                 case .voice:
                     Section {
-                        Picker("Я говорю", selection: $settings.voiceLanguage) {
-                            Text("Українською та англійською").tag("auto")
-                            Text("Лише українською").tag("uk")
-                            Text("Лише англійською").tag("en")
+                        Picker(tr("Я говорю", "I speak"), selection: $settings.voiceLanguage) {
+                            Text(tr("Українською та англійською", "Ukrainian and English")).tag("auto")
+                            Text(tr("Лише українською", "Ukrainian only")).tag("uk")
+                            Text(tr("Лише англійською", "English only")).tag("en")
                         }
                         HStack {
-                            Text("Модель розпізнавання")
+                            Text(tr("Модель розпізнавання", "Recognition model"))
                             Spacer()
                             switch parakeet.state {
                             case .ready:
-                                Label("Parakeet Ultra готова", systemImage: "checkmark.seal.fill").foregroundStyle(.green)
+                                Label(tr("Parakeet Ultra готова", "Parakeet Ultra is ready"), systemImage: "checkmark.seal.fill").foregroundStyle(.green)
                             case .downloading(let fraction):
                                 ProgressView(value: fraction).frame(width: 120)
                                 Text("\(Int(fraction * 100)) %").monospacedDigit().foregroundStyle(.secondary)
                             case .notDownloaded:
-                                Button("Завантажити (~600 МБ)") { parakeet.prepare() }
+                                Button(tr("Завантажити (~600 МБ)", "Download (~600 MB)")) { parakeet.prepare() }
                             case .failed(let message):
                                 Text(message).foregroundStyle(.red).lineLimit(2)
-                                Button("Ще раз") { parakeet.prepare() }
+                                Button(tr("Ще раз", "Try again")) { parakeet.prepare() }
                             }
                         }
                     } header: {
-                        Text("Голосовий ввід")
+                        Text(tr("Голосовий ввід", "Voice input"))
                     } footer: {
-                        Text("Натисніть гарячу клавішу «Голосовий ввід» (за замовчуванням fn), говоріть, натисніть її ще раз — "
-                             + "текст з’явиться в місці курсора. Esc скасовує. Розпізнає модель NVIDIA Parakeet Ultra на цьому Mac "
-                             + "(з розділовими знаками); російську вона ніколи не вставить — такий результат перевіряє український "
-                             + "розпізнавач macOS. Поки модель не завантажена, працює вбудоване розпізнавання macOS.")
+                        Text(tr("Натисніть гарячу клавішу «Голосовий ввід» (за замовчуванням fn), говоріть, натисніть її ще раз — "
+                                + "текст з’явиться в місці курсора. Esc скасовує. Розпізнає модель NVIDIA Parakeet Ultra на цьому Mac "
+                                + "(з розділовими знаками); російську вона ніколи не вставить — такий результат перевіряє український "
+                                + "розпізнавач macOS. Поки модель не завантажена, працює вбудоване розпізнавання macOS.",
+                                "Press the “Voice input” hotkey (fn by default), speak, press it again — the text appears at the "
+                                + "cursor. Esc cancels. Speech is recognized by the NVIDIA Parakeet Ultra model on this Mac "
+                                + "(with punctuation); it never inserts Russian — such a result is redone by the macOS Ukrainian "
+                                + "recognizer. Until the model is downloaded, the built-in macOS recognition is used."))
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
 
                     Section {
                         Toggle(isOn: $settings.offerVoiceCorrections) {
-                            Text("Пропонувати запам’ятати виправлення")
-                            Text("Коли ви вручну виправите одне надиктоване слово, Klavko на 5 секунд запропонує "
-                                 + "писати його так і надалі (↩ — так, Esc — ні).")
+                            Text(tr("Пропонувати запам’ятати виправлення", "Offer to remember corrections"))
+                            Text(tr("Коли ви вручну виправите одне надиктоване слово, Klavko на 5 секунд запропонує "
+                                    + "писати його так і надалі (↩ — так, Esc — ні).",
+                                    "When you fix one dictated word by hand, Klavko offers for 5 seconds "
+                                    + "to write it that way from now on (↩ — yes, Esc — no)."))
                         }
                         HStack(spacing: 8) {
-                            TextField("", text: $newSpellingHeard, prompt: Text("Чує"))
+                            TextField("", text: $newSpellingHeard, prompt: Text(tr("Чує", "Heard")))
                                 .labelsHidden()
                                 .textFieldStyle(.roundedBorder)
                                 .frame(width: 140)
                             Image(systemName: "arrow.right").foregroundStyle(.secondary)
-                            TextField("", text: $newSpellingWritten, prompt: Text("Писати так"))
+                            TextField("", text: $newSpellingWritten, prompt: Text(tr("Писати так", "Write as")))
                                 .labelsHidden()
                                 .textFieldStyle(.roundedBorder)
                                 .onSubmit(addSpelling)
-                            Button("Додати", action: addSpelling)
+                            Button(tr("Додати", "Add"), action: addSpelling)
                                 .disabled(newSpellingHeard.trimmingCharacters(in: .whitespaces).isEmpty
                                           || newSpellingWritten.trimmingCharacters(in: .whitespaces).isEmpty)
                         }
                         if settings.voiceVocabulary.isEmpty {
-                            Text("Поки порожньо").foregroundStyle(.secondary)
+                            Text(tr("Поки порожньо", "Empty so far")).foregroundStyle(.secondary)
                         } else {
                             FlowLayout(spacing: 6) {
                                 ForEach(settings.voiceVocabulary, id: \.self) { rule in
@@ -261,69 +284,78 @@ struct SettingsView: View {
                             }
                         }
                     } header: {
-                        Text("Словник голосового вводу (\(settings.voiceVocabulary.count))")
+                        Text(tr("Словник голосового вводу", "Voice input vocabulary") + " (\(settings.voiceVocabulary.count))")
                     } footer: {
-                        Text("Як писати слова, які розпізнавання чує інакше. Власні заміни з вкладки "
-                             + "«Текст» («адра» → «ADRA») теж діють для голосового вводу.")
+                        Text(tr("Як писати слова, які розпізнавання чує інакше. Власні заміни з вкладки "
+                                + "«Текст» («адра» → «ADRA») теж діють для голосового вводу.",
+                                "How to write words that recognition hears differently. Your replacements from the "
+                                + "“Text” tab (“adra” → “ADRA”) apply to voice input too."))
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
 
                 case .clipboard:
                     Section {
-                        Toggle("Зберігати історію буфера обміну", isOn: $settings.clipboardEnabled)
-                        Picker("Зберігати", selection: $settings.clipboardKeepDays) {
-                            Text("1 день").tag(1)
-                            Text("7 днів").tag(7)
-                            Text("30 днів").tag(30)
-                            Text("90 днів").tag(90)
-                            Text("Завжди").tag(0)
+                        Toggle(tr("Зберігати історію буфера обміну", "Keep clipboard history"), isOn: $settings.clipboardEnabled)
+                        Picker(tr("Зберігати", "Keep for"), selection: $settings.clipboardKeepDays) {
+                            Text(tr("1 день", "1 day")).tag(1)
+                            Text(tr("7 днів", "7 days")).tag(7)
+                            Text(tr("30 днів", "30 days")).tag(30)
+                            Text(tr("90 днів", "90 days")).tag(90)
+                            Text(tr("Завжди", "Forever")).tag(0)
                         }
                         .disabled(!settings.clipboardEnabled)
                         .onChange(of: settings.clipboardKeepDays) { clipboard.prune() }
-                        soundRow("Звук під час копіювання", isOn: $settings.playCopySound, sound: $settings.copySoundName)
+                        soundRow(tr("Звук під час копіювання", "Sound when copying"), isOn: $settings.playCopySound, sound: $settings.copySoundName)
                             .disabled(!settings.clipboardEnabled)
                         HStack {
-                            Text("Записів: \(clipboard.history.items.count)")
+                            Text(tr("Записів", "Items") + ": \(clipboard.history.items.count)")
                             Spacer()
-                            Button("Очистити історію") { clipboard.clearUnpinned() }
+                            Button(tr("Очистити історію", "Clear history")) { clipboard.clearUnpinned() }
                                 .disabled(clipboard.history.items.allSatisfy(\.pinned))
                         }
                     } header: {
-                        Text("Історія буфера обміну")
+                        Text(tr("Історія буфера обміну", "Clipboard history"))
                     } footer: {
-                        Text("Відкривається гарячою клавішею «Історія буфера обміну» (за замовчуванням ⌥⌘V). "
-                             + "Шукайте, ↩ — вставити, ⌘C — скопіювати, ⌘P — закріпити (закріплене не видаляється), "
-                             + "⌘⌫ — видалити, ⌘1…⌘9 — вставити одразу. Історія зберігається лише на цьому Mac; "
-                             + "паролі, які позначають менеджери паролів, не записуються.")
+                        Text(tr("Відкривається гарячою клавішею «Історія буфера обміну» (за замовчуванням ⌥⌘V). "
+                                + "Шукайте, ↩ — вставити, ⌘C — скопіювати, ⌘P — закріпити (закріплене не видаляється), "
+                                + "⌘⌫ — видалити, ⌘1…⌘9 — вставити одразу. Історія зберігається лише на цьому Mac; "
+                                + "паролі, які позначають менеджери паролів, не записуються.",
+                                "Opens with the “Clipboard history” hotkey (⌥⌘V by default). "
+                                + "Search, ↩ — paste, ⌘C — copy, ⌘P — pin (pinned items are never removed), "
+                                + "⌘⌫ — delete, ⌘1…⌘9 — paste right away. The history stays on this Mac only; "
+                                + "passwords marked by password managers are never recorded."))
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
-                    Section("Не записувати з програм") {
+                    Section(tr("Не записувати з програм", "Don’t record from these apps")) {
                         if settings.clipboardIgnoredApps.isEmpty {
-                            Text("Немає").foregroundStyle(.secondary)
+                            Text(tr("Немає", "None")).foregroundStyle(.secondary)
                         }
                         ForEach(settings.clipboardIgnoredApps, id: \.self) { bundleID in
                             HStack {
                                 Text(Self.appName(bundleID))
                                 Spacer()
-                                Button("Прибрати") { settings.toggleClipboardIgnored(bundleID) }
+                                Button(tr("Прибрати", "Remove")) { settings.toggleClipboardIgnored(bundleID) }
                             }
                         }
-                        Button("Додати програму…") { addIgnoredApp() }
+                        Button(tr("Додати програму…", "Add App…")) { addIgnoredApp() }
                     }
                 case .hotkeys:
                     Section {
                         ForEach(HotkeyAction.allCases, id: \.self) { action in
                             shortcutRow(action)
                         }
-                        Button("Відновити стандартні") { settings.resetShortcuts() }
+                        Button(tr("Відновити стандартні", "Restore Defaults")) { settings.resetShortcuts() }
                     } header: {
-                        Text("Гарячі клавіші")
+                        Text(tr("Гарячі клавіші", "Hotkeys"))
                     } footer: {
-                        Text("Клацніть на комбінацію і натисніть нову: клавішу з ⌃ ⌥ ⇧ ⌘, лише модифікатори разом "
-                             + "(наприклад ⌥⌘) або двічі швидко ті самі модифікатори. Esc — скасувати. "
-                             + "Якщо нічого не виділено, змінюється весь текст, набраний після останнього кліку, Enter чи стрілок.")
+                        Text(tr("Клацніть на комбінацію і натисніть нову: клавішу з ⌃ ⌥ ⇧ ⌘, лише модифікатори разом "
+                                + "(наприклад ⌥⌘) або двічі швидко ті самі модифікатори. Esc — скасувати. "
+                                + "Якщо нічого не виділено, змінюється весь текст, набраний після останнього кліку, Enter чи стрілок.",
+                                "Click a shortcut and press a new one: a key with ⌃ ⌥ ⇧ ⌘, modifiers alone together "
+                                + "(for example ⌥⌘) or the same modifiers twice quickly. Esc — cancel. "
+                                + "With nothing selected, all text typed since the last click, Return or arrow key is changed."))
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
@@ -356,7 +388,7 @@ struct SettingsView: View {
                 Image(systemName: "speaker.wave.2")
             }
             .buttonStyle(.borderless)
-            .help("Прослухати")
+            .help(tr("Прослухати", "Listen"))
             Toggle("", isOn: isOn)
                 .labelsHidden()
                 .toggleStyle(.switch)
@@ -375,7 +407,7 @@ struct SettingsView: View {
                 }
             } label: {
                 if recorder.recording == action {
-                    Text("Натисніть…")
+                    Text(tr("Натисніть…", "Press keys…"))
                         .foregroundStyle(Color.accentColor)
                 } else if let shortcut = settings.shortcuts[action] {
                     HStack(spacing: 4) {
@@ -384,11 +416,11 @@ struct SettingsView: View {
                         }
                     }
                 } else {
-                    Text("Не задано").foregroundStyle(.secondary)
+                    Text(tr("Не задано", "Not set")).foregroundStyle(.secondary)
                 }
             }
             .buttonStyle(.plain)
-            .help("Клацніть, щоб змінити")
+            .help(tr("Клацніть, щоб змінити", "Click to change"))
 
             Button {
                 settings.setShortcut(nil, for: action)
@@ -396,7 +428,7 @@ struct SettingsView: View {
                 Image(systemName: "xmark.circle.fill").foregroundStyle(.secondary)
             }
             .buttonStyle(.borderless)
-            .help("Прибрати гарячу клавішу")
+            .help(tr("Прибрати гарячу клавішу", "Remove the hotkey"))
             .opacity(settings.shortcuts[action] == nil ? 0 : 1)
             .disabled(settings.shortcuts[action] == nil)
         }
@@ -413,13 +445,13 @@ enum SettingsTab: String, CaseIterable {
 
     var title: String {
         switch self {
-        case .general: "Загальні"
-        case .layout: "Розкладка"
-        case .text: "Текст"
-        case .voice: "Голос"
-        case .clipboard: "Буфер"
-        case .about: "Про Klavko"
-        case .hotkeys: "Клавіші"
+        case .general: tr("Загальні", "General")
+        case .layout: tr("Розкладка", "Layout")
+        case .text: tr("Текст", "Text")
+        case .voice: tr("Голос", "Voice")
+        case .clipboard: tr("Буфер", "Clipboard")
+        case .about: tr("Про Klavko", "About")
+        case .hotkeys: tr("Клавіші", "Hotkeys")
         }
     }
 
@@ -518,7 +550,7 @@ private struct RemovableChip: View {
             }
             .buttonStyle(.plain)
             .foregroundStyle(.secondary)
-            .help("Прибрати «\(title)»")
+            .help(tr("Прибрати «\(title)»", "Remove “\(title)”"))
         }
         .padding(.leading, 8)
         .padding(.trailing, 6)

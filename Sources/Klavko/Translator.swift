@@ -141,11 +141,11 @@ final class Translator: ObservableObject {
         switch error {
         case TranslationError.unsupportedLanguagePairing, TranslationError.unsupportedSourceLanguage,
              TranslationError.unsupportedTargetLanguage:
-            "Перекладач macOS не підтримує цю пару мов."
+            tr("Перекладач macOS не підтримує цю пару мов.", "The macOS translator doesn’t support this language pair.")
         case TranslationError.nothingToTranslate:
-            "Немає що перекладати."
+            tr("Немає що перекладати.", "Nothing to translate.")
         default:
-            "Не вдалося перекласти: \(error.localizedDescription)"
+            tr("Не вдалося перекласти: ", "Couldn’t translate: ") + error.localizedDescription
         }
     }
 
@@ -229,7 +229,7 @@ private struct TranslatorPanelView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Text("Klavko · Переклад").font(.headline)
+                Text(tr("Klavko · Переклад", "Klavko · Translation")).font(.headline)
                 Spacer()
                 if let job = translator.job {
                     Button {
@@ -238,7 +238,7 @@ private struct TranslatorPanelView: View {
                         Text(job.direction.title)
                     }
                     .buttonStyle(.borderless)
-                    .help("Перекласти в інший бік")
+                    .help(tr("Перекласти в інший бік", "Translate the other way"))
                 }
             }
             content
@@ -250,13 +250,13 @@ private struct TranslatorPanelView: View {
 
     @ViewBuilder private var content: some View {
         if #unavailable(macOS 15.0) {
-            Text("Переклад працює на macOS 15 Sequoia і новіших.")
+            Text(tr("Переклад працює на macOS 15 Sequoia і новіших.", "Translation needs macOS 15 Sequoia or later."))
                 .foregroundStyle(.secondary)
             closeRow
         } else {
             switch translator.stage {
             case .noSelection:
-                Text("Спершу виділіть текст, потім натисніть гарячу клавішу.")
+                Text(tr("Спершу виділіть текст, потім натисніть гарячу клавішу.", "Select some text first, then press the hotkey."))
                     .foregroundStyle(.secondary)
                 closeRow
 
@@ -264,7 +264,8 @@ private struct TranslatorPanelView: View {
                 HStack(spacing: 10) {
                     ProgressView().controlSize(.small)
                     Text(translator.stage == .downloading
-                         ? "Завантажую мови для перекладу (один раз)…" : "Перекладаю…")
+                         ? tr("Завантажую мови для перекладу (один раз)…", "Downloading translation languages (once)…")
+                         : tr("Перекладаю…", "Translating…"))
                 }
                 closeRow
 
@@ -277,11 +278,11 @@ private struct TranslatorPanelView: View {
                 .frame(maxHeight: 260)
                 .fixedSize(horizontal: false, vertical: true)
                 HStack {
-                    Text("Перекладач macOS, на цьому Mac").font(.caption).foregroundStyle(.secondary)
+                    Text(tr("Перекладач macOS, на цьому Mac", "macOS translator, on this Mac")).font(.caption).foregroundStyle(.secondary)
                     Spacer()
-                    Button("Копіювати") { translator.copyResult() }
+                    Button(tr("Копіювати", "Copy")) { translator.copyResult() }
                         .keyboardShortcut("c", modifiers: .command)
-                    Button("Замінити") { translator.replace() }
+                    Button(tr("Замінити", "Replace")) { translator.replace() }
                         .keyboardShortcut(.defaultAction)
                 }
 
@@ -295,7 +296,7 @@ private struct TranslatorPanelView: View {
     private var closeRow: some View {
         HStack {
             Spacer()
-            Button("Закрити") { translator.close() }.keyboardShortcut(.cancelAction)
+            Button(tr("Закрити", "Close")) { translator.close() }.keyboardShortcut(.cancelAction)
         }
     }
 }

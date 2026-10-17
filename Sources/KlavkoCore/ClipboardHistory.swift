@@ -7,10 +7,10 @@ public struct ClipItem: Codable, Hashable, Identifiable, Sendable {
 
         public var title: String {
             switch self {
-            case .text: "Текст"
-            case .link: "Посилання"
-            case .image: "Зображення"
-            case .files: "Файли"
+            case .text: tr("Текст", "Text")
+            case .link: tr("Посилання", "Links")
+            case .image: tr("Зображення", "Images")
+            case .files: tr("Файли", "Files")
             }
         }
 
@@ -66,13 +66,13 @@ public struct ClipItem: Codable, Hashable, Identifiable, Sendable {
     /// One line for the list.
     public var title: String {
         switch kind {
-        case .image: return "Зображення"
+        case .image: return tr("Зображення", "Image")
         case .files:
             let names = text.split(separator: "\n").map { ($0 as NSString).lastPathComponent }
-            return names.count == 1 ? names[0] : "\(names.first ?? "") і ще \(names.count - 1)"
+            return names.count == 1 ? names[0] : "\(names.first ?? "") " + tr("і ще", "and") + " \(names.count - 1)" + tr("", " more")
         case .text, .link:
             let line = text.split(whereSeparator: \.isNewline).first.map(String.init) ?? ""
-            return line.trimmingCharacters(in: .whitespaces).isEmpty ? "(пробіли)" : line.trimmingCharacters(in: .whitespaces)
+            return line.trimmingCharacters(in: .whitespaces).isEmpty ? tr("(пробіли)", "(spaces)") : line.trimmingCharacters(in: .whitespaces)
         }
     }
 

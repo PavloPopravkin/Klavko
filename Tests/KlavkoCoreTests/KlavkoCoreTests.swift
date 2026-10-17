@@ -130,7 +130,11 @@ final class ShortcutTests: XCTestCase {
         XCTAssertFalse(chord.matches(.double([.option, .command])))
         XCTAssertEqual(chord.displayName(layout: nil), "⌥⌘")
         XCTAssertEqual(Shortcut(modifiers: [.shift], double: true).displayName(layout: nil), "⇧⇧")
+        AppLanguage.current = .ukrainian
         XCTAssertEqual(Shortcut(modifiers: [.option, .command], double: true).parts(layout: nil), ["двічі", "⌥", "⌘"])
+        AppLanguage.current = .english
+        XCTAssertEqual(Shortcut(modifiers: [.option, .command], double: true).parts(layout: nil), ["twice", "⌥", "⌘"])
+        AppLanguage.current = .ukrainian
     }
 
     func testShortcutsSurviveJSONRoundTrip() throws {

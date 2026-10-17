@@ -1,4 +1,5 @@
 import AppKit
+import KlavkoCore
 import SwiftUI
 
 /// A small floating card in the top-right corner that offers to add a word to the exceptions.
@@ -65,13 +66,14 @@ private struct ExceptionPromptView: View {
             Text("Klavko")
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(.secondary)
-            Text("Ви вже двічі скасували виправлення слова «\(word)». Додати його до винятків, щоб Klavko більше його не змінював?")
+            Text(tr("Ви вже двічі скасували виправлення слова «\(word)». Додати його до винятків, щоб Klavko більше його не змінював?",
+                     "You have undone the fix of “\(word)” twice. Add it to the exceptions so Klavko leaves it alone?"))
                 .font(.callout)
                 .fixedSize(horizontal: false, vertical: true)
             HStack {
                 Spacer()
-                Button("Ні", action: onDismiss)
-                Button("Додати", action: onAdd)
+                Button(tr("Ні", "No"), action: onDismiss)
+                Button(tr("Додати", "Add"), action: onAdd)
                     .keyboardShortcut(.defaultAction)
             }
         }

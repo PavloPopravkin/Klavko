@@ -179,7 +179,7 @@ private struct VoiceLearnView: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("Запам’ятати для голосового вводу?")
+                    Text(tr("Запам’ятати для голосового вводу?", "Remember for voice input?"))
                         .font(.system(size: 13, weight: .semibold))
                         .foregroundStyle(.white)
                     ForEach(corrections, id: \.self) { pair in
@@ -201,7 +201,7 @@ private struct VoiceLearnView: View {
                         .background(Circle().fill(.white.opacity(0.12)))
                 }
                 .buttonStyle(.plain)
-                .help("Не запам’ятовувати (Esc)")
+                .help(tr("Не запам’ятовувати (Esc)", "Don’t remember (Esc)"))
             }
             HStack(spacing: 10) {
                 // Time left to confirm.
@@ -217,7 +217,7 @@ private struct VoiceLearnView: View {
                 }
                 .frame(height: 4)
                 Button(action: onConfirm) {
-                    Text("Підтвердити ↩")
+                    Text(tr("Підтвердити ↩", "Confirm ↩"))
                         .font(.system(size: 12, weight: .semibold))
                         .foregroundStyle(.white)
                         .padding(.horizontal, 12)
