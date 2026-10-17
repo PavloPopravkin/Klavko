@@ -73,23 +73,31 @@ final class ClipboardManager: ObservableObject {
             let paths = urls.map(\.path).joined(separator: "\n")
             return ClipItem(kind: .files, text: paths, appName: appName, appBundleID: bundleID)
         }
-        if let text = pasteboard.string(forType: .string), !text.isEmpty {
+        let text = pasteboard.string(forType: .string)
+        // A picture copied in a browser comes with its address as text: keep the picture. Text that also
+        // has a picture of itself (tables, rich text) stays text.
+        let hasImage = pasteboard.availableType(from: [.png, .tiff]) != nil
+        let textIsJustAddress = text.map { ClipItem.kind(ofText: $0) == .link || $0.hasPrefix("/") } ?? true
+        if hasImage && textIsJustAddress, let item = imageItem(appName: appName, bundleID: bundleID) { return item }
+        if let text, !text.isEmpty {
             let kept = text.count > Self.maxTextLength ? String(text.prefix(Self.maxTextLength)) : text
             return ClipItem(kind: ClipItem.kind(ofText: kept), text: kept, appName: appName, appBundleID: bundleID)
         }
-        if let image = NSImage(pasteboard: pasteboard), let png = Self.png(image) {
-            let hash = SHA256.hash(data: png).map { String(format: "%02x", $0) }.joined()
-            let name = String(hash.prefix(24)) + ".png"
-            let url = imagesFolder.appendingPathComponent(name)
-            if !FileManager.default.fileExists(atPath: url.path) {
-                try? FileManager.default.createDirectory(at: imagesFolder, withIntermediateDirectories: true)
-                guard (try? png.write(to: url)) != nil else { return nil }
-            }
-            let size = image.representations.first.map { "\($0.pixelsWide) × \($0.pixelsHigh)" } ?? ""
-            return ClipItem(kind: .image, text: size, imageName: name, fingerprint: "image:" + hash,
-                            appName: appName, appBundleID: bundleID)
+        return imageItem(appName: appName, bundleID: bundleID)
+    }
+
+    private func imageItem(appName: String?, bundleID: String?) -> ClipItem? {
+        guard let image = NSImage(pasteboard: pasteboard), let png = Self.png(image) else { return nil }
+        let hash = SHA256.hash(data: png).map { String(format: "%02x", $0) }.joined()
+        let name = String(hash.prefix(24)) + ".png"
+        let url = imagesFolder.appendingPathComponent(name)
+        if !FileManager.default.fileExists(atPath: url.path) {
+            try? FileManager.default.createDirectory(at: imagesFolder, withIntermediateDirectories: true)
+            guard (try? png.write(to: url)) != nil else { return nil }
         }
-        return nil
+        let size = image.representations.first.map { "\($0.pixelsWide) × \($0.pixelsHigh)" } ?? ""
+        return ClipItem(kind: .image, text: size, imageName: name, fingerprint: "image:" + hash,
+                        appName: appName, appBundleID: bundleID)
     }
 
     private static func png(_ image: NSImage) -> Data? {

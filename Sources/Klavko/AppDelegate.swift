@@ -55,7 +55,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         dictation.vocabulary = { [unowned self] in settings.voiceRules }
         dictation.onInserted = { [unowned self] text in
             engine.reset()
-            correctionWatcher.watch(inserted: text)
+            if settings.offerVoiceCorrections { correctionWatcher.watch(inserted: text) }
         }
         // A dictated word fixed by hand: offer to spell it that way from now on.
         correctionWatcher.known = { [unowned self] in settings.voiceRules }

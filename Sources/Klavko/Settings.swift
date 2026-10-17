@@ -26,6 +26,7 @@ final class Settings: ObservableObject {
         static let listContinuation = "listContinuation"
         static let replacements = "replacements"
         static let voiceVocabulary = "voiceVocabulary"
+        static let offerVoiceCorrections = "offerVoiceCorrections"
         static let clipboardEnabled = "clipboardEnabled"
         static let clipboardKeepDays = "clipboardKeepDays"
         static let clipboardIgnoredApps = "clipboardIgnoredApps"
@@ -92,6 +93,11 @@ final class Settings: ObservableObject {
     /// Dictated words the user taught Klavko to spell their way (heard → written), in the order added.
     @Published private(set) var voiceVocabulary: [Replacement] {
         didSet { defaults.set(try? JSONEncoder().encode(voiceVocabulary), forKey: Key.voiceVocabulary) }
+    }
+
+    /// After a dictated word is fixed by hand, offer to remember the spelling.
+    @Published var offerVoiceCorrections: Bool {
+        didSet { defaults.set(offerVoiceCorrections, forKey: Key.offerVoiceCorrections) }
     }
 
     /// What voice input applies to its text: the vocabulary, then the word replacements ("адра" → "ADRA").
@@ -201,6 +207,7 @@ final class Settings: ObservableObject {
             Key.spellingSoundName: "Tink",
             // Terminals: words there are mostly commands, not natural language.
             // Code editors: "...", quotes and capitals mean something else in code.
+            Key.offerVoiceCorrections: true,
             Key.clipboardEnabled: true,
             Key.clipboardKeepDays: 30,
             Key.clipboardIgnoredApps: ["com.1password.1password", "com.agilebits.onepassword7", "com.bitwarden.desktop",
@@ -225,6 +232,7 @@ final class Settings: ObservableObject {
         // Left over from the AI actions (removed in 0.10).
         defaults.removeObject(forKey: "aiModel")
         defaults.removeObject(forKey: "aiActions")
+        offerVoiceCorrections = defaults.bool(forKey: Key.offerVoiceCorrections)
         clipboardEnabled = defaults.bool(forKey: Key.clipboardEnabled)
         clipboardKeepDays = defaults.integer(forKey: Key.clipboardKeepDays)
         clipboardIgnoredApps = defaults.stringArray(forKey: Key.clipboardIgnoredApps) ?? []

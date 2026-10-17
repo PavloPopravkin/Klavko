@@ -48,8 +48,8 @@ public enum VoiceVocabulary {
     // MARK: - Learning from corrections
 
     /// Words the user changed in dictated text: compares what was inserted with the text there now
-    /// (the field around the insertion) and returns each replaced word or short phrase.
-    /// Additions, deletions and punctuation-only changes are not corrections.
+    /// (the field around the insertion) and returns each word replaced by one other word.
+    /// Rewritten phrases, additions, deletions and punctuation-only changes are not corrections.
     public static func corrections(inserted: String, now current: String) -> [Replacement] {
         let old = words(inserted)
         let new = words(current)
@@ -86,22 +86,22 @@ public enum VoiceVocabulary {
         for pair in pairs where old[pair.old] != new[pair.new] {
             found.append((pair.old, Replacement(from: old[pair.old], to: new[pair.new])))
         }
-        // Real gaps: matched words on both sides inside the dictated text.
+        // Real gaps: matched words on both sides inside the dictated text; one word for one word.
         for (left, right) in zip(pairs, pairs.dropFirst()) {
             let oldGap = Array(old[(left.old + 1)..<right.old])
             let newGap = Array(new[(left.new + 1)..<right.new])
-            guard (1...3).contains(oldGap.count), (1...3).contains(newGap.count) else { continue }
+            guard oldGap.count == 1, newGap.count == 1 else { continue }
             found.append((left.old + 1, Replacement(from: oldGap.joined(separator: " "), to: newGap.joined(separator: " "))))
         }
         // A changed first or last word: the gap has a match on one side only, same word count.
-        if let first = pairs.first, first.old > 0, first.old <= 3, first.new >= first.old {
+        if let first = pairs.first, first.old == 1, first.new >= 1 {
             let oldGap = old[0..<first.old]
             let newGap = new[(first.new - first.old)..<first.new]
             if oldGap.map({ $0.lowercased() }) != newGap.map({ $0.lowercased() }) {
                 found.append((0, Replacement(from: oldGap.joined(separator: " "), to: newGap.joined(separator: " "))))
             }
         }
-        if let last = pairs.last, n - 1 - last.old > 0, n - 1 - last.old <= 3, m - 1 - last.new >= n - 1 - last.old {
+        if let last = pairs.last, n - 1 - last.old == 1, m - 1 - last.new >= 1 {
             let count = n - 1 - last.old
             let oldGap = old[(last.old + 1)...]
             let newGap = new[(last.new + 1)..<(last.new + 1 + count)]

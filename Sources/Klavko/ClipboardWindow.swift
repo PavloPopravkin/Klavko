@@ -1,6 +1,7 @@
 import AppKit
 import KlavkoCore
 import SwiftUI
+import UniformTypeIdentifiers
 
 /// The clipboard history window, like Raycast's: search on top, the list on the left, a preview on the
 /// right. ↩ pastes into the app you were in, ⌘C only copies, ⌘P pins, ⌘⌫ deletes, Esc closes.
@@ -270,6 +271,24 @@ private struct ClipboardView: View {
                     .padding(14)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
+        case .files where ClipRow.imagePath(of: item) != nil:
+            // A copied picture file (Finder): show the picture itself.
+            let path = ClipRow.imagePath(of: item) ?? ""
+            VStack(spacing: 8) {
+                if let image = NSImage(contentsOfFile: path) {
+                    Image(nsImage: image)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else {
+                    Image(nsImage: NSWorkspace.shared.icon(forFile: path)).resizable().frame(width: 64, height: 64)
+                }
+                Text((path as NSString).lastPathComponent)
+                    .font(.system(size: 12))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+            .padding(14)
         case .files:
             ScrollView {
                 VStack(alignment: .leading, spacing: 8) {
@@ -392,6 +411,9 @@ private struct ClipRow: View {
         if item.kind == .image, let url = manager.imageURL(for: item), let image = NSImage(contentsOf: url) {
             Image(nsImage: image).resizable().scaledToFill()
                 .frame(width: 22, height: 22).clipShape(RoundedRectangle(cornerRadius: 4))
+        } else if let path = Self.imagePath(of: item), let image = NSImage(contentsOfFile: path) {
+            Image(nsImage: image).resizable().scaledToFill()
+                .frame(width: 22, height: 22).clipShape(RoundedRectangle(cornerRadius: 4))
         } else if item.kind == .files, let path = item.text.split(separator: "\n").first {
             Image(nsImage: NSWorkspace.shared.icon(forFile: String(path))).resizable()
         } else {
@@ -401,6 +423,14 @@ private struct ClipRow: View {
                 .frame(width: 22, height: 22)
                 .background(RoundedRectangle(cornerRadius: 5).fill(Color.primary.opacity(0.07)))
         }
+    }
+
+    /// The file of a single copied picture (from Finder), if that's what the item is.
+    static func imagePath(of item: ClipItem) -> String? {
+        guard item.kind == .files, !item.text.contains("\n"),
+              let type = UTType(filenameExtension: (item.text as NSString).pathExtension),
+              type.conforms(to: .image) else { return nil }
+        return item.text
     }
 
     static func appIcon(_ bundleID: String?) -> NSImage? {

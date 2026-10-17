@@ -232,6 +232,11 @@ struct SettingsView: View {
                     }
 
                     Section {
+                        Toggle(isOn: $settings.offerVoiceCorrections) {
+                            Text("Пропонувати запам’ятати виправлення")
+                            Text("Коли ви вручну виправите одне надиктоване слово, Klavko на 5 секунд запропонує "
+                                 + "писати його так і надалі (↩ — так, Esc — ні).")
+                        }
                         HStack(spacing: 8) {
                             TextField("", text: $newSpellingHeard, prompt: Text("Чує"))
                                 .labelsHidden()
@@ -258,8 +263,7 @@ struct SettingsView: View {
                     } header: {
                         Text("Словник голосового вводу (\(settings.voiceVocabulary.count))")
                     } footer: {
-                        Text("Як писати слова, які розпізнавання чує інакше. Виправте надиктоване слово вручну — Klavko "
-                             + "запропонує запам’ятати виправлення (5 секунд, кнопка «Підтвердити»). Власні заміни з вкладки "
+                        Text("Як писати слова, які розпізнавання чує інакше. Власні заміни з вкладки "
                              + "«Текст» («адра» → «ADRA») теж діють для голосового вводу.")
                             .font(.caption)
                             .foregroundStyle(.secondary)

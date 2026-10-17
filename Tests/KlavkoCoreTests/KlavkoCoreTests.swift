@@ -707,3 +707,13 @@ final class ClipboardHistoryTests: XCTestCase {
         XCTAssertEqual(ClipItem(kind: .text, text: "\n  Привіт\nсвіт").title, "Привіт")
     }
 }
+
+final class VoiceCorrectionSingleWordTests: XCTestCase {
+    func testRewrittenPhrasesAreNotOffered() {
+        XCTAssertEqual(VoiceVocabulary.corrections(inserted: "Я прийду завтра зранку до офісу",
+                                                   now: "Я прийду в понеділок після обіду до офісу"), [])
+        XCTAssertEqual(VoiceVocabulary.corrections(inserted: "Я прийду завтра зранку до офісу",
+                                                   now: "Я прийду завтра вранці до офісу"),
+                       [Replacement(from: "зранку", to: "вранці")])
+    }
+}
