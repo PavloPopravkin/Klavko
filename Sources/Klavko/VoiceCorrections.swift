@@ -97,6 +97,8 @@ final class VoiceLearnPrompt {
     private var panel: NSPanel?
     private var autoClose: DispatchWorkItem?
 
+    var isVisible: Bool { panel != nil }
+
     func show(_ corrections: [Replacement], onConfirm: @escaping () -> Void) {
         close()
         let view = VoiceLearnView(corrections: corrections,
@@ -188,7 +190,7 @@ private struct VoiceLearnView: View {
                         .background(Circle().fill(.white.opacity(0.12)))
                 }
                 .buttonStyle(.plain)
-                .help("Не запам’ятовувати")
+                .help("Не запам’ятовувати (Esc)")
             }
             HStack(spacing: 10) {
                 // Time left to confirm.

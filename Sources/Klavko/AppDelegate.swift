@@ -83,6 +83,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
         engine.onEscape = { [unowned self] in
             MainActor.assumeIsolated {
+                // "Remember this spelling?" on screen: Esc declines it (and doesn't reach the app).
+                if learnPrompt.isVisible {
+                    learnPrompt.close()
+                    return true
+                }
                 guard dictation.isActive else { return false }
                 dictation.cancel()
                 return true
