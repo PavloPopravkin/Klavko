@@ -11,6 +11,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private let recorder = ShortcutRecorder()
     private let engine = SwitchEngine()
     private let exceptionPrompt = ExceptionPrompt()
+    private let correctionWatcher = VoiceCorrectionWatcher()
+    private let learnPrompt = VoiceLearnPrompt()
     private let translator = Translator()
     private let dictation = VoiceDictation()
     private let parakeet = ParakeetEngine()
@@ -48,7 +50,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
         // Between two plausible results, the one in the layout's language.
         dictation.preferredLanguage = { SystemLayouts.currentLanguage() ?? "uk" }
-        dictation.onInserted = { [engine] in engine.reset() }
+        dictation.vocabulary = { [unowned self] in settings.voiceRules }
+        dictation.onInserted = { [unowned self] text in
+            engine.reset()
+            correctionWatcher.watch(inserted: text)
+        }
+        // A dictated word fixed by hand: offer to spell it that way from now on.
+        correctionWatcher.known = { [unowned self] in settings.voiceRules }
+        correctionWatcher.onFound = { [unowned self] corrections in
+            learnPrompt.show(corrections) { [unowned self] in
+                for pair in corrections { settings.setVoiceSpelling(heard: pair.from, written: pair.to) }
+            }
+        }
+        engine.onUserKey = { [unowned self] in
+            MainActor.assumeIsolated { correctionWatcher.userTyped() }
+        }
         // Used once its model is downloaded (opt-in, from Settings → Voice input); macOS recognition until then.
         dictation.parakeet = parakeet
         engine.onTranslate = { [unowned self] in
@@ -58,7 +74,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             MainActor.assumeIsolated { dictation.toggle() }
         }
         engine.onReturn = { [unowned self] in
-            MainActor.assumeIsolated { dictation.handleReturn() }
+            MainActor.assumeIsolated {
+                if dictation.handleReturn() { return true }
+                // Return may send the message and empty the field: look at the corrections first.
+                correctionWatcher.checkNow()
+                return false
+            }
         }
         engine.onEscape = { [unowned self] in
             MainActor.assumeIsolated {
@@ -145,6 +166,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         // Developer check of the translator: --translate-check <text> <out.txt> writes the translation and quits.
         if let index = CommandLine.arguments.firstIndex(of: "--translate-check"), index + 2 < CommandLine.arguments.count {
             translator.check(CommandLine.arguments[index + 1], writeTo: URL(fileURLWithPath: CommandLine.arguments[index + 2]))
+        }
+        // Developer check of the "remember this spelling?" card: --snapshot-learn <file.png>.
+        if let index = CommandLine.arguments.firstIndex(of: "--snapshot-learn"), index + 1 < CommandLine.arguments.count {
+            VoiceLearnPrompt.snapshot(to: URL(fileURLWithPath: CommandLine.arguments[index + 1]))
+            NSApp.terminate(nil)
         }
         // Developer check of the settings layout: --snapshot-settings <file.png> renders the window and quits.
         if let index = CommandLine.arguments.firstIndex(of: "--snapshot-settings"),
@@ -326,19 +352,26 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         settingsWindow?.makeKeyAndOrderFront(nil)
     }
 
-    private func snapshotSettings(to url: URL) {
+    /// Renders every tab into `<name>-<tab>.png` next to `url`, then quits.
+    private func snapshotSettings(to url: URL, tabs: [SettingsTab] = SettingsTab.allCases) {
+        guard let tab = tabs.first else { return NSApp.terminate(nil) }
         var view = SettingsView(settings: settings, recorder: recorder, parakeet: parakeet, keyLayout: englishLayout(),
                                 previewSound: { _ in })
-        view.height = 2400
+        view.initialTab = tab
+        view.height = 900
         let window = NSWindow(contentViewController: NSHostingController(rootView: view))
         window.orderBack(nil)
         settingsWindow = window
         DispatchQueue.main.asyncAfter(deadline: .now() + 1) { [weak self] in
-            guard let view = self?.settingsWindow?.contentView,
-                  let bitmap = view.bitmapImageRepForCachingDisplay(in: view.bounds) else { return }
-            view.cacheDisplay(in: view.bounds, to: bitmap)
-            try? bitmap.representation(using: .png, properties: [:])?.write(to: url)
-            NSApp.terminate(nil)
+            if let view = self?.settingsWindow?.contentView,
+               let bitmap = view.bitmapImageRepForCachingDisplay(in: view.bounds) {
+                view.cacheDisplay(in: view.bounds, to: bitmap)
+                let name = url.deletingPathExtension().lastPathComponent + "-\(tab.rawValue).png"
+                try? bitmap.representation(using: .png, properties: [:])?
+                    .write(to: url.deletingLastPathComponent().appendingPathComponent(name))
+            }
+            self?.settingsWindow?.close()
+            self?.snapshotSettings(to: url, tabs: Array(tabs.dropFirst()))
         }
     }
 

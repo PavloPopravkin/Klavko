@@ -60,6 +60,8 @@ final class SwitchEngine {
     var onEscape: () -> Bool = { false }
     /// Return / Enter was pressed: true if something (voice input) used it, so it isn't passed on.
     var onReturn: () -> Bool = { false }
+    /// Any key the user pressed (Klavko's own typing excluded).
+    var onUserKey: () -> Void = {}
     /// Called when the user reverted an automatic fix of a word (the word as they want it).
     var onRevert: (String) -> Void = { _ in }
 
@@ -179,6 +181,7 @@ final class SwitchEngine {
         }
         switch type {
         case .keyDown:
+            onUserKey()
             excludedNow = isExcluded()
             return handleKeyDown(event)
         case .flagsChanged:

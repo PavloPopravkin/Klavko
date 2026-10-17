@@ -637,3 +637,30 @@ final class TranscriptCleanupTests: XCTestCase {
         XCTAssertEqual(TranscriptCleanup.clean("Звичайний текст, без змін."), "Звичайний текст, без змін.")
     }
 }
+
+final class VoiceVocabularyTests: XCTestCase {
+    let rules = [Replacement(from: "адра", to: "ADRA"), Replacement(from: "нова пошта", to: "Нова Пошта"),
+                 Replacement(from: "київ", to: "київ"), Replacement(from: ":)", to: "🙂")]
+
+    func testApplyWholeWordsIgnoringCase() {
+        XCTAssertEqual(VoiceVocabulary.apply("Я працюю в адра.", rules: rules), "Я працюю в ADRA.")
+        XCTAssertEqual(VoiceVocabulary.apply("Адра допомагає", rules: rules), "ADRA допомагає")
+        XCTAssertEqual(VoiceVocabulary.apply("кадрами займається", rules: rules), "кадрами займається")
+        XCTAssertEqual(VoiceVocabulary.apply("Відправ нова пошта завтра", rules: rules), "Відправ Нова Пошта завтра")
+        XCTAssertEqual(VoiceVocabulary.apply("Київ гарний :)", rules: rules), "Київ гарний :)")
+    }
+
+    func testCorrectionsFindChangedWords() {
+        XCTAssertEqual(VoiceVocabulary.corrections(inserted: "Я працюю в адра і мені подобається.",
+                                                   now: "Привіт! Я працюю в ADRA і мені подобається."),
+                       [Replacement(from: "адра", to: "ADRA")])
+        XCTAssertEqual(VoiceVocabulary.corrections(inserted: "Зустрінемось у кафе павлін завтра",
+                                                   now: "Зустрінемось у кафе Pavlin завтра"),
+                       [Replacement(from: "павлін", to: "Pavlin")])
+        XCTAssertEqual(VoiceVocabulary.corrections(inserted: "Олег приїде завтра", now: "Олех приїде завтра"),
+                       [Replacement(from: "Олег", to: "Олех")])
+        XCTAssertEqual(VoiceVocabulary.corrections(inserted: "Я буду о десятій", now: "Я буду о десятій, домовились?"), [])
+        XCTAssertEqual(VoiceVocabulary.corrections(inserted: "Я буду о десятій", now: "Я буду о десятій."), [])
+        XCTAssertEqual(VoiceVocabulary.corrections(inserted: "Я буду о десятій", now: "Зовсім інший текст тут"), [])
+    }
+}

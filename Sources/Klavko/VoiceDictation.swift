@@ -31,8 +31,10 @@ final class VoiceDictation: ObservableObject {
     var parakeet: ParakeetEngine?
     /// The language to listen in first (the keyboard layout's).
     var preferredLanguage: () -> String = { "uk" }
-    /// Called after text was typed (so key tracking can start afresh).
-    var onInserted: () -> Void = {}
+    /// The user's spellings ("адра" → "ADRA"), applied to everything recognized.
+    var vocabulary: () -> [Replacement] = { [] }
+    /// Called with the text after it was typed (key tracking starts afresh; corrections get watched).
+    var onInserted: (String) -> Void = { _ in }
 
     var isActive: Bool { stage == .listening || stage == .finishing }
 
@@ -153,7 +155,7 @@ final class VoiceDictation: ObservableObject {
     private func update() {
         guard let live else { return }
         // With Parakeet the panel shows its text (in whatever language is spoken), not macOS's guess.
-        if !(parakeet?.isDownloaded ?? false) { text = live.text }
+        if !(parakeet?.isDownloaded ?? false) { text = VoiceVocabulary.apply(live.text, rules: vocabulary()) }
         if live.failedForGood, stage == .listening {
             stopAudio()
             stage = .failed("Розпізнавання мовлення не працює. Перевірте мікрофон і Диктування в System Settings → Keyboard.")
@@ -245,7 +247,7 @@ final class VoiceDictation: ObservableObject {
                 let heard = (try? await parakeet.transcribe(file: file, language: hint)) ?? ""
                 guard let self, session == current, stage == .listening else { return }
                 if !heard.isEmpty, !LanguageGuess.looksRussian(heard) {
-                    text = heard
+                    text = VoiceVocabulary.apply(heard, rules: vocabulary())
                 }
                 schedulePreview(after: max(0.7, Date().timeIntervalSince(started) * 1.5))
             }
@@ -288,13 +290,14 @@ final class VoiceDictation: ObservableObject {
         cleanUp()
     }
 
-    private func insert(_ text: String) {
+    private func insert(_ heard: String) {
         insertOnFinish = false
+        let text = VoiceVocabulary.apply(heard, rules: vocabulary())
         // Separate from the word before the caret, if there is one.
         let before = CaretContext.textBeforeCaret(limit: 1) ?? ""
         let spaced = (before.last.map { !$0.isWhitespace } ?? false) ? " " + text : text
         TextInjector.type(spaced)
-        onInserted()
+        onInserted(text)
         Log.engine.notice("Voice input inserted \(text.count) chars")
     }
 
@@ -467,7 +470,7 @@ private final class IndicatorPanel: NSPanel {
 }
 
 /// Klavko's icon colours, for the voice panel's glow.
-private enum Neon {
+enum Neon {
     static let blue = Color(red: 0.01, green: 0.47, blue: 0.99)
     static let sky = Color(red: 0.22, green: 0.66, blue: 1.0)
     static let cyan = Color(red: 0.55, green: 0.88, blue: 1.0)

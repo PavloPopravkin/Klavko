@@ -25,6 +25,7 @@ final class Settings: ObservableObject {
         static let typography = "typography"
         static let listContinuation = "listContinuation"
         static let replacements = "replacements"
+        static let voiceVocabulary = "voiceVocabulary"
         static let voiceLanguage = "voiceLanguage"
         static let playSpellingSound = "playSpellingSound"
         static let spellingSoundName = "spellingSoundName"
@@ -83,6 +84,18 @@ final class Settings: ObservableObject {
     /// The languages the user speaks: "auto" (Ukrainian and English), "uk" or "en". Never Russian.
     @Published var voiceLanguage: String {
         didSet { defaults.set(voiceLanguage, forKey: Key.voiceLanguage) }
+    }
+
+    /// Dictated words the user taught Klavko to spell their way (heard → written), in the order added.
+    @Published private(set) var voiceVocabulary: [Replacement] {
+        didSet { defaults.set(try? JSONEncoder().encode(voiceVocabulary), forKey: Key.voiceVocabulary) }
+    }
+
+    /// What voice input applies to its text: the vocabulary, then the word replacements ("адра" → "ADRA").
+    var voiceRules: [Replacement] {
+        voiceVocabulary + replacements.filter { rule in
+            !voiceVocabulary.contains { $0.from.lowercased() == rule.from.lowercased() }
+        }
     }
 
     /// The user's own replacements, in the order added.
@@ -182,6 +195,8 @@ final class Settings: ObservableObject {
         // Left over from the AI actions (removed in 0.10).
         defaults.removeObject(forKey: "aiModel")
         defaults.removeObject(forKey: "aiActions")
+        voiceVocabulary = defaults.data(forKey: Key.voiceVocabulary)
+            .flatMap { try? JSONDecoder().decode([Replacement].self, from: $0) } ?? []
         replacements = defaults.data(forKey: Key.replacements)
             .flatMap { try? JSONDecoder().decode([Replacement].self, from: $0) } ?? []
         showFlag = defaults.bool(forKey: Key.showFlag)
@@ -313,6 +328,24 @@ final class Settings: ObservableObject {
 
     func removeReplacement(_ replacement: Replacement) {
         replacements.removeAll { $0 == replacement }
+    }
+
+    // MARK: - Voice vocabulary
+
+    /// Adds or updates a spelling for dictation ("адра" → "ADRA"); false if either side is empty.
+    @discardableResult
+    func setVoiceSpelling(heard: String, written: String) -> Bool {
+        let heard = heard.trimmingCharacters(in: .whitespaces)
+        let written = written.trimmingCharacters(in: .whitespaces)
+        guard !heard.isEmpty, !written.isEmpty else { return false }
+        var updated = voiceVocabulary.filter { $0.from.lowercased() != heard.lowercased() }
+        updated.append(Replacement(from: heard, to: written))
+        voiceVocabulary = updated
+        return true
+    }
+
+    func removeVoiceSpelling(_ rule: Replacement) {
+        voiceVocabulary.removeAll { $0 == rule }
     }
 
     // MARK: - Excluded apps
