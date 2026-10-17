@@ -193,6 +193,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         if let index = CommandLine.arguments.firstIndex(of: "--translate-check"), index + 2 < CommandLine.arguments.count {
             translator.check(CommandLine.arguments[index + 1], writeTo: URL(fileURLWithPath: CommandLine.arguments[index + 2]))
         }
+        // Developer check of Parakeet's language handling: --parakeet-check <audio> <out.txt>.
+        if let index = CommandLine.arguments.firstIndex(of: "--parakeet-check"), index + 2 < CommandLine.arguments.count {
+            let file = URL(fileURLWithPath: CommandLine.arguments[index + 1])
+            let out = URL(fileURLWithPath: CommandLine.arguments[index + 2])
+            Task { @MainActor [dictation] in
+                let result = await dictation.checkParakeet(file: file)
+                try? result.write(to: out, atomically: true, encoding: .utf8)
+                NSApp.terminate(nil)
+            }
+        }
         // Developer check of the clipboard window: --snapshot-clipboard <file.png>.
         if let index = CommandLine.arguments.firstIndex(of: "--snapshot-clipboard"), index + 1 < CommandLine.arguments.count {
             clipboardWindow.snapshot(to: URL(fileURLWithPath: CommandLine.arguments[index + 1]))

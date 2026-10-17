@@ -643,21 +643,21 @@ final class TranscriptCleanupTests: XCTestCase {
 }
 
 final class VoiceVocabularyTests: XCTestCase {
-    let rules = [Replacement(from: "адра", to: "ADRA"), Replacement(from: "нова пошта", to: "Нова Пошта"),
+    let rules = [Replacement(from: "зсу", to: "ЗСУ"), Replacement(from: "нова пошта", to: "Нова Пошта"),
                  Replacement(from: "київ", to: "київ"), Replacement(from: ":)", to: "🙂")]
 
     func testApplyWholeWordsIgnoringCase() {
-        XCTAssertEqual(VoiceVocabulary.apply("Я працюю в адра.", rules: rules), "Я працюю в ADRA.")
-        XCTAssertEqual(VoiceVocabulary.apply("Адра допомагає", rules: rules), "ADRA допомагає")
-        XCTAssertEqual(VoiceVocabulary.apply("кадрами займається", rules: rules), "кадрами займається")
+        XCTAssertEqual(VoiceVocabulary.apply("Дякую зсу.", rules: rules), "Дякую ЗСУ.")
+        XCTAssertEqual(VoiceVocabulary.apply("Зсу захищає", rules: rules), "ЗСУ захищає")
+        XCTAssertEqual(VoiceVocabulary.apply("зсув ґрунту", rules: rules), "зсув ґрунту")
         XCTAssertEqual(VoiceVocabulary.apply("Відправ нова пошта завтра", rules: rules), "Відправ Нова Пошта завтра")
         XCTAssertEqual(VoiceVocabulary.apply("Київ гарний :)", rules: rules), "Київ гарний :)")
     }
 
     func testCorrectionsFindChangedWords() {
-        XCTAssertEqual(VoiceVocabulary.corrections(inserted: "Я працюю в адра і мені подобається.",
-                                                   now: "Привіт! Я працюю в ADRA і мені подобається."),
-                       [Replacement(from: "адра", to: "ADRA")])
+        XCTAssertEqual(VoiceVocabulary.corrections(inserted: "Мій брат служить у зсу з весни.",
+                                                   now: "Привіт! Мій брат служить у ЗСУ з весни."),
+                       [Replacement(from: "зсу", to: "ЗСУ")])
         XCTAssertEqual(VoiceVocabulary.corrections(inserted: "Зустрінемось у кафе павлін завтра",
                                                    now: "Зустрінемось у кафе Pavlin завтра"),
                        [Replacement(from: "павлін", to: "Pavlin")])
@@ -671,8 +671,8 @@ final class VoiceVocabularyTests: XCTestCase {
 
 final class VoiceCorrectionOrderTests: XCTestCase {
     func testCorrectionsComeInReadingOrder() {
-        let found = VoiceVocabulary.corrections(inserted: "Привіт олег я з адра сьогодні",
-                                                now: "Привіт Олех я з ADRA сьогодні")
+        let found = VoiceVocabulary.corrections(inserted: "Привіт олег я в зсу сьогодні",
+                                                now: "Привіт Олех я в ЗСУ сьогодні")
         XCTAssertEqual(found.first, Replacement(from: "олег", to: "Олех"))
         XCTAssertEqual(found.count, 2)
     }
@@ -723,5 +723,15 @@ final class VoiceCorrectionSingleWordTests: XCTestCase {
         XCTAssertEqual(VoiceVocabulary.corrections(inserted: "Я прийду завтра зранку до офісу",
                                                    now: "Я прийду завтра вранці до офісу"),
                        [Replacement(from: "зранку", to: "вранці")])
+    }
+}
+
+final class ForeignLatinTests: XCTestCase {
+    func testUkrainianHeardAsAnotherLatinLanguage() {
+        XCTAssertTrue(LanguageGuess.looksForeignLatin("Přiby v texті z opisu zhádku."))
+        XCTAssertTrue(LanguageGuess.looksForeignLatin("pryberi v texті"))
+        XCTAssertFalse(LanguageGuess.looksForeignLatin("Прибери в тексті з опису згадку."))
+        XCTAssertFalse(LanguageGuess.looksForeignLatin("Please remove it from the description."))
+        XCTAssertFalse(LanguageGuess.looksForeignLatin("Відкрий GitHub і зроби commit"))
     }
 }

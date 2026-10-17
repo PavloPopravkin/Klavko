@@ -114,7 +114,7 @@ final class Settings: ObservableObject {
         didSet { defaults.set(offerVoiceCorrections, forKey: Key.offerVoiceCorrections) }
     }
 
-    /// What voice input applies to its text: the vocabulary, then the word replacements ("адра" → "ADRA").
+    /// What voice input applies to its text: the vocabulary, then the word replacements ("зсу" → "ЗСУ").
     var voiceRules: [Replacement] {
         voiceVocabulary + replacements.filter { rule in
             !voiceVocabulary.contains { $0.from.lowercased() == rule.from.lowercased() }
@@ -404,7 +404,7 @@ final class Settings: ObservableObject {
 
     // MARK: - Voice vocabulary
 
-    /// Adds or updates a spelling for dictation ("адра" → "ADRA"); false if either side is empty.
+    /// Adds or updates a spelling for dictation ("зсу" → "ЗСУ"); false if either side is empty.
     @discardableResult
     func setVoiceSpelling(heard: String, written: String) -> Bool {
         let heard = heard.trimmingCharacters(in: .whitespaces)

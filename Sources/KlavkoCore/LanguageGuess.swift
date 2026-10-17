@@ -79,4 +79,24 @@ extension LanguageGuess {
         if lowered.contains(where: { "ыэъё".contains($0) }) { return true }
         return cyrillicWords.count >= 4 && !lowered.contains(where: { "іїєґ".contains($0) })
     }
+
+    /// Text the recognizer wrote in the wrong Latin-script language: letters neither Ukrainian nor English
+    /// uses (ř, á, ž, ł, ü…), or Latin and Cyrillic mixed in one word ("texті"). Ukrainian heard as Czech
+    /// comes out like "Přiby v texті z opisu".
+    public static func looksForeignLatin(_ text: String) -> Bool {
+        for word in text.split(whereSeparator: { !$0.isLetter }) {
+            var latin = false
+            var cyrillic = false
+            for scalar in word.unicodeScalars {
+                switch scalar.value {
+                case 0x00C0...0x024F, 0x1E00...0x1EFF: return true  // accented Latin
+                case 0x0041...0x005A, 0x0061...0x007A: latin = true
+                case 0x0400...0x04FF: cyrillic = true
+                default: break
+                }
+            }
+            if latin && cyrillic { return true }
+        }
+        return false
+    }
 }

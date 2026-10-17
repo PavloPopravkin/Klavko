@@ -287,9 +287,9 @@ struct SettingsView: View {
                         Text(tr("Словник голосового вводу", "Voice input vocabulary") + " (\(settings.voiceVocabulary.count))")
                     } footer: {
                         Text(tr("Як писати слова, які розпізнавання чує інакше. Власні заміни з вкладки "
-                                + "«Текст» («адра» → «ADRA») теж діють для голосового вводу.",
+                                + "«Текст» («зсу» → «ЗСУ») теж діють для голосового вводу.",
                                 "How to write words that recognition hears differently. Your replacements from the "
-                                + "“Text” tab (“adra” → “ADRA”) apply to voice input too."))
+                                + "“Text” tab (“zsu” → “ZSU”) apply to voice input too."))
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }

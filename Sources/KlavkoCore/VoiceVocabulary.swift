@@ -1,7 +1,7 @@
 import Foundation
 
 /// The user's own spellings for dictated words: what recognition hears → how the user writes it
-/// ("адра" → "ADRA"). Learned from corrections after dictation and taken from the text replacements.
+/// ("зсу" → "ЗСУ"). Learned from corrections after dictation and taken from the text replacements.
 public enum VoiceVocabulary {
     /// `text` with every rule applied to whole words (or phrases), ignoring case.
     /// A lowercase spelling at the start of a sentence gets its capital: "київ" → "Київ".
@@ -82,7 +82,7 @@ public enum VoiceVocabulary {
         }
         // With where each one starts in the dictated text, so they come out in reading order.
         var found: [(at: Int, rule: Replacement)] = []
-        // Case-only changes are matches in the alignment ("адра" = "ADRA"); they count too.
+        // Case-only changes are matches in the alignment ("зсу" = "ЗСУ"); they count too.
         for pair in pairs where old[pair.old] != new[pair.new] {
             found.append((pair.old, Replacement(from: old[pair.old], to: new[pair.new])))
         }

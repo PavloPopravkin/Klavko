@@ -2,7 +2,7 @@ import AppKit
 import KlavkoCore
 import SwiftUI
 
-/// After dictation, notices when the user fixes a dictated word in the same field ("адра" → "ADRA"),
+/// After dictation, notices when the user fixes a dictated word in the same field ("зсу" → "ЗСУ"),
 /// so Klavko can offer to spell it that way next time. Reads the field through Accessibility once the
 /// user pauses typing (and right before Return, which may send the message and empty the field).
 @MainActor
@@ -152,7 +152,7 @@ final class VoiceLearnPrompt {
 
     /// Developer check of the card's look.
     static func snapshot(to url: URL) {
-        let view = VoiceLearnView(corrections: [Replacement(from: "адра", to: "ADRA")],
+        let view = VoiceLearnView(corrections: [Replacement(from: "зсу", to: "ЗСУ")],
                                   onConfirm: {}, onDismiss: {}, frozenProgress: 0.6)
             .background(Color(white: 0.9))
         let hosting = NSHostingView(rootView: view)

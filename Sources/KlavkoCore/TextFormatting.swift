@@ -71,7 +71,7 @@ public enum Typography {
         }.max { $0.from.count < $1.from.count }
     }
 
-    /// A whole-word replacement for a finished word, ignoring letter case ("адра", "Адра" → "ADRA").
+    /// A whole-word replacement for a finished word, ignoring letter case ("зсу", "Зсу" → "ЗСУ").
     /// An exact match wins if there are rules for several cases.
     public static func wordMatch(_ word: String, rules: [Replacement]) -> Replacement? {
         rules.first { $0.isWord && $0.from == word }

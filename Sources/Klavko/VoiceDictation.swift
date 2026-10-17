@@ -31,7 +31,7 @@ final class VoiceDictation: ObservableObject {
     var parakeet: ParakeetEngine?
     /// The language to listen in first (the keyboard layout's).
     var preferredLanguage: () -> String = { "uk" }
-    /// The user's spellings ("адра" → "ADRA"), applied to everything recognized.
+    /// The user's spellings ("зсу" → "ЗСУ"), applied to everything recognized.
     var vocabulary: () -> [Replacement] = { [] }
     /// Called with the text after it was typed (key tracking starts afresh; corrections get watched).
     var onInserted: (String) -> Void = { _ in }
@@ -209,14 +209,15 @@ final class VoiceDictation: ObservableObject {
         Task { [weak self] in
             defer { try? FileManager.default.removeItem(at: file) }
             do {
-                var text = try await parakeet.transcribe(file: file, language: hint)
+                guard let self else { return }
+                var text = try await parakeetText(parakeet, file: file, hint: hint)
                 var language = "parakeet"
-                if LanguageGuess.looksRussian(text) {
-                    Log.engine.notice("Parakeet heard Russian; redoing with the Ukrainian recognizer")
+                if LanguageGuess.looksRussian(text) || (text.isEmpty && ukrainianAllowed) {
+                    Log.engine.notice("Parakeet result unusable; redoing with the Ukrainian recognizer")
                     text = ukrainianAllowed ? await Self.recognize(file: file, language: "uk") : ""
                     language = "uk (macOS)"
                 }
-                guard let self, session == current else { return }
+                guard session == current else { return }
                 complete(with: text, language: language)
             } catch {
                 Log.engine.error("Parakeet failed: \(error.localizedDescription, privacy: .public)")
@@ -228,6 +229,40 @@ final class VoiceDictation: ObservableObject {
             guard let self, session == current else { return }
             complete(with: liveResult.text, language: liveResult.language)
         }
+    }
+
+    /// Parakeet's text of a recording, in Ukrainian or English. Left to pick the language itself, it now and
+    /// then hears Ukrainian as another Latin-script language ("Přiby v texті z opisu zhádku"); then the
+    /// recording is recognized again as Ukrainian, and for plain Latin text that isn't clearly English the
+    /// version with more real words wins.
+    private func parakeetText(_ parakeet: ParakeetEngine, file: URL, hint: Language?) async throws -> String {
+        let text = try await parakeet.transcribe(file: file, language: hint)
+        guard hint == nil, allowed.contains("uk"), !text.isEmpty, !LanguageGuess.looksRussian(text) else { return text }
+        let foreign = LanguageGuess.looksForeignLatin(text)
+        let cyrillic = text.unicodeScalars.contains { (0x0400...0x04FF).contains($0.value) }
+        if !foreign && cyrillic { return text }
+        if !foreign && LanguageGuess.wordShare(text, language: "en", spellChecker: spellChecker) >= 0.6 { return text }
+        let ukrainian = try await parakeet.transcribe(file: file, language: .ukrainian)
+        // Asked for Ukrainian, it is Ukrainian unless it has letters only Russian uses (a short phrase
+        // without і, ї, є, ґ is still fine here).
+        let russian = ukrainian.lowercased().contains { "ыэъё".contains($0) }
+        guard !ukrainian.isEmpty, !russian else { return foreign ? "" : text }
+        if foreign {
+            Log.engine.notice("Parakeet heard another Latin-script language; using its Ukrainian pass")
+            return ukrainian
+        }
+        return LanguageGuess.best([(language: "en", text: text), (language: "uk", text: ukrainian)],
+                                  preferred: preferredLanguage(), spellChecker: spellChecker)?.text ?? text
+    }
+
+    /// Developer check: Parakeet's own guess for a recording and the text Klavko would insert.
+    func checkParakeet(file: URL) async -> String {
+        guard let parakeet else { return "no parakeet" }
+        allowed = ["uk", "en"]
+        let raw = (try? await parakeet.transcribe(file: file, language: nil)) ?? "error"
+        let ukrainian = (try? await parakeet.transcribe(file: file, language: .ukrainian)) ?? "error"
+        let final = (try? await parakeetText(parakeet, file: file, hint: nil)) ?? "error"
+        return "auto: \(raw)\nuk: \(ukrainian)\nfinal: \(final)"
     }
 
     /// Only one language spoken: rule out the other alphabet outright.
@@ -247,7 +282,7 @@ final class VoiceDictation: ObservableObject {
             let started = Date()
             Task { [weak self] in
                 defer { try? FileManager.default.removeItem(at: file) }
-                let heard = (try? await parakeet.transcribe(file: file, language: hint)) ?? ""
+                let heard = (try? await self?.parakeetText(parakeet, file: file, hint: hint)) ?? ""
                 guard let self, session == current, stage == .listening else { return }
                 if !heard.isEmpty, !LanguageGuess.looksRussian(heard) {
                     text = VoiceVocabulary.apply(heard, rules: vocabulary())
