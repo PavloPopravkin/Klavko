@@ -97,10 +97,20 @@ final class VoiceLearnPrompt {
     private var panel: NSPanel?
     private var autoClose: DispatchWorkItem?
 
+    private var confirmAction: (() -> Void)?
+
     var isVisible: Bool { panel != nil }
+
+    /// Saves the corrections and closes, as the "Confirm" button does (Return).
+    func confirm() {
+        let action = confirmAction
+        close()
+        action?()
+    }
 
     func show(_ corrections: [Replacement], onConfirm: @escaping () -> Void) {
         close()
+        confirmAction = onConfirm
         let view = VoiceLearnView(corrections: corrections,
                                   onConfirm: { [weak self] in onConfirm(); self?.close() },
                                   onDismiss: { [weak self] in self?.close() })
@@ -133,6 +143,7 @@ final class VoiceLearnPrompt {
     }
 
     func close() {
+        confirmAction = nil
         autoClose?.cancel()
         autoClose = nil
         panel?.orderOut(nil)
@@ -206,7 +217,7 @@ private struct VoiceLearnView: View {
                 }
                 .frame(height: 4)
                 Button(action: onConfirm) {
-                    Text("Підтвердити")
+                    Text("Підтвердити ↩")
                         .font(.system(size: 12, weight: .semibold))
                         .foregroundStyle(.white)
                         .padding(.horizontal, 12)

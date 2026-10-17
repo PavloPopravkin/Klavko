@@ -76,6 +76,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         engine.onReturn = { [unowned self] in
             MainActor.assumeIsolated {
                 if dictation.handleReturn() { return true }
+                // "Remember this spelling?" on screen: Return confirms it first (and doesn't reach the app).
+                if learnPrompt.isVisible {
+                    learnPrompt.confirm()
+                    return true
+                }
                 // Return may send the message and empty the field: look at the corrections first.
                 correctionWatcher.checkNow()
                 return false
