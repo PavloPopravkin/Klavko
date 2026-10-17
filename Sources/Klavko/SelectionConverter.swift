@@ -9,6 +9,14 @@ enum SelectionConverter {
     private static let keyV: CGKeyCode = 9
     private static let leftArrow: CGKeyCode = 123
 
+    /// Until when Klavko is using the clipboard itself (copy selection → put back): the clipboard
+    /// history doesn't record those changes.
+    nonisolated(unsafe) static var borrowedUntil = Date.distantPast
+
+    private static func borrow() {
+        borrowedUntil = Date().addingTimeInterval(1.5)
+    }
+
     /// Retypes the selection in the other layout ("ghbdsn" → "привіт") and switches to that layout.
     static func convert(layouts: [(source: TISInputSource, map: LayoutMap)], onConverted: @escaping () -> Void) {
         var target: TISInputSource?
@@ -26,6 +34,7 @@ enum SelectionConverter {
 
     /// Replaces the selection with `change(selection)`; nil or the same text leaves it alone.
     static func transform(_ change: @escaping (String) -> String?, onDone: @escaping () -> Void) {
+        borrow()
         let pasteboard = NSPasteboard.general
         let saved = snapshot(pasteboard)
         let countBeforeCopy = pasteboard.changeCount
@@ -102,6 +111,7 @@ enum SelectionConverter {
 
     /// Copies the selection and hands over its text (nil if nothing is selected); the clipboard is restored.
     static func copySelection(_ completion: @escaping (String?) -> Void) {
+        borrow()
         let pasteboard = NSPasteboard.general
         let saved = snapshot(pasteboard)
         let countBeforeCopy = pasteboard.changeCount
@@ -132,6 +142,7 @@ enum SelectionConverter {
 
     /// Pastes `text` over the selection in the frontmost app; the clipboard is restored afterwards.
     static func paste(_ text: String) {
+        borrow()
         let pasteboard = NSPasteboard.general
         let saved = snapshot(pasteboard)
         pasteboard.clearContents()

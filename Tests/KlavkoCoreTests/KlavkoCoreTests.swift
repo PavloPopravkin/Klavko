@@ -673,3 +673,37 @@ final class VoiceCorrectionOrderTests: XCTestCase {
         XCTAssertEqual(found.count, 2)
     }
 }
+
+final class ClipboardHistoryTests: XCTestCase {
+    func testAddMovesDuplicatesUpAndKeepsPins() {
+        var history = ClipboardHistory()
+        history.add(ClipItem(kind: .text, text: "перший"), maxItems: 10, maxAge: nil)
+        history.add(ClipItem(kind: .text, text: "другий"), maxItems: 10, maxAge: nil)
+        history.togglePin(history.items[1].id)  // "перший"
+        history.add(ClipItem(kind: .text, text: "перший"), maxItems: 10, maxAge: nil)
+        XCTAssertEqual(history.items.map(\.text), ["перший", "другий"])
+        XCTAssertTrue(history.items[0].pinned)
+    }
+
+    func testPruneKeepsPinnedAndDropsOld() {
+        let now = Date()
+        var history = ClipboardHistory()
+        history.add(ClipItem(kind: .text, text: "старий", date: now.addingTimeInterval(-40 * 86_400)), maxItems: 10, maxAge: nil)
+        history.togglePin(history.items[0].id)
+        history.add(ClipItem(kind: .text, text: "давній", date: now.addingTimeInterval(-35 * 86_400)), maxItems: 10, maxAge: nil)
+        for index in 0..<5 { history.add(ClipItem(kind: .text, text: "новий \(index)", date: now), maxItems: 3, maxAge: 30 * 86_400) }
+        XCTAssertEqual(history.items.map(\.text), ["новий 4", "новий 3", "новий 2", "старий"])
+    }
+
+    func testSearchAndKinds() {
+        var history = ClipboardHistory()
+        history.add(ClipItem(kind: .link, text: "https://klavko.app"), maxItems: 10, maxAge: nil)
+        history.add(ClipItem(kind: .text, text: "Зустріч у вівторок о 10"), maxItems: 10, maxAge: nil)
+        XCTAssertEqual(history.search("вівторок зустріч").map(\.text), ["Зустріч у вівторок о 10"])
+        XCTAssertEqual(history.search("", kind: .link).count, 1)
+        XCTAssertEqual(ClipItem.kind(ofText: "https://github.com/x"), .link)
+        XCTAssertEqual(ClipItem.kind(ofText: "дивись https://github.com/x"), .text)
+        XCTAssertEqual(ClipItem.kind(ofText: "mailto:a@b.ua"), .link)
+        XCTAssertEqual(ClipItem(kind: .text, text: "\n  Привіт\nсвіт").title, "Привіт")
+    }
+}

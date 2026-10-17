@@ -26,6 +26,9 @@ final class Settings: ObservableObject {
         static let listContinuation = "listContinuation"
         static let replacements = "replacements"
         static let voiceVocabulary = "voiceVocabulary"
+        static let clipboardEnabled = "clipboardEnabled"
+        static let clipboardKeepDays = "clipboardKeepDays"
+        static let clipboardIgnoredApps = "clipboardIgnoredApps"
         static let voiceLanguage = "voiceLanguage"
         static let playSpellingSound = "playSpellingSound"
         static let spellingSoundName = "spellingSoundName"
@@ -95,6 +98,29 @@ final class Settings: ObservableObject {
     var voiceRules: [Replacement] {
         voiceVocabulary + replacements.filter { rule in
             !voiceVocabulary.contains { $0.from.lowercased() == rule.from.lowercased() }
+        }
+    }
+
+    /// Keep a clipboard history.
+    @Published var clipboardEnabled: Bool {
+        didSet { defaults.set(clipboardEnabled, forKey: Key.clipboardEnabled) }
+    }
+
+    /// Days to keep clipboard items (0: forever).
+    @Published var clipboardKeepDays: Int {
+        didSet { defaults.set(clipboardKeepDays, forKey: Key.clipboardKeepDays) }
+    }
+
+    /// Apps whose copies the clipboard history never records (password managers).
+    @Published private(set) var clipboardIgnoredApps: [String] {
+        didSet { defaults.set(clipboardIgnoredApps, forKey: Key.clipboardIgnoredApps) }
+    }
+
+    func toggleClipboardIgnored(_ bundleID: String) {
+        if clipboardIgnoredApps.contains(bundleID) {
+            clipboardIgnoredApps.removeAll { $0 == bundleID }
+        } else {
+            clipboardIgnoredApps.append(bundleID)
         }
     }
 
@@ -175,6 +201,10 @@ final class Settings: ObservableObject {
             Key.spellingSoundName: "Tink",
             // Terminals: words there are mostly commands, not natural language.
             // Code editors: "...", quotes and capitals mean something else in code.
+            Key.clipboardEnabled: true,
+            Key.clipboardKeepDays: 30,
+            Key.clipboardIgnoredApps: ["com.1password.1password", "com.agilebits.onepassword7", "com.bitwarden.desktop",
+                                       "com.apple.keychainaccess", "com.apple.Passwords", "org.keepassxc.keepassxc"],
             Key.excludedApps: ["com.apple.Terminal", "com.googlecode.iterm2", "com.apple.dt.Xcode",
                                "com.microsoft.VSCode", "com.todesktop.230313mzl4w4u92", "dev.zed.Zed",
                                "com.sublimetext.4"],
@@ -195,6 +225,9 @@ final class Settings: ObservableObject {
         // Left over from the AI actions (removed in 0.10).
         defaults.removeObject(forKey: "aiModel")
         defaults.removeObject(forKey: "aiActions")
+        clipboardEnabled = defaults.bool(forKey: Key.clipboardEnabled)
+        clipboardKeepDays = defaults.integer(forKey: Key.clipboardKeepDays)
+        clipboardIgnoredApps = defaults.stringArray(forKey: Key.clipboardIgnoredApps) ?? []
         voiceVocabulary = defaults.data(forKey: Key.voiceVocabulary)
             .flatMap { try? JSONDecoder().decode([Replacement].self, from: $0) } ?? []
         replacements = defaults.data(forKey: Key.replacements)

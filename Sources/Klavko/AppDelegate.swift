@@ -13,6 +13,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private let exceptionPrompt = ExceptionPrompt()
     private let correctionWatcher = VoiceCorrectionWatcher()
     private let learnPrompt = VoiceLearnPrompt()
+    private let clipboard = ClipboardManager()
+    private lazy var clipboardWindow = ClipboardWindow(manager: clipboard)
     private let translator = Translator()
     private let dictation = VoiceDictation()
     private let parakeet = ParakeetEngine()
@@ -69,6 +71,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
         // Used once its model is downloaded (opt-in, from Settings → Voice input); macOS recognition until then.
         dictation.parakeet = parakeet
+        clipboard.isEnabled = { [unowned self] in settings.clipboardEnabled }
+        clipboard.keepDays = { [unowned self] in settings.clipboardKeepDays }
+        clipboard.ignoredApps = { [unowned self] in settings.clipboardIgnoredApps }
+        clipboard.prune()
+        clipboard.start()
+        engine.onClipboard = { [unowned self] in
+            MainActor.assumeIsolated { clipboardWindow.toggle() }
+        }
         engine.onTranslate = { [unowned self] in
             MainActor.assumeIsolated { translator.start() }
         }
@@ -178,6 +188,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         // Developer check of the translator: --translate-check <text> <out.txt> writes the translation and quits.
         if let index = CommandLine.arguments.firstIndex(of: "--translate-check"), index + 2 < CommandLine.arguments.count {
             translator.check(CommandLine.arguments[index + 1], writeTo: URL(fileURLWithPath: CommandLine.arguments[index + 2]))
+        }
+        // Developer check of the clipboard window: --snapshot-clipboard <file.png>.
+        if let index = CommandLine.arguments.firstIndex(of: "--snapshot-clipboard"), index + 1 < CommandLine.arguments.count {
+            clipboardWindow.snapshot(to: URL(fileURLWithPath: CommandLine.arguments[index + 1]))
         }
         // Developer check of the "remember this spelling?" card: --snapshot-learn <file.png>.
         if let index = CommandLine.arguments.firstIndex(of: "--snapshot-learn"), index + 1 < CommandLine.arguments.count {
@@ -310,6 +324,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         menu.addItem(.separator())
         menu.addItem(item("Голосовий ввід", #selector(toggleVoice)))
         menu.addItem(item("Перекласти виділене", #selector(startTranslation)))
+        menu.addItem(item("Історія буфера обміну", #selector(showClipboard)))
         menu.addItem(item("Налаштування…", #selector(showSettings), key: ","))
         menu.addItem(item("Вийти з Klavko", #selector(quit), key: "q"))
     }
@@ -341,7 +356,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     @objc private func showSettings() {
         if settingsWindow == nil {
-            let view = SettingsView(settings: settings, recorder: recorder, parakeet: parakeet, keyLayout: englishLayout(),
+            let view = SettingsView(settings: settings, recorder: recorder, parakeet: parakeet, clipboard: clipboard,
+                                    keyLayout: englishLayout(),
                                     previewSound: { [weak self] name in self?.playSound(named: name) })
             let window = NSWindow(contentViewController: NSHostingController(rootView: view))
             window.title = "Klavko — Налаштування"
@@ -357,7 +373,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     /// Renders every tab into `<name>-<tab>.png` next to `url`, then quits.
     private func snapshotSettings(to url: URL, tabs: [SettingsTab] = SettingsTab.allCases) {
         guard let tab = tabs.first else { return NSApp.terminate(nil) }
-        var view = SettingsView(settings: settings, recorder: recorder, parakeet: parakeet, keyLayout: englishLayout(),
+        var view = SettingsView(settings: settings, recorder: recorder, parakeet: parakeet, clipboard: clipboard,
+                                    keyLayout: englishLayout(),
                                 previewSound: { _ in })
         view.initialTab = tab
         view.height = 900
@@ -380,6 +397,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     @objc private func toggleVoice() {
         // After the menu closes, so the text lands in the app that was in front.
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { [weak self] in self?.dictation.toggle() }
+    }
+
+    @objc private func showClipboard() {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { [weak self] in self?.clipboardWindow.show() }
     }
 
     @objc private func startTranslation() {

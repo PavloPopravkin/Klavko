@@ -55,6 +55,7 @@ final class SwitchEngine {
     /// The AI actions hotkey was pressed.
     /// The voice input hotkey was pressed.
     var onTranslate: () -> Void = {}
+    var onClipboard: () -> Void = {}
     var onVoice: () -> Void = {}
     /// Esc was pressed: true if something (voice input) used it, so it isn't passed on.
     var onEscape: () -> Bool = { false }
@@ -739,6 +740,9 @@ final class SwitchEngine {
         case .translate:
             reset()
             onTranslate()
+        case .clipboard:
+            reset()
+            onClipboard()
         case .voice:
             reset()
             onVoice()

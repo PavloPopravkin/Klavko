@@ -6,6 +6,7 @@ struct SettingsView: View {
     @ObservedObject var settings: Settings
     @ObservedObject var recorder: ShortcutRecorder
     @ObservedObject var parakeet: ParakeetEngine
+    @ObservedObject var clipboard: ClipboardManager
     /// English layout, used to name letter keys in shortcuts.
     let keyLayout: LayoutMap?
     let previewSound: (String) -> Void
@@ -26,6 +27,19 @@ struct SettingsView: View {
         let words = newException.split(whereSeparator: { $0 == " " || $0 == "," || $0 == ";" })
         for word in words { settings.addException(String(word)) }
         newException = ""
+    }
+
+    private func addIgnoredApp() {
+        let openPanel = NSOpenPanel()
+        openPanel.allowedContentTypes = [.application]
+        openPanel.directoryURL = URL(fileURLWithPath: "/Applications")
+        openPanel.allowsMultipleSelection = true
+        guard openPanel.runModal() == .OK else { return }
+        for url in openPanel.urls {
+            if let bundleID = Bundle(url: url)?.bundleIdentifier, !settings.clipboardIgnoredApps.contains(bundleID) {
+                settings.toggleClipboardIgnored(bundleID)
+            }
+        }
     }
 
     private func addSpelling() {
@@ -251,6 +265,47 @@ struct SettingsView: View {
                             .foregroundStyle(.secondary)
                     }
 
+                case .clipboard:
+                    Section {
+                        Toggle("Зберігати історію буфера обміну", isOn: $settings.clipboardEnabled)
+                        Picker("Зберігати", selection: $settings.clipboardKeepDays) {
+                            Text("1 день").tag(1)
+                            Text("7 днів").tag(7)
+                            Text("30 днів").tag(30)
+                            Text("90 днів").tag(90)
+                            Text("Завжди").tag(0)
+                        }
+                        .disabled(!settings.clipboardEnabled)
+                        .onChange(of: settings.clipboardKeepDays) { clipboard.prune() }
+                        HStack {
+                            Text("Записів: \(clipboard.history.items.count)")
+                            Spacer()
+                            Button("Очистити історію") { clipboard.clearUnpinned() }
+                                .disabled(clipboard.history.items.allSatisfy(\.pinned))
+                        }
+                    } header: {
+                        Text("Історія буфера обміну")
+                    } footer: {
+                        Text("Відкривається гарячою клавішею «Історія буфера обміну» (за замовчуванням ⌥⌘V). "
+                             + "Шукайте, ↩ — вставити, ⌘C — скопіювати, ⌘P — закріпити (закріплене не видаляється), "
+                             + "⌘⌫ — видалити, ⌘1…⌘9 — вставити одразу. Історія зберігається лише на цьому Mac; "
+                             + "паролі, які позначають менеджери паролів, не записуються.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    Section("Не записувати з програм") {
+                        if settings.clipboardIgnoredApps.isEmpty {
+                            Text("Немає").foregroundStyle(.secondary)
+                        }
+                        ForEach(settings.clipboardIgnoredApps, id: \.self) { bundleID in
+                            HStack {
+                                Text(Self.appName(bundleID))
+                                Spacer()
+                                Button("Прибрати") { settings.toggleClipboardIgnored(bundleID) }
+                            }
+                        }
+                        Button("Додати програму…") { addIgnoredApp() }
+                    }
                 case .hotkeys:
                     Section {
                         ForEach(HotkeyAction.allCases, id: \.self) { action in
@@ -346,7 +401,7 @@ struct SettingsView: View {
 }
 
 enum SettingsTab: String, CaseIterable {
-    case general, layout, text, voice, hotkeys
+    case general, layout, text, voice, clipboard, hotkeys
 
     var title: String {
         switch self {
@@ -354,6 +409,7 @@ enum SettingsTab: String, CaseIterable {
         case .layout: "Розкладка"
         case .text: "Текст"
         case .voice: "Голос"
+        case .clipboard: "Буфер"
         case .hotkeys: "Клавіші"
         }
     }
@@ -364,6 +420,7 @@ enum SettingsTab: String, CaseIterable {
         case .layout: "keyboard"
         case .text: "textformat"
         case .voice: "waveform"
+        case .clipboard: "doc.on.clipboard"
         case .hotkeys: "command"
         }
     }
