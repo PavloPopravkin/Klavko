@@ -146,12 +146,14 @@ final class VoiceDictation: ObservableObject {
         }
         insertOnFinish = true
         stage = .listening
+        schedulePreview(after: 1.0)
         Log.engine.notice("Voice input started (\(code, privacy: .public))")
     }
 
     private func update() {
         guard let live else { return }
-        text = live.text
+        // With Parakeet the panel shows its text (in whatever language is spoken), not macOS's guess.
+        if !(parakeet?.isDownloaded ?? false) { text = live.text }
         if live.failedForGood, stage == .listening {
             stopAudio()
             stage = .failed("Розпізнавання мовлення не працює. Перевірте мікрофон і Диктування в System Settings → Keyboard.")
@@ -197,8 +199,7 @@ final class VoiceDictation: ObservableObject {
         }
         secondPassRunning = true
         let ukrainianAllowed = allowed.contains("uk")
-        // Only one language: rule out the other alphabet outright.
-        let hint: Language? = allowed == ["uk"] ? .ukrainian : allowed == ["en"] ? .english : nil
+        let hint = parakeetHint
         let current = session
         Task { [weak self] in
             defer { try? FileManager.default.removeItem(at: file) }
@@ -221,6 +222,33 @@ final class VoiceDictation: ObservableObject {
         DispatchQueue.main.asyncAfter(deadline: .now() + 30) { [weak self] in
             guard let self, session == current else { return }
             complete(with: liveResult.text, language: liveResult.language)
+        }
+    }
+
+    /// Only one language spoken: rule out the other alphabet outright.
+    private var parakeetHint: Language? {
+        allowed == ["uk"] ? .ukrainian : allowed == ["en"] ? .english : nil
+    }
+
+    /// While listening, recognizes the recording so far with Parakeet again and again, for the panel.
+    /// Each pass waits a bit longer than the last one took, so long dictation doesn't hog the Mac.
+    private func schedulePreview(after delay: TimeInterval) {
+        guard let parakeet, parakeet.isDownloaded else { return }
+        let current = session
+        DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
+            guard let self, session == current, stage == .listening else { return }
+            guard let file = fanout.writeRecording() else { return schedulePreview(after: 0.5) }
+            let hint = parakeetHint
+            let started = Date()
+            Task { [weak self] in
+                defer { try? FileManager.default.removeItem(at: file) }
+                let heard = (try? await parakeet.transcribe(file: file, language: hint)) ?? ""
+                guard let self, session == current, stage == .listening else { return }
+                if !heard.isEmpty, !LanguageGuess.looksRussian(heard) {
+                    text = heard
+                }
+                schedulePreview(after: max(0.7, Date().timeIntervalSince(started) * 1.5))
+            }
         }
     }
 
@@ -356,8 +384,8 @@ final class VoiceDictation: ObservableObject {
         languageTitle = "українська"
         text = "Привіт, я диктую цей текст голосом, а Klavko вставить його туди, де стоїть курсор."
         for index in 0..<VoiceMeter.count { meter.push(Float(0.02 + 0.1 * abs(sin(Double(index) / 3)))) }
-        let view = NSHostingView(rootView: VoiceIndicator(dictation: self, meter: meter).padding(20)
-            .background(Color(white: 0.85)))
+        let view = NSHostingView(rootView: VoiceIndicator(dictation: self, meter: meter)
+            .background(Color(white: 0.9)))
         view.frame = NSRect(origin: .zero, size: view.fittingSize)
         guard let bitmap = view.bitmapImageRepForCachingDisplay(in: view.bounds) else { return }
         view.cacheDisplay(in: view.bounds, to: bitmap)
@@ -438,7 +466,21 @@ private final class IndicatorPanel: NSPanel {
     override var canBecomeKey: Bool { true }
 }
 
-/// A dark capsule with a live wave (like Wispr Flow) and, above it, a bubble with what is being heard.
+/// Klavko's icon colours, for the voice panel's glow.
+private enum Neon {
+    static let blue = Color(red: 0.01, green: 0.47, blue: 0.99)
+    static let sky = Color(red: 0.22, green: 0.66, blue: 1.0)
+    static let cyan = Color(red: 0.55, green: 0.88, blue: 1.0)
+    static let yellow = Color(red: 1.0, green: 0.79, blue: 0.12)
+    static let navy = LinearGradient(colors: [Color(red: 0.04, green: 0.10, blue: 0.26),
+                                              Color(red: 0.01, green: 0.04, blue: 0.14)],
+                                     startPoint: .top, endPoint: .bottom)
+    static let rim = LinearGradient(colors: [cyan.opacity(0.9), blue.opacity(0.9), sky.opacity(0.6)],
+                                    startPoint: .topLeading, endPoint: .bottomTrailing)
+    static let bar = LinearGradient(colors: [.white, cyan, sky], startPoint: .top, endPoint: .bottom)
+}
+
+/// A glowing navy capsule with a live wave (like Wispr Flow) and, above it, a bubble with what is being heard.
 private struct VoiceIndicator: View {
     @ObservedObject var dictation: VoiceDictation
     @ObservedObject var meter: VoiceMeter
@@ -446,13 +488,20 @@ private struct VoiceIndicator: View {
     private static let width: CGFloat = 440
 
     var body: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: 10) {
             bubble
             capsule
         }
         .frame(width: Self.width)
-        .padding(.vertical, 12)
-        .padding(.horizontal, 16)  // room for the shadows
+        .padding(.vertical, 18)
+        .padding(.horizontal, 22)  // room for the glow
+    }
+
+    /// How loud it is right now, 0…1: the glow breathes with the voice.
+    private var loudness: CGFloat {
+        guard dictation.stage == .listening else { return dictation.stage == .finishing ? 0.4 : 0 }
+        let recent = meter.levels.suffix(4)
+        return recent.reduce(0, +) / CGFloat(max(recent.count, 1))
     }
 
     // MARK: Bubble with the text
@@ -462,33 +511,33 @@ private struct VoiceIndicator: View {
             if case .failed(let message) = dictation.stage {
                 Text(message)
                     .font(.system(size: 13))
-                    .foregroundStyle(Color(red: 1, green: 0.55, blue: 0.5))
+                    .foregroundStyle(Color(red: 1, green: 0.6, blue: 0.55))
                     .fixedSize(horizontal: false, vertical: true)
             } else {
                 Text(dictation.text.isEmpty ? "Говоріть…" : dictation.text)
                     .font(.system(size: 14))
-                    .foregroundStyle(.white.opacity(dictation.text.isEmpty ? 0.5 : 0.95))
+                    .foregroundStyle(.white.opacity(dictation.text.isEmpty ? 0.55 : 0.96))
                     .lineLimit(4)
                     .truncationMode(.head)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .animation(.easeOut(duration: 0.15), value: dictation.text)
                 Text(hint)
                     .font(.system(size: 11))
-                    .foregroundStyle(.white.opacity(0.45))
+                    .foregroundStyle(Neon.cyan.opacity(0.55))
             }
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 10)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Color.black.opacity(0.82)))
-        .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(.white.opacity(0.08)))
-        .shadow(color: .black.opacity(0.25), radius: 10, y: 4)
+        .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Neon.navy).opacity(0.94))
+        .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(Neon.rim, lineWidth: 1).opacity(0.55))
+        .shadow(color: Neon.blue.opacity(0.35), radius: 12)
     }
 
     private var hint: String {
         switch dictation.stage {
         case .finishing: "Розпізнаю…"
-        default: "Enter або гаряча клавіша — вставити · Esc — скасувати · \(dictation.languageTitle)"
+        default: "Enter або гаряча клавіша — вставити · Esc — скасувати"
         }
     }
 
@@ -496,9 +545,13 @@ private struct VoiceIndicator: View {
 
     private var capsule: some View {
         HStack(spacing: 10) {
-            roundButton("xmark", filled: false, help: "Скасувати (Esc)") {
-                if case .failed = dictation.stage { dictation.closeFailure() } else { dictation.cancel() }
-            }
+            closeButton
+            // The yellow dot from the icon: on while listening.
+            Circle()
+                .fill(Neon.yellow)
+                .frame(width: 6, height: 6)
+                .shadow(color: Neon.yellow.opacity(0.9), radius: 4)
+                .opacity(dictation.stage == .listening ? 1 : 0.3)
             Group {
                 if dictation.stage == .finishing {
                     ThinkingWave()
@@ -508,28 +561,47 @@ private struct VoiceIndicator: View {
             }
             .frame(width: 150, height: 28)
             if dictation.stage == .listening {
-                roundButton("checkmark", filled: true, help: "Вставити (Enter)") { dictation.toggle() }
+                insertButton
             } else {
                 Color.clear.frame(width: 26, height: 26)
             }
         }
         .padding(.horizontal, 7)
         .padding(.vertical, 6)
-        .background(Capsule().fill(Color.black.opacity(0.88)))
-        .overlay(Capsule().strokeBorder(.white.opacity(0.1)))
-        .shadow(color: .black.opacity(0.3), radius: 10, y: 4)
+        .background(Capsule().fill(Neon.navy))
+        .overlay(Capsule().strokeBorder(Neon.rim, lineWidth: 1.2))
+        // Neon glow that swells as you speak.
+        .shadow(color: Neon.blue.opacity(0.45 + 0.45 * loudness), radius: 6 + 14 * loudness)
+        .shadow(color: Neon.cyan.opacity(0.25 * loudness), radius: 3)
+        .animation(.easeOut(duration: 0.12), value: loudness)
     }
 
-    private func roundButton(_ symbol: String, filled: Bool, help: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Image(systemName: symbol)
+    private var closeButton: some View {
+        Button {
+            if case .failed = dictation.stage { dictation.closeFailure() } else { dictation.cancel() }
+        } label: {
+            Image(systemName: "xmark")
                 .font(.system(size: 11, weight: .bold))
-                .foregroundStyle(filled ? Color.black : Color.white.opacity(0.8))
+                .foregroundStyle(.white.opacity(0.8))
                 .frame(width: 26, height: 26)
-                .background(Circle().fill(filled ? Color.white : Color.white.opacity(0.14)))
+                .background(Circle().fill(.white.opacity(0.12)))
         }
         .buttonStyle(.plain)
-        .help(help)
+        .help("Скасувати (Esc)")
+    }
+
+    private var insertButton: some View {
+        Button { dictation.toggle() } label: {
+            Image(systemName: "checkmark")
+                .font(.system(size: 11, weight: .bold))
+                .foregroundStyle(.white)
+                .frame(width: 26, height: 26)
+                .background(Circle().fill(LinearGradient(colors: [Neon.sky, Neon.blue],
+                                                         startPoint: .top, endPoint: .bottom)))
+                .shadow(color: Neon.sky.opacity(0.8), radius: 5)
+        }
+        .buttonStyle(.plain)
+        .help("Вставити (Enter)")
     }
 }
 
@@ -542,10 +614,12 @@ private struct Waveform: View {
         HStack(alignment: .center, spacing: 3) {
             ForEach(0..<levels.count, id: \.self) { index in
                 Capsule()
-                    .fill(.white.opacity(muted ? 0.35 : 0.95))
+                    .fill(Neon.bar)
                     .frame(width: 3, height: height(index))
             }
         }
+        .opacity(muted ? 0.4 : 1)
+        .shadow(color: Neon.sky.opacity(0.9), radius: 3)
         .animation(.easeOut(duration: 0.09), value: levels)
     }
 
@@ -568,10 +642,12 @@ private struct ThinkingWave: View {
                 ForEach(0..<VoiceMeter.count, id: \.self) { index in
                     let phase = sin(time * 5 - Double(index) * 0.45)
                     Capsule()
-                        .fill(.white.opacity(0.55 + 0.35 * phase))
+                        .fill(Neon.bar)
+                        .opacity(0.5 + 0.4 * phase)
                         .frame(width: 3, height: 4 + 7 * (phase + 1))
                 }
             }
+            .shadow(color: Neon.sky.opacity(0.8), radius: 3)
         }
     }
 }
