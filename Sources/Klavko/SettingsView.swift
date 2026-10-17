@@ -14,8 +14,6 @@ struct SettingsView: View {
 
     @State private var newException = ""
     @State private var newReplacementFrom = ""
-    @State private var apiKeyInput = ""
-    @State private var hasAPIKey = Keychain.apiKey() != nil
     @State private var newReplacementTo = ""
 
     private func addException() {
@@ -177,70 +175,6 @@ struct SettingsView: View {
                      + "текст з’явиться в місці курсора. Esc скасовує. Розпізнає модель NVIDIA Parakeet Ultra на цьому Mac "
                      + "(з розділовими знаками); російську вона ніколи не вставить — такий результат перевіряє український "
                      + "розпізнавач macOS. Поки модель не завантажена, працює вбудоване розпізнавання macOS.")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-
-            Section {
-                HStack {
-                    if hasAPIKey {
-                        Label("Ключ Anthropic збережено в Keychain", systemImage: "checkmark.seal.fill")
-                            .foregroundStyle(.green)
-                        Spacer()
-                        Button("Видалити ключ") {
-                            Keychain.setAPIKey(nil)
-                            hasAPIKey = false
-                        }
-                    } else {
-                        SecureField("", text: $apiKeyInput, prompt: Text("API-ключ Anthropic (sk-ant-…)"))
-                            .labelsHidden()
-                            .textFieldStyle(.roundedBorder)
-                        Button("Зберегти") {
-                            if Keychain.setAPIKey(apiKeyInput.trimmingCharacters(in: .whitespacesAndNewlines)) {
-                                apiKeyInput = ""
-                                hasAPIKey = Keychain.apiKey() != nil
-                            }
-                        }
-                        .disabled(apiKeyInput.trimmingCharacters(in: .whitespaces).isEmpty)
-                    }
-                }
-                Picker("Модель", selection: $settings.aiModel) {
-                    ForEach(AIModel.allCases, id: \.self) { Text($0.title).tag($0) }
-                }
-                ForEach($settings.aiActions) { $action in
-                    VStack(alignment: .leading, spacing: 4) {
-                        HStack {
-                            TextField("", text: $action.title, prompt: Text("Назва"))
-                                .labelsHidden()
-                                .textFieldStyle(.roundedBorder)
-                            Button {
-                                settings.aiActions.removeAll { $0.id == action.id }
-                            } label: {
-                                Image(systemName: "minus.circle.fill").foregroundStyle(.secondary)
-                            }
-                            .buttonStyle(.borderless)
-                            .help("Прибрати дію")
-                        }
-                        TextField("", text: $action.instruction, prompt: Text("Що зробити з текстом"), axis: .vertical)
-                            .labelsHidden()
-                            .textFieldStyle(.roundedBorder)
-                            .font(.callout)
-                            .lineLimit(1...3)
-                    }
-                }
-                HStack {
-                    Button("Додати дію") {
-                        settings.aiActions.append(AIAction(title: "Нова дія", instruction: ""))
-                    }
-                    Spacer()
-                    Button("Стандартні дії") { settings.aiActions = AIAction.defaults }
-                }
-            } header: {
-                Text("ШІ (Claude)")
-            } footer: {
-                Text("Виділіть текст будь-де і натисніть гарячу клавішу «ШІ-дії з виділеним текстом» (за замовчуванням двічі ⌘). "
-                     + "Виділений текст надсилається в Anthropic лише після того, як ви вибрали дію. "
-                     + "Ключ можна отримати на console.anthropic.com; оплата — за використання на вашому рахунку Anthropic.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }

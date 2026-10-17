@@ -82,7 +82,7 @@ public enum Shortcut: Codable, Hashable, Sendable {
 }
 
 public enum HotkeyAction: String, Codable, CaseIterable, Sendable {
-    case convertWord, convertText, undo, changeCase, aiActions, voice
+    case convertWord, convertText, undo, changeCase, voice
 
     public var title: String {
         switch self {
@@ -90,7 +90,6 @@ public enum HotkeyAction: String, Codable, CaseIterable, Sendable {
         case .convertText: "Змінити розкладку виділеного або набраного"
         case .undo: "Скасувати або повернути виправлення"
         case .changeCase: "Змінити регістр (слово або виділене)"
-        case .aiActions: "ШІ-дії з виділеним текстом"
         case .voice: "Голосовий ввід (почати / вставити)"
         }
     }
@@ -101,7 +100,6 @@ public enum HotkeyAction: String, Codable, CaseIterable, Sendable {
         case .convertText: Shortcut(modifiers: [.option], double: true)
         case .undo: nil
         case .changeCase: nil
-        case .aiActions: Shortcut(modifiers: [.command], double: true)
         case .voice: Shortcut(modifiers: [.function], double: false)
         }
     }

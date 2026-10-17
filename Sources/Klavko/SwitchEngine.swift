@@ -53,7 +53,6 @@ final class SwitchEngine {
     /// Called after Klavko changed text.
     var onFix: (FixKind) -> Void = { _ in }
     /// The AI actions hotkey was pressed.
-    var onAIActions: () -> Void = {}
     /// The voice input hotkey was pressed.
     var onVoice: () -> Void = {}
     /// Esc was pressed: true if something (voice input) used it, so it isn't passed on.
@@ -726,9 +725,6 @@ final class SwitchEngine {
             }
         case .changeCase:
             changeCase()
-        case .aiActions:
-            reset()
-            onAIActions()
         case .voice:
             reset()
             onVoice()

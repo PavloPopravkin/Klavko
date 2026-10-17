@@ -563,21 +563,6 @@ final class InflectionTests: XCTestCase {
     }
 }
 
-final class AIPromptTests: XCTestCase {
-    func testMessageWrapsTheTextAndKeepsItIntact() {
-        let message = AIPrompt.message(instruction: "Translate the text into English.", text: "Привіт,\nсвіт")
-        XCTAssertTrue(message.hasPrefix("Instruction: Translate the text into English."))
-        XCTAssertTrue(message.contains("<text>\nПривіт,\nсвіт\n</text>"))
-    }
-
-    func testDefaultActionsAndModels() {
-        XCTAssertEqual(AIAction.defaults.count, 6)
-        XCTAssertTrue(AIAction.defaults.allSatisfy { !$0.title.isEmpty && !$0.instruction.isEmpty })
-        XCTAssertEqual(AIModel.opus.rawValue, "claude-opus-5-5")
-        XCTAssertFalse(AIModel.haiku.supportsFallback)
-    }
-}
-
 final class LanguageGuessTests: XCTestCase {
     let checker = MacSpellChecker()
 

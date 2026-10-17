@@ -25,8 +25,6 @@ final class Settings: ObservableObject {
         static let typography = "typography"
         static let listContinuation = "listContinuation"
         static let replacements = "replacements"
-        static let aiModel = "aiModel"
-        static let aiActions = "aiActions"
         static let voiceLanguage = "voiceLanguage"
         static let playSpellingSound = "playSpellingSound"
         static let spellingSoundName = "spellingSoundName"
@@ -82,18 +80,9 @@ final class Settings: ObservableObject {
         didSet { defaults.set(listContinuation, forKey: Key.listContinuation); onChange?() }
     }
 
-    @Published var aiModel: AIModel {
-        didSet { defaults.set(aiModel.rawValue, forKey: Key.aiModel); onChange?() }
-    }
-
     /// The languages the user speaks: "auto" (Ukrainian and English), "uk" or "en". Never Russian.
     @Published var voiceLanguage: String {
         didSet { defaults.set(voiceLanguage, forKey: Key.voiceLanguage) }
-    }
-
-    /// AI actions offered for selected text, in menu order.
-    @Published var aiActions: [AIAction] {
-        didSet { defaults.set(try? JSONEncoder().encode(aiActions), forKey: Key.aiActions) }
     }
 
     /// The user's own replacements, in the order added.
@@ -190,9 +179,9 @@ final class Settings: ObservableObject {
         listContinuation = defaults.bool(forKey: Key.listContinuation)
         let storedVoice = defaults.string(forKey: Key.voiceLanguage) ?? "auto"
         voiceLanguage = ["auto", "uk", "en"].contains(storedVoice) ? storedVoice : "auto"
-        aiModel = defaults.string(forKey: Key.aiModel).flatMap(AIModel.init(rawValue:)) ?? .opus
-        aiActions = defaults.data(forKey: Key.aiActions)
-            .flatMap { try? JSONDecoder().decode([AIAction].self, from: $0) } ?? AIAction.defaults
+        // Left over from the AI actions (removed in 0.10).
+        defaults.removeObject(forKey: "aiModel")
+        defaults.removeObject(forKey: "aiActions")
         replacements = defaults.data(forKey: Key.replacements)
             .flatMap { try? JSONDecoder().decode([Replacement].self, from: $0) } ?? []
         showFlag = defaults.bool(forKey: Key.showFlag)

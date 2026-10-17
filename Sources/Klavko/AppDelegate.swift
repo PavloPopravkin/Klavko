@@ -11,7 +11,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private let recorder = ShortcutRecorder()
     private let engine = SwitchEngine()
     private let exceptionPrompt = ExceptionPrompt()
-    private let assistant = AIAssistant()
     private let dictation = VoiceDictation()
     private let parakeet = ParakeetEngine()
     private var monitor: KeyboardMonitor?
@@ -43,9 +42,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             guard let bundleID = NSWorkspace.shared.frontmostApplication?.bundleIdentifier else { return false }
             return Self.appsWithOwnLists.contains(bundleID)
         }
-        assistant.actions = { [unowned self] in settings.aiActions }
-        assistant.model = { [unowned self] in settings.aiModel }
-        assistant.openSettings = { [weak self] in self?.showSettings() }
         dictation.languages = { [unowned self] in
             settings.voiceLanguage == "auto" ? ["uk", "en"] : [settings.voiceLanguage]
         }
@@ -63,9 +59,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                 dictation.cancel()
                 return true
             }
-        }
-        engine.onAIActions = { [unowned self] in
-            MainActor.assumeIsolated { assistant.start() }
         }
         engine.onFix = { [unowned self] kind in
             MainActor.assumeIsolated { playFixSound(kind) }
@@ -140,12 +133,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         // Developer check of the voice indicator: --snapshot-voice <file.png>.
         if let index = CommandLine.arguments.firstIndex(of: "--snapshot-voice"), index + 1 < CommandLine.arguments.count {
             dictation.snapshot(to: URL(fileURLWithPath: CommandLine.arguments[index + 1]))
-            NSApp.terminate(nil)
-        }
-        // Developer check of the AI panel: --snapshot-ai-panel <directory> renders its stages and quits.
-        if let index = CommandLine.arguments.firstIndex(of: "--snapshot-ai-panel"),
-           index + 1 < CommandLine.arguments.count {
-            assistant.snapshots(to: URL(fileURLWithPath: CommandLine.arguments[index + 1]))
             NSApp.terminate(nil)
         }
         // Developer check of the settings layout: --snapshot-settings <file.png> renders the window and quits.
@@ -283,7 +270,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
         menu.addItem(.separator())
         menu.addItem(item("Голосовий ввід", #selector(toggleVoice)))
-        menu.addItem(item("ШІ-дії з виділеним…", #selector(startAIActions)))
         menu.addItem(item("Налаштування…", #selector(showSettings), key: ","))
         menu.addItem(item("Вийти з Klavko", #selector(quit), key: "q"))
     }
@@ -347,11 +333,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     @objc private func toggleVoice() {
         // After the menu closes, so the text lands in the app that was in front.
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { [weak self] in self?.dictation.toggle() }
-    }
-
-    @objc private func startAIActions() {
-        // The menu has taken focus from the app with the selection; give it back first.
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { [weak self] in self?.assistant.start() }
     }
 
     @objc private func quit() {
