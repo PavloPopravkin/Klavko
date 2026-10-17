@@ -254,7 +254,13 @@ private struct ClipboardView: View {
 
     @ViewBuilder private func content(_ item: ClipItem) -> some View {
         switch item.kind {
-        case .text, .link:
+        case .link:
+            ScrollView {
+                LinkPreview(address: item.text.trimmingCharacters(in: .whitespacesAndNewlines)) { window.close() }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(14)
+            }
+        case .text:
             ScrollView {
                 Text(item.text)
                     .font(.system(size: 13))
@@ -376,6 +382,39 @@ private struct ClipboardView: View {
                 .padding(.vertical, 1)
                 .background(RoundedRectangle(cornerRadius: 4).fill(Color.primary.opacity(0.1)))
         }
+    }
+}
+
+/// The copied address as a link: underlined with a hand cursor on hover; a click opens it in the browser.
+private struct LinkPreview: View {
+    let address: String
+    let onOpen: () -> Void
+    @State private var hovering = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(address)
+                .font(.system(size: 13))
+                .foregroundStyle(Color.accentColor)
+                .underline(hovering)
+                .multilineTextAlignment(.leading)
+                .onHover { inside in
+                    hovering = inside
+                    if inside { NSCursor.pointingHand.push() } else { NSCursor.pop() }
+                }
+                .onTapGesture { open() }
+                .help("Відкрити в браузері")
+            if let host = URL(string: address)?.host {
+                Label(host, systemImage: "globe").font(.system(size: 11)).foregroundStyle(.secondary)
+            }
+        }
+        .onDisappear { if hovering { NSCursor.pop() } }
+    }
+
+    private func open() {
+        guard let url = URL(string: address) else { return }
+        onOpen()
+        NSWorkspace.shared.open(url)
     }
 }
 

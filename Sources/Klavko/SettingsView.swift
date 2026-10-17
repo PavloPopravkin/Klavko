@@ -328,6 +328,8 @@ struct SettingsView: View {
                             .foregroundStyle(.secondary)
                     }
 
+                case .about:
+                    AboutSection()
                 }
             }
             .formStyle(.grouped)
@@ -407,7 +409,7 @@ struct SettingsView: View {
 }
 
 enum SettingsTab: String, CaseIterable {
-    case general, layout, text, voice, clipboard, hotkeys
+    case general, layout, text, voice, clipboard, hotkeys, about
 
     var title: String {
         switch self {
@@ -416,6 +418,7 @@ enum SettingsTab: String, CaseIterable {
         case .text: "Текст"
         case .voice: "Голос"
         case .clipboard: "Буфер"
+        case .about: "Про Klavko"
         case .hotkeys: "Клавіші"
         }
     }
@@ -427,6 +430,7 @@ enum SettingsTab: String, CaseIterable {
         case .text: "textformat"
         case .voice: "waveform"
         case .clipboard: "doc.on.clipboard"
+        case .about: "info.circle"
         case .hotkeys: "command"
         }
     }
@@ -449,7 +453,7 @@ private struct SettingsTabBar: View {
                         Text(tab.title)
                             .font(.system(size: 11))
                     }
-                    .frame(width: 84, height: 50)
+                    .frame(width: 78, height: 50)
                     .foregroundStyle(selection == tab ? Color.accentColor : Color.secondary)
                     .background(RoundedRectangle(cornerRadius: 8)
                         .fill(selection == tab ? Color.primary.opacity(0.08) : .clear))
