@@ -27,6 +27,11 @@ final class Translator: ObservableObject {
     @Published private(set) var job: Job?
 
     private var panel: NSPanel?
+    /// The mouse position the panel opened at; it stays next to it as its content grows.
+    private var anchor = NSPoint.zero
+    private var resizeObserver: NSObjectProtocol?
+    /// Where the selection came from when Accessibility gave it directly (no clipboard used).
+    private var selection: SelectionConverter.Selection?
     private var nextID = 0
     /// The app with the selection, to give focus back to if a language download brought Klavko forward.
     private var sourceApp: NSRunningApplication?
@@ -34,6 +39,15 @@ final class Translator: ObservableObject {
     func start() {
         close()
         sourceApp = NSWorkspace.shared.frontmostApplication
+        anchor = NSEvent.mouseLocation
+        // Without the clipboard where the app allows it; ⌘C (clipboard restored) elsewhere.
+        if let selection = SelectionConverter.accessibleSelection() {
+            self.selection = selection
+            translate(selection.text, TranslationDirection(for: selection.text))
+            showPanel()
+            return
+        }
+        selection = nil
         SelectionConverter.copySelection { [weak self] text in
             MainActor.assumeIsolated {
                 guard let self else { return }
@@ -58,8 +72,10 @@ final class Translator: ObservableObject {
     func replace() {
         guard case .result(let text) = stage else { return }
         let app = sourceApp
+        let selection = selection
         close()
         app?.activate()
+        if let selection, selection.replace(with: text) { return }
         // The other app gets its keyboard focus back once the panel is gone.
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) { SelectionConverter.paste(text) }
     }
@@ -74,6 +90,8 @@ final class Translator: ObservableObject {
     }
 
     func close() {
+        if let resizeObserver { NotificationCenter.default.removeObserver(resizeObserver) }
+        resizeObserver = nil
         panel?.orderOut(nil)
         panel = nil
         job = nil
@@ -134,6 +152,7 @@ final class Translator: ObservableObject {
     /// Developer check: --translate-check <text> <out.txt> translates without a selection and writes the result.
     func check(_ text: String, writeTo url: URL) {
         sourceApp = nil
+        anchor = NSEvent.mouseLocation
         translate(text, TranslationDirection(for: text))
         showPanel()
         Task { @MainActor in
@@ -165,23 +184,32 @@ final class Translator: ObservableObject {
         panel.isReleasedWhenClosed = false
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
         panel.onClose = { [weak self] in self?.close() }
-        position(panel)
+        place(panel)
+        // The result is taller than "Translating…": keep the grown panel next to the mouse and on screen.
+        resizeObserver = NotificationCenter.default.addObserver(
+            forName: NSWindow.didResizeNotification, object: panel, queue: .main
+        ) { [weak self, weak panel] _ in
+            MainActor.assumeIsolated {
+                guard let self, let panel else { return }
+                self.place(panel)
+            }
+        }
         // Takes Return / ⌘C / Esc without activating Klavko, so the app with the selection stays active.
         panel.makeKeyAndOrderFront(nil)
         self.panel = panel
     }
 
-    /// Just below and right of the mouse pointer, kept on screen.
-    private func position(_ panel: NSPanel) {
-        let mouse = NSEvent.mouseLocation
+    /// Below and right of the mouse pointer; above it when there is no room below; always on screen.
+    private func place(_ panel: NSPanel) {
         let size = panel.frame.size
-        let screen = NSScreen.screens.first { $0.frame.contains(mouse) } ?? NSScreen.main
-        var origin = NSPoint(x: mouse.x + 12, y: mouse.y - size.height - 12)
+        let screen = NSScreen.screens.first { $0.frame.contains(anchor) } ?? NSScreen.main
+        var origin = NSPoint(x: anchor.x + 12, y: anchor.y - size.height - 12)
         if let frame = screen?.visibleFrame {
+            if origin.y < frame.minY + 8 { origin.y = anchor.y + 12 }
             origin.x = min(max(origin.x, frame.minX + 8), frame.maxX - size.width - 8)
             origin.y = min(max(origin.y, frame.minY + 8), frame.maxY - size.height - 8)
         }
-        panel.setFrameOrigin(origin)
+        if panel.frame.origin != origin { panel.setFrameOrigin(origin) }
     }
 }
 
