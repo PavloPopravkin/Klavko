@@ -57,6 +57,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         engine.onVoice = { [unowned self] in
             MainActor.assumeIsolated { dictation.toggle() }
         }
+        engine.onReturn = { [unowned self] in
+            MainActor.assumeIsolated { dictation.handleReturn() }
+        }
         engine.onEscape = { [unowned self] in
             MainActor.assumeIsolated {
                 guard dictation.isActive else { return false }

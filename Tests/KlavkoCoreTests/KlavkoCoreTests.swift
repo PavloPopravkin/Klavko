@@ -626,3 +626,14 @@ final class TranslationTests: XCTestCase {
         XCTAssertEqual(lines.assemble(["Hello, world", "- item"]), "  Hello, world \n\n- item\n")
     }
 }
+
+final class TranscriptCleanupTests: XCTestCase {
+    func testUnknownTokensBecomeDashesAndQuotes() {
+        XCTAssertEqual(TranscriptCleanup.clean("Київ <unk> столиця України."), "Київ — столиця України.")
+        XCTAssertEqual(TranscriptCleanup.clean("Він сказав <unk>привіт<unk> і пішов."), "Він сказав «привіт» і пішов.")
+        XCTAssertEqual(TranscriptCleanup.clean("Книга <unk>Кобзар<unk>."), "Книга «Кобзар».")
+        XCTAssertEqual(TranscriptCleanup.clean("He said <unk>hello<unk> twice"), "He said “hello” twice")
+        XCTAssertEqual(TranscriptCleanup.clean("<unk> Добре."), "Добре.")
+        XCTAssertEqual(TranscriptCleanup.clean("Звичайний текст, без змін."), "Звичайний текст, без змін.")
+    }
+}

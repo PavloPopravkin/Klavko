@@ -1,5 +1,6 @@
 import Foundation
 import FluidAudio
+import KlavkoCore
 
 /// NVIDIA Parakeet Ultra speech recognition on this Mac (Core ML, Neural Engine), via FluidAudio.
 /// The model (~600 MB) is downloaded once from Hugging Face; after that everything runs offline.
@@ -67,7 +68,7 @@ final class ParakeetEngine: ObservableObject {
         var state = TdtDecoderState.make()
         let result = try await manager.transcribe(file, decoderState: &state, language: language)
         scheduleUnload()
-        return result.text.trimmingCharacters(in: .whitespacesAndNewlines)
+        return TranscriptCleanup.clean(result.text.trimmingCharacters(in: .whitespacesAndNewlines))
     }
 
     private func scheduleUnload() {

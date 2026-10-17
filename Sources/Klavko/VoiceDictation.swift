@@ -36,6 +36,9 @@ final class VoiceDictation: ObservableObject {
 
     var isActive: Bool { stage == .listening || stage == .finishing }
 
+    /// The microphone's loudness for the panel's wave.
+    let meter = VoiceMeter()
+
     private let audio = AVAudioEngine()
     private let fanout = AudioFanout()
     private let spellChecker = MacSpellChecker()
@@ -66,6 +69,20 @@ final class VoiceDictation: ObservableObject {
             }
         case .idle, .failed:
             start()
+        }
+    }
+
+    /// Return / Enter while dictating inserts what was heard (and never reaches the app, where it
+    /// could send a half-written message); used up while recognizing too.
+    func handleReturn() -> Bool {
+        switch stage {
+        case .listening:
+            finish()
+            return true
+        case .finishing:
+            return true
+        case .idle, .failed:
+            return false
         }
     }
 
@@ -114,6 +131,10 @@ final class VoiceDictation: ObservableObject {
                                       changed: { [weak self] in self?.update() })
         live = recognition
         fanout.startRecording(keep: !others.isEmpty || parakeet?.isDownloaded == true)
+        let meter = meter
+        fanout.onLevel = { level in
+            DispatchQueue.main.async { MainActor.assumeIsolated { meter.push(level) } }
+        }
         Self.feed(audio.inputNode, into: fanout)
         recognition.startSegment()
         audio.prepare()
@@ -252,6 +273,8 @@ final class VoiceDictation: ObservableObject {
     private func stopAudio() {
         if audio.isRunning { audio.stop() }
         audio.inputNode.removeTap(onBus: 0)
+        fanout.onLevel = nil
+        meter.reset()
     }
 
     private func cleanUp() {
@@ -332,7 +355,9 @@ final class VoiceDictation: ObservableObject {
         stage = .listening
         languageTitle = "українська"
         text = "Привіт, я диктую цей текст голосом, а Klavko вставить його туди, де стоїть курсор."
-        let view = NSHostingView(rootView: VoiceIndicator(dictation: self))
+        for index in 0..<VoiceMeter.count { meter.push(Float(0.02 + 0.1 * abs(sin(Double(index) / 3)))) }
+        let view = NSHostingView(rootView: VoiceIndicator(dictation: self, meter: meter).padding(20)
+            .background(Color(white: 0.85)))
         view.frame = NSRect(origin: .zero, size: view.fittingSize)
         guard let bitmap = view.bitmapImageRepForCachingDisplay(in: view.bounds) else { return }
         view.cacheDisplay(in: view.bounds, to: bitmap)
@@ -344,34 +369,67 @@ final class VoiceDictation: ObservableObject {
         hidePanel()
     }
 
+    private var resizeObserver: NSObjectProtocol?
+
     private func showPanel() {
         if panel == nil {
-            let hosting = NSHostingController(rootView: VoiceIndicator(dictation: self))
+            let hosting = NSHostingController(rootView: VoiceIndicator(dictation: self, meter: meter))
             hosting.sizingOptions = [.preferredContentSize]
             let panel = IndicatorPanel(contentViewController: hosting)
             panel.styleMask = [.nonactivatingPanel, .borderless]
             panel.backgroundColor = .clear
             panel.isOpaque = false
-            panel.hasShadow = true
+            panel.hasShadow = false  // the capsule and the bubble draw their own
             panel.level = .statusBar
             panel.hidesOnDeactivate = false
             panel.isReleasedWhenClosed = false
             panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
             self.panel = panel
+            // The text grows the panel upwards; keep it centred at the bottom.
+            resizeObserver = NotificationCenter.default.addObserver(
+                forName: NSWindow.didResizeNotification, object: panel, queue: .main
+            ) { [weak self] _ in
+                MainActor.assumeIsolated { self?.placePanel() }
+            }
         }
-        guard let panel else { return }
-        // Bottom centre of the screen with the mouse, above the Dock.
-        let mouse = NSEvent.mouseLocation
-        let screen = NSScreen.screens.first { $0.frame.contains(mouse) } ?? NSScreen.main
-        if let frame = screen?.visibleFrame {
-            panel.setFrameOrigin(NSPoint(x: frame.midX - 210, y: frame.minY + 40))
-        }
+        placePanel()
         // Never takes the keyboard: typing goes on in the app where the text will be inserted.
-        panel.orderFrontRegardless()
+        panel?.orderFrontRegardless()
+    }
+
+    /// Bottom centre of the screen with the mouse, above the Dock.
+    private func placePanel() {
+        guard let panel else { return }
+        let mouse = NSEvent.mouseLocation
+        let screen = panel.isVisible ? (panel.screen ?? NSScreen.main)
+            : (NSScreen.screens.first { $0.frame.contains(mouse) } ?? NSScreen.main)
+        guard let frame = screen?.visibleFrame else { return }
+        let origin = NSPoint(x: (frame.midX - panel.frame.width / 2).rounded(), y: frame.minY + 24)
+        if panel.frame.origin != origin { panel.setFrameOrigin(origin) }
     }
 
     private func hidePanel() {
         panel?.orderOut(nil)
+    }
+}
+
+/// Recent microphone loudness, newest last, each 0…1; drives the panel's wave.
+@MainActor
+final class VoiceMeter: ObservableObject {
+    static let count = 28
+    @Published private(set) var levels = [CGFloat](repeating: 0, count: VoiceMeter.count)
+
+    /// `rms` of one audio buffer.
+    func push(_ rms: Float) {
+        // Speech sits around -50…-10 dB; map that range to 0…1.
+        let decibels = 20 * log10(max(rms, 0.000_01))
+        let level = CGFloat(min(max((decibels + 52) / 40, 0), 1))
+        levels.removeFirst()
+        levels.append(level)
+    }
+
+    func reset() {
+        levels = [CGFloat](repeating: 0, count: Self.count)
     }
 }
 
@@ -380,58 +438,140 @@ private final class IndicatorPanel: NSPanel {
     override var canBecomeKey: Bool { true }
 }
 
+/// A dark capsule with a live wave (like Wispr Flow) and, above it, a bubble with what is being heard.
 private struct VoiceIndicator: View {
     @ObservedObject var dictation: VoiceDictation
-    @State private var pulse = false
+    @ObservedObject var meter: VoiceMeter
+
+    private static let width: CGFloat = 440
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 8) {
-                Image(systemName: "mic.fill")
-                    .foregroundStyle(.red)
-                    .opacity(pulse ? 0.35 : 1)
-                    .animation(.easeInOut(duration: 0.7).repeatForever(), value: pulse)
-                    .onAppear { pulse = true }
-                Text(status).font(.headline)
-                Spacer()
-                Button {
-                    if case .failed = dictation.stage { dictation.closeFailure() } else { dictation.cancel() }
-                } label: {
-                    Image(systemName: "xmark.circle.fill").foregroundStyle(.secondary)
-                }
-                .buttonStyle(.borderless)
-                .help("Скасувати")
-            }
-            if case .failed(let message) = dictation.stage {
-                Text(message).font(.callout).foregroundStyle(.red).fixedSize(horizontal: false, vertical: true)
-            } else {
-                Text(dictation.text.isEmpty ? "Говоріть…" : dictation.text)
-                    .font(.callout)
-                    .foregroundStyle(dictation.text.isEmpty ? .secondary : .primary)
-                    .lineLimit(3)
-                    .truncationMode(.head)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                HStack {
-                    Text("Ще раз гаряча клавіша — вставити")
-                        .font(.caption).foregroundStyle(.secondary)
-                    Spacer()
-                    if dictation.stage == .listening {
-                        Button("Вставити") { dictation.toggle() }
-                    }
-                }
-            }
+        VStack(spacing: 8) {
+            bubble
+            capsule
         }
-        .padding(14)
-        .frame(width: 420)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14))
+        .frame(width: Self.width)
+        .padding(.vertical, 12)
+        .padding(.horizontal, 16)  // room for the shadows
     }
 
-    private var status: String {
+    // MARK: Bubble with the text
+
+    @ViewBuilder private var bubble: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            if case .failed(let message) = dictation.stage {
+                Text(message)
+                    .font(.system(size: 13))
+                    .foregroundStyle(Color(red: 1, green: 0.55, blue: 0.5))
+                    .fixedSize(horizontal: false, vertical: true)
+            } else {
+                Text(dictation.text.isEmpty ? "Говоріть…" : dictation.text)
+                    .font(.system(size: 14))
+                    .foregroundStyle(.white.opacity(dictation.text.isEmpty ? 0.5 : 0.95))
+                    .lineLimit(4)
+                    .truncationMode(.head)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .animation(.easeOut(duration: 0.15), value: dictation.text)
+                Text(hint)
+                    .font(.system(size: 11))
+                    .foregroundStyle(.white.opacity(0.45))
+            }
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Color.black.opacity(0.82)))
+        .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(.white.opacity(0.08)))
+        .shadow(color: .black.opacity(0.25), radius: 10, y: 4)
+    }
+
+    private var hint: String {
         switch dictation.stage {
-        case .listening: "Слухаю · \(dictation.languageTitle)"
         case .finishing: "Розпізнаю…"
-        case .failed: "Голосовий ввід"
-        case .idle: "Голосовий ввід"
+        default: "Enter або гаряча клавіша — вставити · Esc — скасувати · \(dictation.languageTitle)"
+        }
+    }
+
+    // MARK: Capsule with the wave
+
+    private var capsule: some View {
+        HStack(spacing: 10) {
+            roundButton("xmark", filled: false, help: "Скасувати (Esc)") {
+                if case .failed = dictation.stage { dictation.closeFailure() } else { dictation.cancel() }
+            }
+            Group {
+                if dictation.stage == .finishing {
+                    ThinkingWave()
+                } else {
+                    Waveform(levels: meter.levels, muted: dictation.stage != .listening)
+                }
+            }
+            .frame(width: 150, height: 28)
+            if dictation.stage == .listening {
+                roundButton("checkmark", filled: true, help: "Вставити (Enter)") { dictation.toggle() }
+            } else {
+                Color.clear.frame(width: 26, height: 26)
+            }
+        }
+        .padding(.horizontal, 7)
+        .padding(.vertical, 6)
+        .background(Capsule().fill(Color.black.opacity(0.88)))
+        .overlay(Capsule().strokeBorder(.white.opacity(0.1)))
+        .shadow(color: .black.opacity(0.3), radius: 10, y: 4)
+    }
+
+    private func roundButton(_ symbol: String, filled: Bool, help: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: symbol)
+                .font(.system(size: 11, weight: .bold))
+                .foregroundStyle(filled ? Color.black : Color.white.opacity(0.8))
+                .frame(width: 26, height: 26)
+                .background(Circle().fill(filled ? Color.white : Color.white.opacity(0.14)))
+        }
+        .buttonStyle(.plain)
+        .help(help)
+    }
+}
+
+/// Bars that follow the voice: the newest loudness in the middle, older ones fading out to the sides.
+private struct Waveform: View {
+    let levels: [CGFloat]
+    let muted: Bool
+
+    var body: some View {
+        HStack(alignment: .center, spacing: 3) {
+            ForEach(0..<levels.count, id: \.self) { index in
+                Capsule()
+                    .fill(.white.opacity(muted ? 0.35 : 0.95))
+                    .frame(width: 3, height: height(index))
+            }
+        }
+        .animation(.easeOut(duration: 0.09), value: levels)
+    }
+
+    /// Bars mirror around the centre, which shows the latest level.
+    private func height(_ index: Int) -> CGFloat {
+        let half = levels.count / 2
+        let distance = abs(index - half)
+        let level = levels[max(levels.count - 1 - distance * 2, 0)]
+        let taper = 1 - CGFloat(distance) / CGFloat(half + 2)
+        return 3 + 25 * level * taper
+    }
+}
+
+/// A gentle travelling wave while the recording is being recognized.
+private struct ThinkingWave: View {
+    var body: some View {
+        TimelineView(.animation) { context in
+            let time = context.date.timeIntervalSinceReferenceDate
+            HStack(alignment: .center, spacing: 3) {
+                ForEach(0..<VoiceMeter.count, id: \.self) { index in
+                    let phase = sin(time * 5 - Double(index) * 0.45)
+                    Capsule()
+                        .fill(.white.opacity(0.55 + 0.35 * phase))
+                        .frame(width: 3, height: 4 + 7 * (phase + 1))
+                }
+            }
         }
     }
 }
@@ -446,6 +586,13 @@ private final class AudioFanout: @unchecked Sendable {
     /// About three minutes at 48 kHz; longer dictation keeps only the live result.
     private let maxFrames: AVAudioFrameCount = 48_000 * 180
     private var recordedFrames: AVAudioFrameCount = 0
+    private var levelHandler: (@Sendable (Float) -> Void)?
+
+    /// Gets each buffer's loudness (RMS), on the audio thread.
+    var onLevel: (@Sendable (Float) -> Void)? {
+        get { lock.withLock { levelHandler } }
+        set { lock.withLock { levelHandler = newValue } }
+    }
 
     var hasRecording: Bool { lock.withLock { !recording.isEmpty } }
 
@@ -471,6 +618,11 @@ private final class AudioFanout: @unchecked Sendable {
     }
 
     func append(_ buffer: AVAudioPCMBuffer) {
+        if let onLevel, let samples = buffer.floatChannelData?[0], buffer.frameLength > 0 {
+            var sum: Float = 0
+            for index in 0..<Int(buffer.frameLength) { sum += samples[index] * samples[index] }
+            onLevel((sum / Float(buffer.frameLength)).squareRoot())
+        }
         let current = lock.withLock { () -> [SFSpeechAudioBufferRecognitionRequest] in
             if keep, recordedFrames + buffer.frameLength <= maxFrames, let copy = Self.copy(buffer) {
                 recording.append(copy)

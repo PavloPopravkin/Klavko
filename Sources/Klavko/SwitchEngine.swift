@@ -58,6 +58,8 @@ final class SwitchEngine {
     var onVoice: () -> Void = {}
     /// Esc was pressed: true if something (voice input) used it, so it isn't passed on.
     var onEscape: () -> Bool = { false }
+    /// Return / Enter was pressed: true if something (voice input) used it, so it isn't passed on.
+    var onReturn: () -> Bool = { false }
     /// Called when the user reverted an automatic fix of a word (the word as they want it).
     var onRevert: (String) -> Void = { _ in }
 
@@ -227,6 +229,11 @@ final class SwitchEngine {
         }
         if keyCode == KeyCode.escape, flags.intersection([.maskShift, .maskControl, .maskAlternate, .maskCommand]).isEmpty,
            onEscape() {
+            return false
+        }
+        if keyCode == KeyCode.returnKey || keyCode == KeyCode.keypadEnter,
+           flags.intersection([.maskShift, .maskControl, .maskAlternate, .maskCommand]).isEmpty,
+           onReturn() {
             return false
         }
 
