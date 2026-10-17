@@ -3,7 +3,7 @@ import KlavkoCore
 import SwiftUI
 import UniformTypeIdentifiers
 
-/// The clipboard history window, like Raycast's: search on top, the list on the left, a preview on the
+/// The clipboard history window: search on top, the list on the left, a preview on the
 /// right. ↩ pastes into the app you were in, ⌘C only copies, ⌘P pins, ⌘⌫ deletes, Esc closes.
 /// It never activates Klavko, so the app you came from stays in front and gets the paste.
 @MainActor
@@ -158,7 +158,7 @@ private final class ClipboardPanel: NSPanel {
         super.sendEvent(event)
     }
 
-    // Clicking elsewhere closes it, like Raycast.
+    // Clicking elsewhere closes it.
     override func resignKey() {
         super.resignKey()
         onResignKey?()

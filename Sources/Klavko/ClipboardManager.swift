@@ -2,7 +2,7 @@ import AppKit
 import CryptoKit
 import KlavkoCore
 
-/// Clipboard history, like Raycast's: remembers what you copy (text, links, images, files) on this Mac
+/// Clipboard history: remembers what you copy (text, links, images, files) on this Mac
 /// only, in ~/Library/Application Support/Klavko/Clipboard. Passwords and other concealed items
 /// (marked so by password managers, nspasteboard.org) and copies made in ignored apps are never kept.
 @MainActor

@@ -486,7 +486,7 @@ enum Neon {
     static let bar = LinearGradient(colors: [.white, cyan, sky], startPoint: .top, endPoint: .bottom)
 }
 
-/// A glowing navy capsule with a live wave (like Wispr Flow) and, above it, a bubble with what is being heard.
+/// A glowing navy capsule with a live wave and, above it, a bubble with what is being heard.
 private struct VoiceIndicator: View {
     @ObservedObject var dictation: VoiceDictation
     @ObservedObject var meter: VoiceMeter
