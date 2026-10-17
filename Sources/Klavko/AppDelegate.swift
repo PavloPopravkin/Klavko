@@ -57,9 +57,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
         // A dictated word fixed by hand: offer to spell it that way from now on.
         correctionWatcher.known = { [unowned self] in settings.voiceRules }
+        // One word at a time: only the first correction is offered.
         correctionWatcher.onFound = { [unowned self] corrections in
-            learnPrompt.show(corrections) { [unowned self] in
-                for pair in corrections { settings.setVoiceSpelling(heard: pair.from, written: pair.to) }
+            guard let first = corrections.first else { return }
+            learnPrompt.show([first]) { [unowned self] in
+                settings.setVoiceSpelling(heard: first.from, written: first.to)
             }
         }
         engine.onUserKey = { [unowned self] in
@@ -303,16 +305,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             exclude.representedObject = bundleID
             exclude.state = settings.isExcluded(bundleID) ? .on : .off
             menu.addItem(exclude)
-        }
-
-        menu.addItem(.separator())
-        let keyLayout = englishLayout()
-        for action in HotkeyAction.allCases {
-            guard let shortcut = settings.shortcuts[action] else { continue }
-            menu.addItem(disabledItem("\(action.title): \(shortcut.displayName(layout: keyLayout))"))
-        }
-        if settings.backspaceUndo {
-            menu.addItem(disabledItem("Скасувати заміну: ⌫ одразу після неї"))
         }
 
         menu.addItem(.separator())

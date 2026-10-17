@@ -664,3 +664,12 @@ final class VoiceVocabularyTests: XCTestCase {
         XCTAssertEqual(VoiceVocabulary.corrections(inserted: "Я буду о десятій", now: "Зовсім інший текст тут"), [])
     }
 }
+
+final class VoiceCorrectionOrderTests: XCTestCase {
+    func testCorrectionsComeInReadingOrder() {
+        let found = VoiceVocabulary.corrections(inserted: "Привіт олег я з адра сьогодні",
+                                                now: "Привіт Олех я з ADRA сьогодні")
+        XCTAssertEqual(found.first, Replacement(from: "олег", to: "Олех"))
+        XCTAssertEqual(found.count, 2)
+    }
+}

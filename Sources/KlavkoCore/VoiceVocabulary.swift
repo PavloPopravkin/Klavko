@@ -80,24 +80,25 @@ public enum VoiceVocabulary {
                 j += 1
             }
         }
-        var found: [Replacement] = []
+        // With where each one starts in the dictated text, so they come out in reading order.
+        var found: [(at: Int, rule: Replacement)] = []
         // Case-only changes are matches in the alignment ("адра" = "ADRA"); they count too.
         for pair in pairs where old[pair.old] != new[pair.new] {
-            found.append(Replacement(from: old[pair.old], to: new[pair.new]))
+            found.append((pair.old, Replacement(from: old[pair.old], to: new[pair.new])))
         }
         // Real gaps: matched words on both sides inside the dictated text.
         for (left, right) in zip(pairs, pairs.dropFirst()) {
             let oldGap = Array(old[(left.old + 1)..<right.old])
             let newGap = Array(new[(left.new + 1)..<right.new])
             guard (1...3).contains(oldGap.count), (1...3).contains(newGap.count) else { continue }
-            found.append(Replacement(from: oldGap.joined(separator: " "), to: newGap.joined(separator: " ")))
+            found.append((left.old + 1, Replacement(from: oldGap.joined(separator: " "), to: newGap.joined(separator: " "))))
         }
         // A changed first or last word: the gap has a match on one side only, same word count.
         if let first = pairs.first, first.old > 0, first.old <= 3, first.new >= first.old {
             let oldGap = old[0..<first.old]
             let newGap = new[(first.new - first.old)..<first.new]
             if oldGap.map({ $0.lowercased() }) != newGap.map({ $0.lowercased() }) {
-                found.append(Replacement(from: oldGap.joined(separator: " "), to: newGap.joined(separator: " ")))
+                found.append((0, Replacement(from: oldGap.joined(separator: " "), to: newGap.joined(separator: " "))))
             }
         }
         if let last = pairs.last, n - 1 - last.old > 0, n - 1 - last.old <= 3, m - 1 - last.new >= n - 1 - last.old {
@@ -105,11 +106,11 @@ public enum VoiceVocabulary {
             let oldGap = old[(last.old + 1)...]
             let newGap = new[(last.new + 1)..<(last.new + 1 + count)]
             if oldGap.map({ $0.lowercased() }) != newGap.map({ $0.lowercased() }) {
-                found.append(Replacement(from: oldGap.joined(separator: " "), to: newGap.joined(separator: " ")))
+                found.append((last.old + 1, Replacement(from: oldGap.joined(separator: " "), to: newGap.joined(separator: " "))))
             }
         }
         var seen = Set<Replacement>()
-        return found.filter { $0.from != $0.to && seen.insert($0).inserted }
+        return found.sorted { $0.at < $1.at }.map(\.rule).filter { $0.from != $0.to && seen.insert($0).inserted }
     }
 
     /// Words with their inner apostrophes and hyphens, without the punctuation around them.
