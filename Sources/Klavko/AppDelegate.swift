@@ -74,6 +74,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         clipboard.isEnabled = { [unowned self] in settings.clipboardEnabled }
         clipboard.keepDays = { [unowned self] in settings.clipboardKeepDays }
         clipboard.ignoredApps = { [unowned self] in settings.clipboardIgnoredApps }
+        clipboard.onCopied = { [unowned self] in
+            if settings.playCopySound { playSound(named: settings.copySoundName) }
+        }
         clipboard.prune()
         clipboard.start()
         engine.onClipboard = { [unowned self] in
@@ -131,6 +134,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             guard let self else { return }
             soundPlayer.preload(settings.soundName)
             soundPlayer.preload(settings.spellingSoundName)
+            soundPlayer.preload(settings.copySoundName)
         }
 
         DistributedNotificationCenter.default().addObserver(

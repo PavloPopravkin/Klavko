@@ -281,6 +281,8 @@ struct SettingsView: View {
                         }
                         .disabled(!settings.clipboardEnabled)
                         .onChange(of: settings.clipboardKeepDays) { clipboard.prune() }
+                        soundRow("Звук під час копіювання", isOn: $settings.playCopySound, sound: $settings.copySoundName)
+                            .disabled(!settings.clipboardEnabled)
                         HStack {
                             Text("Записів: \(clipboard.history.items.count)")
                             Spacer()

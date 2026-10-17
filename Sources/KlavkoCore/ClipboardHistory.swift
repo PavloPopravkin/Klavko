@@ -50,6 +50,19 @@ public struct ClipItem: Codable, Hashable, Identifiable, Sendable {
         self.pinned = pinned
     }
 
+    private static let imageExtensions: Set<String> = [
+        "jpg", "jpeg", "png", "gif", "heic", "heif", "tif", "tiff", "webp", "bmp", "svg", "avif", "ico",
+    ]
+
+    /// One copied picture file (from Finder, a screenshot app): shown and filtered as a picture.
+    public var isImageFile: Bool {
+        kind == .files && !text.contains("\n")
+            && Self.imageExtensions.contains((text as NSString).pathExtension.lowercased())
+    }
+
+    /// What the item is for the filter: a picture file counts as a picture.
+    public var shownKind: Kind { isImageFile ? .image : kind }
+
     /// One line for the list.
     public var title: String {
         switch kind {
@@ -153,7 +166,7 @@ public struct ClipboardHistory: Codable, Sendable {
     public func search(_ query: String, kind: ClipItem.Kind? = nil) -> [ClipItem] {
         let words = query.lowercased().split(whereSeparator: \.isWhitespace)
         let matching = items.filter { item in
-            if let kind, item.kind != kind { return false }
+            if let kind, item.shownKind != kind { return false }
             guard !words.isEmpty else { return true }
             let haystack = (item.text + " " + (item.appName ?? "")).lowercased()
             return words.allSatisfy { haystack.contains($0) }

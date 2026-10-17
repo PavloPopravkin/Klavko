@@ -33,12 +33,16 @@ final class Settings: ObservableObject {
         static let voiceLanguage = "voiceLanguage"
         static let playSpellingSound = "playSpellingSound"
         static let spellingSoundName = "spellingSoundName"
+        static let playCopySound = "playCopySound"
+        static let copySoundName = "copySoundName"
         static let revertCounts = "revertCounts"
         static let declinedExceptions = "declinedExceptions"
     }
 
     /// Short, soft macOS system sounds that suit a quick fix.
-    static let sounds = ["Pop", "Tink", "Purr", "Bottle", "Morse", "Frog", "Glass"]
+    /// macOS system sounds (/System/Library/Sounds).
+    static let sounds = ["Pop", "Tink", "Purr", "Bottle", "Morse", "Frog", "Glass", "Ping", "Blow", "Funk", "Hero",
+                         "Submarine", "Basso", "Sosumi"]
 
     private let defaults = UserDefaults.standard
 
@@ -159,6 +163,15 @@ final class Settings: ObservableObject {
         didSet { defaults.set(playSpellingSound, forKey: Key.playSpellingSound); onChange?() }
     }
 
+    /// A sound when something is copied (clipboard history).
+    @Published var playCopySound: Bool {
+        didSet { defaults.set(playCopySound, forKey: Key.playCopySound) }
+    }
+
+    @Published var copySoundName: String {
+        didSet { defaults.set(copySoundName, forKey: Key.copySoundName) }
+    }
+
     @Published var spellingSoundName: String {
         didSet { defaults.set(spellingSoundName, forKey: Key.spellingSoundName); onChange?() }
     }
@@ -205,6 +218,8 @@ final class Settings: ObservableObject {
             Key.soundName: "Pop",
             Key.playSpellingSound: true,
             Key.spellingSoundName: "Tink",
+            Key.playCopySound: true,
+            Key.copySoundName: "Tink",
             // Terminals: words there are mostly commands, not natural language.
             // Code editors: "...", quotes and capitals mean something else in code.
             Key.offerVoiceCorrections: true,
@@ -245,6 +260,8 @@ final class Settings: ObservableObject {
         soundName = defaults.string(forKey: Key.soundName) ?? "Pop"
         playSpellingSound = defaults.bool(forKey: Key.playSpellingSound)
         spellingSoundName = defaults.string(forKey: Key.spellingSoundName) ?? "Tink"
+        playCopySound = defaults.bool(forKey: Key.playCopySound)
+        copySoundName = defaults.string(forKey: Key.copySoundName) ?? "Tink"
         excludedApps = defaults.stringArray(forKey: Key.excludedApps) ?? []
         shortcuts = Self.loadShortcuts(defaults.data(forKey: Key.shortcuts))
         launchAtLogin = SMAppService.mainApp.status == .enabled

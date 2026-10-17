@@ -13,6 +13,8 @@ final class ClipboardManager: ObservableObject {
     /// Days to keep items (0: forever).
     var keepDays: () -> Int = { 30 }
     var ignoredApps: () -> [String] = { [] }
+    /// Something new was copied (not Klavko's own paste from the history).
+    var onCopied: () -> Void = {}
 
     static let maxItems = 1000
     /// Longer copies are kept cut to this length.
@@ -65,6 +67,7 @@ final class ClipboardManager: ObservableObject {
         if let bundleID = app?.bundleIdentifier, ignoredApps().contains(bundleID) { return }
         guard let item = readItem(appName: app?.localizedName, bundleID: app?.bundleIdentifier) else { return }
         add(item)
+        onCopied()
     }
 
     private func readItem(appName: String?, bundleID: String?) -> ClipItem? {
