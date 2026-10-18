@@ -31,7 +31,7 @@ if [ "$IDENTITY" = "-" ]; then
     # signature's requirement: name the app by its identifier, so an update keeps the permission.
     REQUIREMENTS=(--requirements '=designated => identifier "app.klavko.Klavko"')
 fi
-codesign --force --options runtime --entitlements Resources/Klavko.entitlements "${REQUIREMENTS[@]}" \
+codesign --force --options runtime --entitlements Resources/Klavko.entitlements ${REQUIREMENTS[@]+"${REQUIREMENTS[@]}"} \
     --sign "$IDENTITY" "$APP"
 
 echo "Built $APP (signed with: $IDENTITY)"
