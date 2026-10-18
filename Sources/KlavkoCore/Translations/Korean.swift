@@ -201,5 +201,6 @@ extension Translations {
         "Removes fillers and self-corrections (“at one, no, at two” → “at two”), formats lists.": "군더더기 말과 말 바꿈(“한 시에, 아니, 두 시에” → “두 시에”)을 제거하고 목록을 정리합니다.",
         "Recognition with Google AI": "Google AI로 인식",
         "With Google AI the recording is sent to Google (with your key) when you finish, and any language is recognized, Russian too. The key is kept in the Keychain. If Google can’t be reached, this Mac recognizes the text. As in the Jot app.": "Google AI를 사용하면 녹음이 끝날 때 (사용자의 키로) Google에 전송되어 러시아어를 포함한 모든 언어로 인식됩니다. 키는 Keychain에 저장됩니다. Google에 연결할 수 없으면 이 Mac이 텍스트를 인식합니다. Jot 앱과 같은 방식입니다.",
+        "Press the “Voice input” hotkey (fn by default), speak, press it again — the text appears at the cursor. Esc cancels. Speech is recognized by the NVIDIA Parakeet Ultra model on this Mac (with punctuation; Turkish, Hebrew and Arabic by macOS). Russian is inserted only if it is chosen above. Until the model is downloaded, the built-in macOS recognition is used.": "“음성 입력” 단축키(기본값 fn)를 누르고 말한 다음 다시 누르면 커서 위치에 텍스트가 나타납니다. Esc는 취소합니다. 음성은 이 Mac의 NVIDIA Parakeet Ultra 모델이 인식합니다(구두점 포함, 터키어·히브리어·아랍어는 macOS). 러시아어는 위에서 선택한 경우에만 입력됩니다. 모델을 다운로드하기 전에는 macOS 내장 인식을 사용합니다.",
     ]
 }
