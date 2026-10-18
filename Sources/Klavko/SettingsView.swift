@@ -94,7 +94,7 @@ struct SettingsView: View {
                     Section {
                         // Named in both languages, so it can be found whichever is on.
                         Picker("Мова програми · Language", selection: $settings.interfaceLanguage) {
-                            ForEach(AppLanguage.allCases, id: \.self) { Text($0.title).tag($0) }
+                            ForEach(Self.interfaceLanguages(), id: \.self) { Text($0.title).tag($0) }
                         }
                         Toggle(tr("Запускати під час входу в систему", "Open at login"), isOn: $settings.launchAtLogin)
                         Toggle(tr("Показувати прапор розкладки в меню", "Show the layout flag in the menu bar"), isOn: $settings.showFlag)
@@ -173,10 +173,13 @@ struct SettingsView: View {
                 case .text:
                     Section {
                         Picker(tr("Моя мова", "My language"), selection: $settings.translationOwn) {
-                            ForEach(TranslationDirection.languages, id: \.self) { Text(Translator.languageName($0)).tag($0) }
+                            ForEach(Translator.ordered(TranslationDirection.languages), id: \.self) {
+                                Text(Translator.languageName($0)).tag($0)
+                            }
                         }
                         Picker(tr("Перекладати на", "Translate into"), selection: $settings.translationOther) {
-                            ForEach(TranslationDirection.languages.filter { $0 != settings.translationOwn }, id: \.self) {
+                            ForEach(Translator.ordered(TranslationDirection.languages.filter { $0 != settings.translationOwn }),
+                                    id: \.self) {
                                 Text(Translator.languageName($0)).tag($0)
                             }
                         }
@@ -267,9 +270,8 @@ struct SettingsView: View {
                         VStack(alignment: .leading, spacing: 6) {
                             Text(tr("Я говорю", "I speak"))
                             FlowLayout(spacing: 6) {
-                                ForEach(Settings.speechLanguages, id: \.self) { code in
-                                    ChipToggle(title: AppLanguage.current.locale.localizedString(forLanguageCode: code)?
-                                                    .capitalized(with: AppLanguage.current.locale) ?? code,
+                                ForEach(Translator.ordered(Settings.speechLanguages), id: \.self) { code in
+                                    ChipToggle(title: Translator.plainName(code),
                                                isOn: settings.voiceLanguages.contains(code)) {
                                         settings.toggleVoiceLanguage(code)
                                     }
@@ -530,6 +532,15 @@ struct SettingsView: View {
             .help(tr("Прибрати гарячу клавішу", "Remove the hotkey"))
             .opacity(settings.shortcuts[action] == nil ? 0 : 1)
             .disabled(settings.shortcuts[action] == nil)
+        }
+    }
+
+    /// The interface language in use first, the others in alphabetical order of their own names.
+    static func interfaceLanguages() -> [AppLanguage] {
+        let current = AppLanguage.current
+        return [current] + AppLanguage.allCases.filter { $0 != current }.sorted {
+            $0.title.compare($1.title, options: [.caseInsensitive, .diacriticInsensitive], locale: current.locale)
+                == .orderedAscending
         }
     }
 

@@ -126,11 +126,27 @@ final class Translator: ObservableObject {
         return LanguageFlags.emoji[code].map { "\($0) \(label)" } ?? label
     }
 
-    /// A language's name in the interface language, with its flag: "🇺🇦 Українська".
+    /// A language's name in the interface language, after its flag or, without one, its code:
+    /// "🇺🇦 Українська", "RU Російська".
     static func languageName(_ code: String) -> String {
+        (LanguageFlags.emoji[code] ?? code.uppercased()) + " " + plainName(code)
+    }
+
+    /// The name alone, in the interface language: "Українська".
+    static func plainName(_ code: String) -> String {
         let locale = AppLanguage.current.locale
-        let name = locale.localizedString(forLanguageCode: code)?.capitalized(with: locale) ?? code
-        return LanguageFlags.emoji[code].map { "\($0) \(name)" } ?? name
+        return locale.localizedString(forLanguageCode: code)?.capitalized(with: locale) ?? code
+    }
+
+    /// For language lists: the interface language first, the others in alphabetical order of their names.
+    static func ordered(_ codes: [String]) -> [String] {
+        let locale = AppLanguage.current.locale
+        let first = AppLanguage.current.rawValue.components(separatedBy: "-")[0]
+        let rest = codes.filter { $0 != first }.sorted {
+            plainName($0).compare(plainName($1), options: [.caseInsensitive, .diacriticInsensitive], locale: locale)
+                == .orderedAscending
+        }
+        return (codes.contains(first) ? [first] : []) + rest
     }
 
     /// The same text the other way round, for when the guess was wrong.
@@ -376,7 +392,7 @@ private struct TranslatorPanelView: View {
 
     private func languageMenu(_ selected: String, onChange: @escaping (String) -> Void) -> some View {
         Menu {
-            ForEach(TranslationDirection.languages, id: \.self) { code in
+            ForEach(Translator.ordered(TranslationDirection.languages), id: \.self) { code in
                 Button(Translator.languageName(code)) { onChange(code) }
             }
         } label: {
