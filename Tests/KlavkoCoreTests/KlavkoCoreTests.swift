@@ -746,3 +746,17 @@ final class AppVersionTests: XCTestCase {
         XCTAssertFalse(AppVersion.isNewer("0.11.0", than: "0.11.1"))
     }
 }
+
+final class TranslationPairTests: XCTestCase {
+    func testOwnAndOtherLanguage() {
+        XCTAssertEqual(TranslationDirection(for: "Привіт, як справи?", own: "uk", other: "de"),
+                       TranslationDirection(source: "uk", target: "de"))
+        XCTAssertEqual(TranslationDirection(for: "Guten Morgen, wie geht es dir?", own: "uk", other: "de"),
+                       TranslationDirection(source: "de", target: "uk"))
+        XCTAssertEqual(TranslationDirection(for: "Good morning, how are you today?", own: "uk", other: "de", layouts: ["en"]),
+                       TranslationDirection(source: "en", target: "uk"))
+        XCTAssertEqual(TranslationDirection(for: "Hello, how are you?", own: "en", other: "uk"),
+                       TranslationDirection(source: "en", target: "uk"))
+        XCTAssertFalse(TranslationDirection.languages.contains("el"))
+    }
+}

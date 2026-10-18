@@ -172,6 +172,26 @@ struct SettingsView: View {
 
                 case .text:
                     Section {
+                        Picker(tr("Моя мова", "My language"), selection: $settings.translationOwn) {
+                            ForEach(TranslationDirection.languages, id: \.self) { Text(Translator.languageName($0)).tag($0) }
+                        }
+                        Picker(tr("Перекладати на", "Translate into"), selection: $settings.translationOther) {
+                            ForEach(TranslationDirection.languages.filter { $0 != settings.translationOwn }, id: \.self) {
+                                Text(Translator.languageName($0)).tag($0)
+                            }
+                        }
+                    } header: {
+                        Text(tr("Переклад", "Translation"))
+                    } footer: {
+                        Text(tr("Текст моєю мовою перекладається на вибрану мову, текст будь-якою іншою мовою — на мою. "
+                                + "Мови можна змінити й прямо у вікні перекладу.",
+                                "Text in my language is translated into the chosen language, text in any other language into mine. "
+                                + "The languages can also be changed right in the translation panel."))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    Section {
                         Toggle(isOn: $settings.correctSpelling) {
                             Text(tr("Виправляти помилки", "Fix typos"))
                             Text(tr("Усі мови розкладок: пропущені й переставлені літери, сусідні клавіші "
@@ -276,13 +296,15 @@ struct SettingsView: View {
                         Text(tr("Голосовий ввід", "Voice input"))
                     } footer: {
                         Text(tr("Натисніть гарячу клавішу «Голосовий ввід» (за замовчуванням fn), говоріть, натисніть її ще раз — "
-                                + "текст з’явиться в місці курсора. Esc скасовує. Розпізнає модель NVIDIA Parakeet Ultra на цьому Mac "
-                                + "(з розділовими знаками; турецьку, іврит і арабську — macOS). Російська вставляється, лише якщо "
-                                + "її вибрано вище. Поки модель не завантажена, працює вбудоване розпізнавання macOS.",
+                                + "текст з’явиться в місці курсора. Esc скасовує. Розпізнає модель NVIDIA Parakeet Ultra на цьому Mac, "
+                                + "з розділовими знаками. Турецьку, іврит і арабську розпізнає macOS: увімкніть для них Диктування "
+                                + "в System Settings → Keyboard. Мови, не вибрані вище, ніколи не вставляються. Поки модель "
+                                + "не завантажена, працює вбудоване розпізнавання macOS.",
                                 "Press the “Voice input” hotkey (fn by default), speak, press it again — the text appears at the "
-                                + "cursor. Esc cancels. Speech is recognized by the NVIDIA Parakeet Ultra model on this Mac "
-                                + "(with punctuation; Turkish, Hebrew and Arabic by macOS). Russian is inserted only if it is "
-                                + "chosen above. Until the model is downloaded, the built-in macOS recognition is used."))
+                                + "cursor. Esc cancels. Speech is recognized by the NVIDIA Parakeet Ultra model on this Mac, with "
+                                + "punctuation. Turkish, Hebrew and Arabic are recognized by macOS: turn on Dictation for them in "
+                                + "System Settings → Keyboard. Languages not chosen above are never inserted. Until the model is "
+                                + "downloaded, the built-in macOS recognition is used."))
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
@@ -320,12 +342,11 @@ struct SettingsView: View {
                     } header: {
                         Text(tr("Розпізнавання через Google AI", "Recognition with Google AI"))
                     } footer: {
-                        Text(tr("З Google AI запис після натискання надсилається в Google (вашим ключем) і розпізнається будь-якою мовою, "
-                                + "зокрема російською. Ключ зберігається в Keychain. Якщо Google недоступний, текст розпізнає цей Mac. "
-                                + "Як у програмі Jot.",
+                        Text(tr("З Google AI запис після натискання надсилається в Google (вашим ключем) і розпізнається будь-якою мовою. "
+                                + "Ключ зберігається в Keychain. Якщо Google недоступний, текст розпізнає цей Mac.",
                                 "With Google AI the recording is sent to Google (with your key) when you finish, and any language is "
-                                + "recognized, Russian too. The key is kept in the Keychain. If Google can’t be reached, this Mac "
-                                + "recognizes the text. As in the Jot app."))
+                                + "recognized. The key is kept in the Keychain. If Google can’t be reached, this Mac "
+                                + "recognizes the text."))
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }

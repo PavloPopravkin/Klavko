@@ -2,8 +2,11 @@
 
 extension Translations {
     public static let japanese: [String: String] = [
+        "My language": "自分の言語",
+        "Translate into": "翻訳先",
+        "Text in my language is translated into the chosen language, text in any other language into mine. The languages can also be changed right in the translation panel.": "自分の言語のテキストは選んだ言語に、それ以外の言語のテキストは自分の言語に翻訳されます。言語は翻訳パネルで直接変更することもできます。",
         "Version": "バージョン",
-        "Keyboard layout switcher and typing assistant for Mac: Ukrainian, English, Russian and 10 more languages.": "Mac 用のキーボードレイアウト切り替えと入力アシスタント：ウクライナ語、英語、ロシア語ほか 10 言語。",
+        "Keyboard layout switcher and typing assistant for Mac: Ukrainian, English and 11 more languages.": "Mac 用のキーボード配列切り替え・入力アシスタント：ウクライナ語、英語ほか 11 言語。",
         "Check for updates automatically": "アップデートを自動的に確認",
         "What’s New": "新機能",
         "Update": "アップデート",
@@ -199,8 +202,8 @@ extension Translations {
         "Smart transcription": "スマート文字起こし",
         "Removes fillers and self-corrections (“at one, no, at two” → “at two”), formats lists.": "言いよどみや言い直し（「1時、いや、2時に」→「2時に」）を取り除き、リストを整えます。",
         "Recognition with Google AI": "Google AI で認識",
-        "With Google AI the recording is sent to Google (with your key) when you finish, and any language is recognized, Russian too. The key is kept in the Keychain. If Google can’t be reached, this Mac recognizes the text. As in the Jot app.": "Google AI を使うと、録音は終了時に（あなたのキーで）Google に送信され、ロシア語を含むあらゆる言語で認識されます。キーは Keychain に保存されます。Google に接続できない場合は、この Mac が文字を認識します。Jot アプリと同じ方式です。",
-        "Press the “Voice input” hotkey (fn by default), speak, press it again — the text appears at the cursor. Esc cancels. Speech is recognized by the NVIDIA Parakeet Ultra model on this Mac (with punctuation; Turkish, Hebrew and Arabic by macOS). Russian is inserted only if it is chosen above. Until the model is downloaded, the built-in macOS recognition is used.": "「音声入力」ショートカット（デフォルトは fn）を押して話し、もう一度押すと、カーソル位置にテキストが入力されます。Esc でキャンセルします。音声はこの Mac 上の NVIDIA Parakeet Ultra モデルが認識します（句読点付き。トルコ語、ヘブライ語、アラビア語は macOS が認識）。ロシア語は上で選択した場合のみ入力されます。モデルのダウンロードが完了するまでは、macOS 内蔵の認識を使用します。",
+        "With Google AI the recording is sent to Google (with your key) when you finish, and any language is recognized. The key is kept in the Keychain. If Google can’t be reached, this Mac recognizes the text.": "Google AI を使うと、録音は終了時に（あなたのキーで）Google に送信され、どの言語でも認識されます。キーはキーチェーンに保存されます。Google に接続できない場合は、この Mac が文字に起こします。",
+        "Press the “Voice input” hotkey (fn by default), speak, press it again — the text appears at the cursor. Esc cancels. Speech is recognized by the NVIDIA Parakeet Ultra model on this Mac, with punctuation. Turkish, Hebrew and Arabic are recognized by macOS: turn on Dictation for them in System Settings → Keyboard. Languages not chosen above are never inserted. Until the model is downloaded, the built-in macOS recognition is used.": "「音声入力」ショートカット（既定は fn）を押して話し、もう一度押すと、カーソル位置にテキストが入ります。Esc で取り消し。音声はこの Mac 上の NVIDIA Parakeet Ultra モデルが句読点付きで認識します。トルコ語・ヘブライ語・アラビア語は macOS が認識します：システム設定 → キーボードでこれらの音声入力をオンにしてください。上で選んでいない言語は挿入されません。モデルのダウンロードが終わるまでは macOS 内蔵の認識を使います。",
         "The exception is Google AI recognition, if you turn it on in the Voice settings: then recordings are sent to Google.": "例外は Google AI による認識です。「音声」設定でオンにすると、録音が Google に送信されます。",
         "The recording is too long for Google AI.": "録音が長すぎて Google AI で処理できません。",
         "Couldn’t save the key in the Keychain.": "キーをキーチェーン（Keychain）に保存できませんでした。",

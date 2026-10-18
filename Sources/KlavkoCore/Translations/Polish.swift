@@ -2,8 +2,11 @@
 
 extension Translations {
     public static let polish: [String: String] = [
+        "My language": "Mój język",
+        "Translate into": "Tłumacz na",
+        "Text in my language is translated into the chosen language, text in any other language into mine. The languages can also be changed right in the translation panel.": "Tekst w moim języku jest tłumaczony na wybrany język, a tekst w każdym innym języku — na mój. Języki można też zmienić bezpośrednio w oknie tłumaczenia.",
         "Version": "Wersja",
-        "Keyboard layout switcher and typing assistant for Mac: Ukrainian, English, Russian and 10 more languages.": "Przełącznik układu klawiatury i asystent pisania na Maca: ukraiński, angielski, rosyjski i 10 innych języków.",
+        "Keyboard layout switcher and typing assistant for Mac: Ukrainian, English and 11 more languages.": "Przełącznik układu klawiatury i asystent pisania dla Maca: ukraiński, angielski i 11 innych języków.",
         "Check for updates automatically": "Automatycznie sprawdzaj aktualizacje",
         "What’s New": "Co nowego",
         "Update": "Zaktualizuj",
@@ -199,8 +202,8 @@ extension Translations {
         "Smart transcription": "Inteligentna transkrypcja",
         "Removes fillers and self-corrections (“at one, no, at two” → “at two”), formats lists.": "Usuwa słowa-wypełniacze i samopoprawki („o pierwszej, nie, o drugiej” → „o drugiej”), formatuje listy.",
         "Recognition with Google AI": "Rozpoznawanie przez Google AI",
-        "With Google AI the recording is sent to Google (with your key) when you finish, and any language is recognized, Russian too. The key is kept in the Keychain. If Google can’t be reached, this Mac recognizes the text. As in the Jot app.": "Z Google AI nagranie jest po zakończeniu wysyłane do Google (z użyciem Twojego klucza) i rozpoznawane w dowolnym języku, także po rosyjsku. Klucz jest przechowywany w Keychain. Jeśli Google jest niedostępne, tekst rozpoznaje ten Mac. Jak w aplikacji Jot.",
-        "Press the “Voice input” hotkey (fn by default), speak, press it again — the text appears at the cursor. Esc cancels. Speech is recognized by the NVIDIA Parakeet Ultra model on this Mac (with punctuation; Turkish, Hebrew and Arabic by macOS). Russian is inserted only if it is chosen above. Until the model is downloaded, the built-in macOS recognition is used.": "Naciśnij skrót „Wprowadzanie głosowe” (domyślnie fn), mów i naciśnij go ponownie — tekst pojawi się w miejscu kursora. Esc anuluje. Mowę rozpoznaje model NVIDIA Parakeet Ultra na tym Macu (z interpunkcją; turecki, hebrajski i arabski — macOS). Rosyjski jest wstawiany tylko wtedy, gdy wybrano go powyżej. Dopóki model nie zostanie pobrany, działa wbudowane rozpoznawanie macOS.",
+        "With Google AI the recording is sent to Google (with your key) when you finish, and any language is recognized. The key is kept in the Keychain. If Google can’t be reached, this Mac recognizes the text.": "Z Google AI nagranie po zakończeniu jest wysyłane do Google (z Twoim kluczem) i rozpoznawany jest każdy język. Klucz jest przechowywany w pęku kluczy. Jeśli Google jest niedostępne, tekst rozpozna ten Mac.",
+        "Press the “Voice input” hotkey (fn by default), speak, press it again — the text appears at the cursor. Esc cancels. Speech is recognized by the NVIDIA Parakeet Ultra model on this Mac, with punctuation. Turkish, Hebrew and Arabic are recognized by macOS: turn on Dictation for them in System Settings → Keyboard. Languages not chosen above are never inserted. Until the model is downloaded, the built-in macOS recognition is used.": "Naciśnij skrót „Wprowadzanie głosowe” (domyślnie fn), mów i naciśnij go ponownie — tekst pojawi się w miejscu kursora. Esc anuluje. Mowę rozpoznaje model NVIDIA Parakeet Ultra na tym Macu, ze znakami interpunkcyjnymi. Turecki, hebrajski i arabski rozpoznaje macOS: włącz dla nich Dyktowanie w Ustawieniach systemowych → Klawiatura. Języki niewybrane powyżej nigdy nie są wstawiane. Dopóki model nie zostanie pobrany, działa wbudowane rozpoznawanie macOS.",
         "The exception is Google AI recognition, if you turn it on in the Voice settings: then recordings are sent to Google.": "Wyjątkiem jest rozpoznawanie przez Google AI, jeśli włączysz je w ustawieniach Głos: wtedy nagrania są wysyłane do Google.",
         "The recording is too long for Google AI.": "Nagranie jest za długie dla Google AI.",
         "Couldn’t save the key in the Keychain.": "Nie udało się zapisać klucza w pęku kluczy (Keychain).",

@@ -2,8 +2,11 @@
 
 extension Translations {
     public static let turkish: [String: String] = [
+        "My language": "Dilim",
+        "Translate into": "Şu dile çevir",
+        "Text in my language is translated into the chosen language, text in any other language into mine. The languages can also be changed right in the translation panel.": "Benim dilimdeki metin seçilen dile, başka herhangi bir dildeki metin benim dilime çevrilir. Diller doğrudan çeviri panelinde de değiştirilebilir.",
         "Version": "Sürüm",
-        "Keyboard layout switcher and typing assistant for Mac: Ukrainian, English, Russian and 10 more languages.": "Mac için klavye düzeni değiştirici ve yazma yardımcısı: Ukraynaca, İngilizce, Rusça ve 10 dil daha.",
+        "Keyboard layout switcher and typing assistant for Mac: Ukrainian, English and 11 more languages.": "Mac için klavye düzeni değiştirici ve yazma yardımcısı: Ukraynaca, İngilizce ve 11 dil daha.",
         "Check for updates automatically": "Güncellemeleri otomatik denetle",
         "What’s New": "Yenilikler",
         "Update": "Güncelle",
@@ -199,8 +202,8 @@ extension Translations {
         "Smart transcription": "Akıllı yazıya dökme",
         "Removes fillers and self-corrections (“at one, no, at two” → “at two”), formats lists.": "Dolgu sözcüklerini ve kendi düzeltmelerini (“birde, hayır, ikide” → “ikide”) temizler, listeleri düzenler.",
         "Recognition with Google AI": "Google AI ile tanıma",
-        "With Google AI the recording is sent to Google (with your key) when you finish, and any language is recognized, Russian too. The key is kept in the Keychain. If Google can’t be reached, this Mac recognizes the text. As in the Jot app.": "Google AI ile kayıt, bitirdiğinde (anahtarınızla) Google’a gönderilir ve Rusça dahil her dilde tanınır. Anahtar Keychain’de saklanır. Google’a ulaşılamazsa metni bu Mac tanır. Jot uygulamasındaki gibi.",
-        "Press the “Voice input” hotkey (fn by default), speak, press it again — the text appears at the cursor. Esc cancels. Speech is recognized by the NVIDIA Parakeet Ultra model on this Mac (with punctuation; Turkish, Hebrew and Arabic by macOS). Russian is inserted only if it is chosen above. Until the model is downloaded, the built-in macOS recognition is used.": "“Sesli giriş” kısayoluna basın (varsayılan fn), konuşun, tekrar basın — metin imlecin olduğu yere eklenir. Esc iptal eder. Konuşmayı bu Mac’teki NVIDIA Parakeet Ultra modeli tanır (noktalama işaretleriyle; Türkçe, İbranice ve Arapça macOS tarafından). Rusça yalnızca yukarıda seçilmişse eklenir. Model indirilene kadar macOS’un yerleşik tanıması kullanılır.",
+        "With Google AI the recording is sent to Google (with your key) when you finish, and any language is recognized. The key is kept in the Keychain. If Google can’t be reached, this Mac recognizes the text.": "Google AI ile kayıt, bitirdiğinizde Google’a (anahtarınızla) gönderilir ve her dil tanınır. Anahtar Anahtar Zinciri’nde saklanır. Google’a ulaşılamazsa metni bu Mac tanır.",
+        "Press the “Voice input” hotkey (fn by default), speak, press it again — the text appears at the cursor. Esc cancels. Speech is recognized by the NVIDIA Parakeet Ultra model on this Mac, with punctuation. Turkish, Hebrew and Arabic are recognized by macOS: turn on Dictation for them in System Settings → Keyboard. Languages not chosen above are never inserted. Until the model is downloaded, the built-in macOS recognition is used.": "“Sesle giriş” kısayoluna (varsayılan fn) basın, konuşun ve yeniden basın — metin imleçte görünür. Esc iptal eder. Konuşmayı bu Mac’teki NVIDIA Parakeet Ultra modeli noktalama işaretleriyle tanır. Türkçe, İbranice ve Arapçayı macOS tanır: bunlar için Sistem Ayarları → Klavye’de Dikte’yi açın. Yukarıda seçilmeyen diller asla eklenmez. Model indirilene kadar macOS’in yerleşik tanıması kullanılır.",
         "The exception is Google AI recognition, if you turn it on in the Voice settings: then recordings are sent to Google.": "Tek istisna, Ses ayarlarında açarsanız Google AI ile tanımadır: bu durumda kayıtlar Google’a gönderilir.",
         "The recording is too long for Google AI.": "Kayıt Google AI için çok uzun.",
         "Couldn’t save the key in the Keychain.": "Anahtar, Anahtar Zinciri’ne (Keychain) kaydedilemedi.",

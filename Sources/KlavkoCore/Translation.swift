@@ -33,9 +33,26 @@ public struct TranslationDirection: Equatable, Sendable {
         recognizer.languageConstraints = Array(Set(candidates)).map { NLLanguage(rawValue: $0) }
         recognizer.processString(text)
         if let best = recognizer.dominantLanguage?.rawValue, candidates.contains(best) { return best }
-        // The recognizer had nothing to go on: Cyrillic is the home language, anything else English.
+        // The recognizer had nothing to go on: Cyrillic text is the first Cyrillic candidate, anything else
+        // the first other one.
+        let cyrillicLanguages: Set<String> = ["uk", "ru"]
         let cyrillic = letters.filter { (0x0400...0x04FF).contains($0.value) }.count
-        return cyrillic * 2 > letters.count ? candidates.first : "en"
+        return cyrillic * 2 > letters.count
+            ? candidates.first(where: cyrillicLanguages.contains) ?? candidates.first
+            : candidates.first(where: { !cyrillicLanguages.contains($0) }) ?? "en"
+    }
+
+    /// Languages the macOS translator handles on this Mac without the internet, for the translation
+    /// pickers. (Greek has a layout and voice input, but the macOS translator doesn't support it.)
+    public static let languages = ["uk", "en", "ru", "de", "fr", "es", "it", "pt", "pl", "tr", "he", "ar"]
+
+    /// The user's pair from Settings: text in `own` → into `other`; text in any other language → into `own`.
+    /// `layouts`: other languages to tell apart (the keyboard layouts').
+    public init(for text: String, own: String, other: String, layouts: [String] = []) {
+        let candidates = [own, other] + layouts.filter { Self.languages.contains($0) && $0 != own && $0 != other }
+        let source = Self.language(of: text, among: candidates) ?? other
+        self = source == own ? TranslationDirection(source: own, target: other)
+            : TranslationDirection(source: source, target: own)
     }
 
     public var reversed: TranslationDirection { TranslationDirection(source: target, target: source) }

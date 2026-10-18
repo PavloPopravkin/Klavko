@@ -35,6 +35,8 @@ final class Settings: ObservableObject {
         static let clipboardIgnoredApps = "clipboardIgnoredApps"
         static let voiceLanguage = "voiceLanguage"
         static let voiceLanguages = "voiceLanguages"
+        static let translationOwn = "translationOwn"
+        static let translationOther = "translationOther"
         static let voiceEngine = "voiceEngine"
         static let googleSmart = "googleSmart"
         static let googleModel = "googleModel"
@@ -118,6 +120,22 @@ final class Settings: ObservableObject {
 
     /// Languages the user speaks, for voice input on this Mac ("uk", "en", "ru"…; never empty).
     /// Russian is inserted only if it is here. Google AI recognizes any language anyway.
+    /// Translation by default: text in `translationOwn` goes into `translationOther`, any other text into
+    /// `translationOwn`.
+    @Published var translationOwn: String {
+        didSet {
+            defaults.set(translationOwn, forKey: Key.translationOwn)
+            if translationOther == translationOwn { translationOther = translationOwn == "en" ? "uk" : "en" }
+        }
+    }
+
+    @Published var translationOther: String {
+        didSet {
+            defaults.set(translationOther, forKey: Key.translationOther)
+            if translationOther == translationOwn { translationOwn = translationOther == "en" ? "uk" : "en" }
+        }
+    }
+
     @Published var voiceLanguages: [String] {
         didSet {
             if voiceLanguages.isEmpty { voiceLanguages = ["uk"] }
@@ -308,6 +326,11 @@ final class Settings: ObservableObject {
         AppLanguage.current = language
         // Before 0.13 it was one choice: "auto" (Ukrainian and English), "uk" or "en".
         let oldVoice = defaults.string(forKey: Key.voiceLanguage)
+        let languages = TranslationDirection.languages
+        let own = defaults.string(forKey: Key.translationOwn).flatMap { languages.contains($0) ? $0 : nil } ?? "uk"
+        translationOwn = own
+        translationOther = defaults.string(forKey: Key.translationOther)
+            .flatMap { languages.contains($0) && $0 != own ? $0 : nil } ?? (own == "en" ? "uk" : "en")
         let storedVoices = (defaults.stringArray(forKey: Key.voiceLanguages) ?? [])
             .filter(Self.speechLanguages.contains)
         voiceLanguages = !storedVoices.isEmpty ? storedVoices

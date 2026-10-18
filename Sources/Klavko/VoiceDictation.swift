@@ -30,7 +30,7 @@ final class VoiceDictation: ObservableObject {
     /// The better recognizer, once its model is downloaded; macOS speech recognition otherwise.
     var parakeet: ParakeetEngine?
     /// Google AI, when the user chose it and saved a key: it then recognizes the finished recording
-    /// (any language, Russian too); the recognizers on this Mac stay the fallback.
+    /// (any language); the recognizers on this Mac stay the fallback.
     var google: () -> (transcriber: GeminiTranscriber, key: String, model: String, smart: Bool)? = { nil }
     /// The language to listen in first (the keyboard layout's).
     var preferredLanguage: () -> String = { "uk" }

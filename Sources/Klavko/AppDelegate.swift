@@ -97,6 +97,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         engine.onClipboard = { [unowned self] in
             MainActor.assumeIsolated { clipboardWindow.toggle() }
         }
+        translator.defaultPair = { [unowned self] in (settings.translationOwn, settings.translationOther) }
         engine.onTranslate = { [unowned self] in
             MainActor.assumeIsolated { translator.start() }
         }

@@ -6,7 +6,6 @@ import Foundation
 public enum AppLanguage: String, CaseIterable, Codable, Sendable {
     case ukrainian = "uk"
     case english = "en"
-    case russian = "ru"
     case spanish = "es"
     case french = "fr"
     case german = "de"
@@ -36,7 +35,6 @@ public enum AppLanguage: String, CaseIterable, Codable, Sendable {
         switch self {
         case .ukrainian: "Українська"
         case .english: "English"
-        case .russian: "Русский"
         case .spanish: "Español"
         case .french: "Français"
         case .german: "Deutsch"
@@ -64,7 +62,6 @@ public enum AppLanguage: String, CaseIterable, Codable, Sendable {
     public var translations: [String: String]? {
         switch self {
         case .ukrainian, .english: nil
-        case .russian: Translations.russian
         case .spanish: Translations.spanish
         case .french: Translations.french
         case .german: Translations.german

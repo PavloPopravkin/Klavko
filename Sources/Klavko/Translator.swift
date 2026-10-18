@@ -26,6 +26,9 @@ final class Translator: ObservableObject {
     @Published private(set) var stage: Stage = .working
     @Published private(set) var job: Job?
 
+    /// The default pair from Settings: (own language, other language).
+    var defaultPair: () -> (own: String, other: String) = { ("uk", "en") }
+
     private var panel: NSPanel?
     /// The mouse position the panel opened at; it stays next to it as its content grows.
     private var anchor = NSPoint.zero
@@ -62,13 +65,32 @@ final class Translator: ObservableObject {
         }
     }
 
-    /// From the selection's language to English, or from English into the user's own language: the
-    /// interface language if it has a layout, else Ukrainian if it has one, else the first non-English layout's.
+    /// The Settings pair: text in the own language goes into the other one, anything else into the own one.
     private func direction(for text: String) -> TranslationDirection {
-        let languages = SystemLayouts.enabledLayouts().map(\.map.language)
-        let own = languages.filter { $0 != "en" }
-        let home = [AppLanguage.current.rawValue, "uk"].first(where: own.contains) ?? own.first ?? "uk"
-        return TranslationDirection(for: text, home: home, languages: languages)
+        let pair = defaultPair()
+        let layouts = SystemLayouts.enabledLayouts().map(\.map.language)
+        return TranslationDirection(for: text, own: pair.own, other: pair.other, layouts: layouts)
+    }
+
+    /// Picked in the panel: translate the same text again from `source`.
+    func setSource(_ source: String) {
+        guard let job, source != job.direction.source else { return }
+        let target = source == job.direction.target ? job.direction.source : job.direction.target
+        translate(job.text, TranslationDirection(source: source, target: target))
+    }
+
+    /// Picked in the panel: translate the same text again into `target`.
+    func setTarget(_ target: String) {
+        guard let job, target != job.direction.target else { return }
+        let source = target == job.direction.source ? job.direction.target : job.direction.source
+        translate(job.text, TranslationDirection(source: source, target: target))
+    }
+
+    /// A language's name in the interface language, with its flag: "🇺🇦 Українська".
+    static func languageName(_ code: String) -> String {
+        let locale = AppLanguage.current.locale
+        let name = locale.localizedString(forLanguageCode: code)?.capitalized(with: locale) ?? code
+        return LanguageFlags.emoji[code].map { "\($0) \(name)" } ?? name
     }
 
     /// The same text the other way round, for when the guess was wrong.
@@ -237,17 +259,19 @@ private struct TranslatorPanelView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Text(tr("Klavko · Переклад", "Klavko · Translation")).font(.headline)
-                Spacer()
-                if let job = translator.job {
+            Text(tr("Klavko · Переклад", "Klavko · Translation")).font(.headline)
+            if let job = translator.job {
+                // From / into: a change translates the text in the panel again right away.
+                HStack(spacing: 6) {
+                    languagePicker(job.direction.source) { translator.setSource($0) }
                     Button {
                         translator.swapDirection()
                     } label: {
-                        Text(job.direction.title)
+                        Image(systemName: "arrow.left.arrow.right")
                     }
                     .buttonStyle(.borderless)
                     .help(tr("Перекласти в інший бік", "Translate the other way"))
+                    languagePicker(job.direction.target) { translator.setTarget($0) }
                 }
             }
             content
@@ -255,6 +279,16 @@ private struct TranslatorPanelView: View {
         .padding(16)
         .frame(width: 440)
         .modifier(TranslationRunner(translator: translator))
+    }
+
+    private func languagePicker(_ selected: String, onChange: @escaping (String) -> Void) -> some View {
+        Picker("", selection: Binding(get: { selected }, set: onChange)) {
+            ForEach(TranslationDirection.languages, id: \.self) { code in
+                Text(Translator.languageName(code)).tag(code)
+            }
+        }
+        .labelsHidden()
+        .frame(maxWidth: .infinity)
     }
 
     @ViewBuilder private var content: some View {

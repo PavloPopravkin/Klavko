@@ -2,8 +2,11 @@
 
 extension Translations {
     public static let chinese: [String: String] = [
+        "My language": "我的语言",
+        "Translate into": "翻译为",
+        "Text in my language is translated into the chosen language, text in any other language into mine. The languages can also be changed right in the translation panel.": "我的语言的文本会翻译为所选语言，任何其他语言的文本会翻译为我的语言。也可以直接在翻译面板中更改语言。",
         "Version": "版本",
-        "Keyboard layout switcher and typing assistant for Mac: Ukrainian, English, Russian and 10 more languages.": "Mac 键盘布局切换与输入助手：乌克兰语、英语、俄语及另外 10 种语言。",
+        "Keyboard layout switcher and typing assistant for Mac: Ukrainian, English and 11 more languages.": "适用于 Mac 的键盘布局切换与输入助手：乌克兰语、英语及另外 11 种语言。",
         "Check for updates automatically": "自动检查更新",
         "What’s New": "新功能",
         "Update": "更新",
@@ -199,8 +202,8 @@ extension Translations {
         "Smart transcription": "智能转写",
         "Removes fillers and self-corrections (“at one, no, at two” → “at two”), formats lists.": "去除语气词和自我纠正（“一点，不，两点” → “两点”），并整理列表格式。",
         "Recognition with Google AI": "使用 Google AI 识别",
-        "With Google AI the recording is sent to Google (with your key) when you finish, and any language is recognized, Russian too. The key is kept in the Keychain. If Google can’t be reached, this Mac recognizes the text. As in the Jot app.": "使用 Google AI 时，录音在结束后会（通过你的密钥）发送给 Google，并可识别任何语言，包括俄语。密钥保存在 Keychain 中。如果无法连接 Google，则由这台 Mac 识别文字。与 Jot 应用相同。",
-        "Press the “Voice input” hotkey (fn by default), speak, press it again — the text appears at the cursor. Esc cancels. Speech is recognized by the NVIDIA Parakeet Ultra model on this Mac (with punctuation; Turkish, Hebrew and Arabic by macOS). Russian is inserted only if it is chosen above. Until the model is downloaded, the built-in macOS recognition is used.": "按下“语音输入”快捷键（默认为 fn），说话，再按一次——文字会出现在光标处。按 Esc 取消。语音由这台 Mac 上的 NVIDIA Parakeet Ultra 模型识别（含标点；土耳其语、希伯来语和阿拉伯语由 macOS 识别）。只有在上方选择了俄语时才会插入俄语。模型下载完成前，使用 macOS 内置识别。",
+        "With Google AI the recording is sent to Google (with your key) when you finish, and any language is recognized. The key is kept in the Keychain. If Google can’t be reached, this Mac recognizes the text.": "使用 Google AI 时，录音在结束后会（使用你的密钥）发送到 Google，可识别任何语言。密钥保存在钥匙串中。如果无法连接 Google，则由这台 Mac 识别文本。",
+        "Press the “Voice input” hotkey (fn by default), speak, press it again — the text appears at the cursor. Esc cancels. Speech is recognized by the NVIDIA Parakeet Ultra model on this Mac, with punctuation. Turkish, Hebrew and Arabic are recognized by macOS: turn on Dictation for them in System Settings → Keyboard. Languages not chosen above are never inserted. Until the model is downloaded, the built-in macOS recognition is used.": "按下“语音输入”快捷键（默认 fn），说话，再按一次——文本会出现在光标处。Esc 取消。语音由这台 Mac 上的 NVIDIA Parakeet Ultra 模型识别，并带标点。土耳其语、希伯来语和阿拉伯语由 macOS 识别：请在“系统设置”→“键盘”中为它们打开听写。未在上方选择的语言永远不会被插入。模型下载完成前，使用 macOS 内置识别。",
         "The exception is Google AI recognition, if you turn it on in the Voice settings: then recordings are sent to Google.": "例外是 Google AI 识别：如果你在“语音”设置中开启它，录音会发送给 Google。",
         "The recording is too long for Google AI.": "录音太长，Google AI 无法处理。",
         "Couldn’t save the key in the Keychain.": "无法将密钥存入钥匙串（Keychain）。",
