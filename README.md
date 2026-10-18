@@ -1,113 +1,115 @@
 # Klavko
 
-Безкоштовний помічник для набору тексту на Mac — українською, англійською та ще 11 мовами.
+[🇺🇦 Українська](README.uk.md) · 🇬🇧 **English**
 
-Klavko сам перемикає розкладку, коли слово набрано не тією мовою (`ghbdsn` → `привіт`), виправляє очевидні помилки й оформлює текст. А ще в ньому є голосовий ввід, переклад виділеного тексту та історія буфера обміну. Усе працює на вашому Mac: без облікових записів, ключів і онлайн-сервісів, а набраний текст нікуди не надсилається.
+A free typing assistant for Mac — in Ukrainian, English and 11 more languages.
 
-## Завантажити
+Klavko switches the keyboard layout by itself when a word was typed in the wrong one (`ghbdsn` → `привіт`), fixes obvious typos and tidies up your text. It also has voice input, translation of selected text, text recognition from the screen and a clipboard history. Everything runs on your Mac: no accounts, keys or online services, and nothing you type is sent anywhere.
 
-**[⬇︎ Остання версія](../../releases/latest)** — завантажте `Klavko-….zip`, розпакуйте й дотримуйтеся інструкції «Як встановити Klavko.txt» з архіву.
+## Download
 
-Потрібно: macOS 14 або новіша (для перекладу — macOS 15), щонайменше дві розкладки з підтримуваних мов (див. «Мови розкладок»). Програма не нотаризована Apple, тому під час першого запуску macOS попередить — в інструкції описано, як її відкрити.
+**[⬇︎ Latest version](../../releases/latest)** — download `Klavko-….zip`, unzip it and follow “How to install Klavko.txt” in the archive (Ukrainian: «Як встановити Klavko.txt»).
 
-## Можливості
+Requirements: macOS 14 or later (translation needs macOS 15), at least two keyboard layouts of the supported languages (see “Layout languages”). The app isn’t notarized by Apple, so macOS warns on the first launch — the guide explains how to open it.
 
-### Розкладка
-- Набираєте `ghb…` — Klavko вже на третій літері бачить, що це українське «при…», і перемикає розкладку посеред слова.
-- Слово, яке не розпізналося під час набору, перевіряється після пробілу, Tab, Enter або розділового знака: `ghbdsn?` стане `привіт,`.
-- Гарячі клавіші, щоб змінити розкладку слова, виділеного тексту або всього щойно набраного; змінити регістр (малі → Перша велика → ВЕЛИКІ).
-- Скасувати заміну — Backspace одразу після неї або повторне натискання гарячої клавіші.
-- **Винятки** — слова, які Klavko ніколи не змінює. Якщо двічі скасувати заміну того самого слова, Klavko сам запропонує додати його сюди.
-- Прапор поточної розкладки (🇺🇦, 🇺🇸, 🇩🇪…) у рядку меню й тихий звук після перемикання (можна змінити або вимкнути).
-- У терміналах і редакторах коду за замовчуванням вимкнений; будь-яку програму можна виключити з меню.
+## Features
 
-### Мови розкладок
-- Перемикання працює між будь-якими увімкненими в macOS розкладками 13 мов, серед них українська, англійська, німецька, французька, іспанська, італійська, португальська, польська, турецька, грецька, іврит і арабська.
-- Якщо розкладок більше двох, Klavko перевіряє слово словником кожної мови й обирає ту, де воно справжнє. За рівності спершу береться розкладка з іншим алфавітом (латиниця ↔ кирилиця), далі та, якою ви користувалися останньою.
-- Китайська, японська й корейська вводяться через методи вводу, а не розкладки, тому не підтримуються.
+### Keyboard layout
+- Type `ghb…` — by the third letter Klavko sees it’s the Ukrainian «при…» and switches the layout in the middle of the word.
+- A word not recognized while typing is checked after Space, Tab, Return or punctuation: `ghbdsn?` becomes `привіт,`.
+- Hotkeys to switch the layout of the word, the selection or everything just typed, and to change case (lower → Title → UPPER).
+- Undo a fix with Backspace right after it, or by pressing the hotkey again.
+- **Exceptions** — words Klavko never changes. Undo the fix of the same word twice and Klavko offers to add it.
+- The current layout’s flag (🇺🇦, 🇺🇸, 🇩🇪…) in the menu bar and a soft sound after switching (can be changed or turned off).
+- Off by default in terminals and code editors; any app can be excluded from the menu.
 
-### Помилки й оформлення
-- Очевидні помилки виправляються після слова: `пртвіт` → `привіт`, `рлбиш` → `робиш` (сусідня клавіша), `ПРивіт` → `Привіт` (залиплий Shift). Сумнівні слова, імена посеред речення й слова з цифрами лишаються як є.
-- Пропущений пробіл після розділового знака: `Привіт,як` → `Привіт, як`.
-- Велика літера на початку речення; `...` → `…`, `"` → `«»` / `“”`, ` - ` → ` — `, `(c)` → `©`; продовження списків `- ` і `1. ` після Enter.
-- Власні заміни: `сп` → `спасибі`, `:)` → `🙂`, `зсу` → `ЗСУ`.
+### Layout languages
+- Switching works between any enabled macOS layouts of 13 languages, including Ukrainian, English, German, French, Spanish, Italian, Portuguese, Polish, Turkish, Greek, Hebrew and Arabic.
+- With more than two layouts, Klavko checks the word against each language’s dictionary and picks the one where it is a real word. On a tie, a layout with a different alphabet comes first (Latin ↔ Cyrillic), then the one you used last.
+- Chinese, Japanese and Korean are typed with input methods rather than layouts, so they aren’t supported.
 
-### Голосовий ввід
-- Натисніть **fn (🌐)**, говоріть мовами, вибраними в налаштуваннях («Я говорю»: українська, англійська, німецька та інші), натисніть ще раз або Enter — текст з'явиться там, де курсор. Esc скасовує.
-- Панелька з живою хвилею показує, що ви говорите, ще під час мовлення.
-- Розпізнає модель NVIDIA Parakeet Ultra прямо на Mac — з розділовими знаками й автоматичним визначенням мови. Модель (~600 МБ) завантажується один раз; до того працює вбудоване розпізнавання macOS. Російська вставляється, лише якщо її вибрано в «Я говорю». Турецьку, іврит і арабську розпізнає macOS.
-- **Google AI (за бажанням):** у налаштуваннях голосу можна вибрати «Google AI» і вставити власний ключ з [aistudio.google.com](https://aistudio.google.com/apikey). Тоді запис після натискання надсилається в Google і розпізнається будь-якою мовою; «розумний» режим прибирає «ну», «е-е» й самовиправлення. Ключ зберігається в Keychain. Якщо Google недоступний, текст розпізнає Mac.
-- **Словник:** якщо ви вручну виправите надиктоване слово, Klavko запропонує запам'ятати, як його писати. Власні заміни теж діють для голосу.
+### Typos and formatting
+- Obvious typos are fixed after the word: `teh` → `the`, `pertty` → `pretty`, `HEllo` → `Hello` (stuck Shift). Doubtful words, names mid-sentence and words with digits stay as they are.
+- A missing space after punctuation: `Hi,there` → `Hi, there`.
+- A capital at the start of a sentence; `...` → `…`, `"` → `“”` / `«»`, ` - ` → ` — `, `(c)` → `©`; lists `- ` and `1. ` continue after Return.
+- Your own replacements: `ty` → `thank you`, `:)` → `🙂`.
 
-### Переклад
-- Виділіть текст будь-де й двічі натисніть **⌘** — переклад з'явиться в панельці: Enter замінює виділене, ⌘C копіює.
-- Текст вашою мовою перекладається на вибрану, текст іншою мовою — на вашу. Мовну пару за замовчуванням (спочатку українська ↔ англійська) вибирають у налаштуваннях, а прямо в панельці можна змінити мови — текст одразу перекладеться знову.
-- Мови перекладу: українська, англійська, німецька, французька, іспанська, італійська, португальська, польська, турецька, іврит, арабська та інші.
-- Перекладає вбудований перекладач macOS на вашому Mac; мови завантажуються один раз.
+### Voice input
+- Press **fn (🌐)**, speak in the languages chosen in Settings (“I speak”: Ukrainian, English, German and more), press it again or Return — the text appears at the cursor. Esc cancels.
+- A panel with a live wave shows what you say while you speak.
+- Speech is recognized by the NVIDIA Parakeet Ultra model right on your Mac — with punctuation and automatic language detection. The model (~600 MB) is downloaded once; until then the built-in macOS recognition is used. Languages not chosen in “I speak” are never inserted. Turkish, Hebrew and Arabic are recognized by macOS.
+- **Google AI (optional):** in the voice settings you can choose “Google AI” and paste your own key from [aistudio.google.com](https://aistudio.google.com/apikey). The recording is then sent to Google when you finish and any language is recognized; the “smart” mode removes fillers and self-corrections. The key is kept in the Keychain. If Google can’t be reached, your Mac recognizes the text.
+- **Vocabulary:** fix a dictated word by hand and Klavko offers to remember how you write it. Your replacements apply to voice input too.
 
-### Текст з екрана
-- Натисніть **⌃Q** і виділіть область екрана — Klavko прочитає текст у ній (навіть на картинці чи там, де його не можна виділити) і перекладе за вашою парою мов.
-- Перемикач «Переклад / Оригінал» у тому самому вікні показує розпізнаний текст без перекладу; «Копіювати» забирає те, що показано.
-- Розпізнавання працює на Mac, без інтернету. Потрібен дозвіл «Запис екрана» (macOS попросить один раз).
+### Translation
+- Select text anywhere and press **⌘** twice — the translation appears in a panel: Return replaces the selection, ⌘C copies.
+- Text in your language goes into the chosen one, text in any other language into yours. The default pair (Ukrainian ↔ English at first) is set in Settings, and the languages can be changed right in the panel — the text is translated again at once.
+- Translation languages: Ukrainian, English, German, French, Spanish, Italian, Portuguese, Polish, Turkish, Hebrew, Arabic and more.
+- The macOS translator does the work on your Mac; the languages are downloaded once.
 
-### Історія буфера обміну
-- **⌥⌘V** показує все, що ви копіювали: текст, посилання, картинки, файли — з пошуком і переглядом.
-- Enter вставляє в програму, з якої ви відкрили вікно; ⌘P закріплює, ⌘⌫ видаляє, ⌘1…⌘9 вставляють одразу.
-- Зберігається лише на Mac (за замовчуванням 30 днів). Паролі з менеджерів паролів не записуються. Звук під час копіювання можна змінити або вимкнути.
+### Text from the screen
+- Press **⌃Q** and select an area of the screen — Klavko reads the text in it (even in a picture or where it can’t be selected) and translates it with your language pair.
+- The Translation / Original switch in the same panel shows the recognized text without translation; Copy takes what is shown.
+- Recognition runs on your Mac, offline. It needs the Screen Recording permission (macOS asks once).
 
-### Інтерфейс й оновлення
-- Налаштування на вкладках: Загальні, Розкладка, Текст, Голос, Буфер, Клавіші, Про Klavko.
-- Klavko сам повідомляє про нову версію й оновлюється однією кнопкою «Оновити» — без завантаження й встановлення вручну.
-- Мова інтерфейсу — українська, English, español, français, Deutsch, italiano, português, polski, Türkçe, 简体中文, 日本語 або 한국어.
+### Clipboard history
+- **⌥⌘V** shows everything you copied: text, links, pictures, files — with search and preview.
+- Return pastes into the app you came from; ⌘P pins, ⌘⌫ deletes, ⌘1…⌘9 paste right away.
+- Kept on your Mac only (30 days by default). Passwords from password managers are never recorded. The copy sound can be changed or turned off.
 
-## Гарячі клавіші
+### Interface and updates
+- Settings in tabs: General, Layout, Text, Voice, Clipboard, Hotkeys, About.
+- Klavko tells you about a new version and updates with one “Update” button — nothing to download or install by hand.
+- Interface languages: Українська, English, español, français, Deutsch, italiano, português, polski, Türkçe, 简体中文, 日本語 and 한국어.
 
-Усі змінюються в налаштуваннях (вкладка «Клавіші»).
+## Hotkeys
 
-| Дія | За замовчуванням |
+All can be changed in Settings (Hotkeys tab).
+
+| Action | Default |
 |---|---|
-| Змінити розкладку слова | ⇧⇧ (двічі Shift) |
-| Змінити розкладку виділеного або всього набраного | ⌥⌥ (двічі Option) |
-| Скасувати або повернути виправлення | не задано |
-| Змінити регістр | не задано |
-| Перекласти виділене | ⌘⌘ (двічі Command) |
-| Текст з екрана (розпізнати й перекласти) | ⌃Q |
-| Історія буфера обміну | ⌥⌘V |
-| Голосовий ввід | fn |
+| Switch the layout of the word | ⇧⇧ (Shift twice) |
+| Switch the layout of the selection or everything typed | ⌥⌥ (Option twice) |
+| Undo or redo a fix | not set |
+| Change case | not set |
+| Translate the selection | ⌘⌘ (Command twice) |
+| Text from the screen (read and translate) | ⌃Q |
+| Clipboard history | ⌥⌘V |
+| Voice input | fn |
 
-Гарячою клавішею може бути клавіша з модифікаторами (⌃⇧Space), самі модифікатори разом (⌥⌘) або подвійне натискання (⇧⇧).
+A hotkey can be a key with modifiers (⌃⇧Space), modifiers alone together (⌥⌘) or a double press (⇧⇧).
 
-## Приватність
+## Privacy
 
-Klavko працює повністю на вашому Mac. Набраний і надиктований текст, переклади та історія буфера обміну нікуди не надсилаються; у пам'яті під час набору зберігається лише текст від останнього кліку чи Enter. Виняток — голосовий ввід через Google AI, якщо ви самі його ввімкнули: тоді запис надсилається в Google. Інтернет потрібен тільки один раз — щоб завантажити модель розпізнавання мовлення (з Hugging Face) і мови для перекладу (від Apple). Крім того, Klavko час від часу перевіряє на GitHub, чи вийшла нова версія (це вимикається в налаштуваннях).
+Klavko runs entirely on your Mac. What you type and dictate, translations and the clipboard history are never sent anywhere; while you type, only the text since the last click or Return is kept in memory. The one exception is voice input through Google AI, if you turn it on yourself: then the recording is sent to Google. The internet is needed only once — to download the speech recognition model (from Hugging Face) and the translation languages (from Apple). Klavko also checks GitHub now and then for a new version (can be turned off in Settings).
 
-## Підтримати
+## Support
 
-Klavko безкоштовний. Якщо він вам допомагає, можна [подякувати автору](https://send.monobank.ua/jar/2CKJVz8jam) ❤️
+Klavko is free. If it helps you, you can [thank the author](https://send.monobank.ua/jar/2CKJVz8jam) ❤️
 
-## Для розробників
+## For developers
 
 ```bash
-swift test               # тести логіки
-scripts/install.sh       # зібрати, встановити в /Applications і запустити
-scripts/share.sh         # архів для поширення (dist/Klavko-<версія>.zip)
-scripts/check-translations.py  # чи всі тексти інтерфейсу перекладені в Sources/KlavkoCore/Translations
+swift test               # logic tests
+scripts/install.sh       # build, install to /Applications and launch
+scripts/share.sh         # archive to share (dist/Klavko-<version>.zip)
+scripts/check-translations.py  # are all interface texts translated in Sources/KlavkoCore/Translations
 ```
 
-Під час першого запуску дозвольте доступ у **System Settings → Privacy & Security → Accessibility**.
+On the first launch, allow access in **System Settings → Privacy & Security → Accessibility**.
 
-- `Sources/KlavkoCore` — розкладки, визначення мови, перевірка орфографії, історія буфера (без дозволів, покрито тестами).
-- `Sources/Klavko` — програма в рядку меню: перехоплення клавіш, заміна тексту, голосовий ввід, переклад, вікна.
+- `Sources/KlavkoCore` — layouts, language detection, spell checking, clipboard history (no permissions needed, covered by tests).
+- `Sources/Klavko` — the menu bar app: key capture, text replacement, voice input, translation, windows.
 
-Журнал (без вмісту набраного тексту):
+Log (without the typed text):
 
 ```bash
 /usr/bin/log show --last 1h --predicate 'subsystem == "app.klavko.Klavko"'
 ```
 
-## Подяки
+## Credits
 
-- Голосовий ввід: модель [NVIDIA Parakeet](https://huggingface.co/nvidia/parakeet-tdt-0.6b-v3) (CC-BY-4.0), версія Parakeet Ultra, у форматі Core ML через [FluidAudio](https://github.com/FluidInference/FluidAudio) (Apache-2.0).
-- Переклад, перевірка орфографії й запасне розпізнавання мовлення — вбудовані можливості macOS.
+- Voice input: the [NVIDIA Parakeet](https://huggingface.co/nvidia/parakeet-tdt-0.6b-v3) model (CC-BY-4.0), Parakeet Ultra version, in Core ML format via [FluidAudio](https://github.com/FluidInference/FluidAudio) (Apache-2.0).
+- Translation, spell checking and fallback speech recognition — built-in macOS features.
 
 © 2026 Serhii Stepaniuk

@@ -1,5 +1,5 @@
 #!/bin/bash
-# Builds Klavko and packs it with the install guide into dist/Klavko-<version>.zip,
+# Builds Klavko and packs it with the install guides (Ukrainian and English) into dist/Klavko-<version>.zip,
 # the archive to give to other people (or attach to a GitHub release).
 set -euo pipefail
 cd "$(dirname "$0")/.."
@@ -12,6 +12,7 @@ STAGE="$(mktemp -d)/Klavko $VERSION"
 mkdir -p "$STAGE" dist
 cp -R build/Klavko.app "$STAGE/"
 cp "Distribution/Як встановити Klavko.txt" "$STAGE/"
+cp "Distribution/How to install Klavko.txt" "$STAGE/"
 
 ZIP="dist/Klavko-$VERSION.zip"
 rm -f "$ZIP"
