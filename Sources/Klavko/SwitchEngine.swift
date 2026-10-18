@@ -666,7 +666,12 @@ final class SwitchEngine {
         let context = languageOfPreviousWord(beforeLast: typed.count + typedTrail.count)
         // The first layout in which the keys spell a real word.
         guard let found = candidates(for: word, pair).first(where: { option in
-            analyzer.shouldConvert(typed: typed, typedLanguage: option.pair.current.map.language,
+            // The same alphabet (English and French, Ukrainian and Russian): a short word there is
+            // too often a real word of both, so only the sentence around it decides.
+            if option.pair.alternative.map.script == pair.current.map.script,
+               TextRules.coreWord(option.text).count <= ShortWords.maxLength,
+               context != option.pair.alternative.map.language { return false }
+            return analyzer.shouldConvert(typed: typed, typedLanguage: option.pair.current.map.language,
                                    alternative: option.text, alternativeLanguage: option.pair.alternative.map.language,
                                    contextLanguage: context)
         }) else { return false }
