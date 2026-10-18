@@ -135,7 +135,7 @@ final class GeminiTranscriber: @unchecked Sendable {
     // MARK: - Transport
 
     private func post(_ path: String, body: [String: Any], key: String, deadline: TimeInterval,
-                      modelInPath: Bool = true) async throws -> Data {
+                      modelInPath: Bool = true, retried: Bool = false) async throws -> Data {
         var request = URLRequest(url: Self.endpoint.appendingPathComponent(path))
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -157,10 +157,23 @@ final class GeminiTranscriber: @unchecked Sendable {
         case 403, 404:
             // On interactions this is about the endpoint, not the model.
             throw modelInPath ? Failure.noModel : Failure.server("interactions unavailable (\(http.statusCode))")
-        case 429: throw Failure.quota
+        case 429:
+            // A per-minute limit says how long to wait ("retryDelay": "2s"): wait once if it's short.
+            if !retried, let delay = Self.retryDelay(data, http), delay <= 8 {
+                try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+                return try await post(path, body: body, key: key, deadline: deadline, modelInPath: modelInPath, retried: true)
+            }
+            throw Failure.quota
         case 400: throw Failure.rejectedKey(Self.errorMessage(data))
         default: throw Failure.server(Self.errorMessage(data) ?? "HTTP \(http.statusCode)")
         }
+    }
+
+    private static func retryDelay(_ data: Data, _ http: HTTPURLResponse) -> Double? {
+        if let header = http.value(forHTTPHeaderField: "Retry-After"), let seconds = Double(header) { return seconds }
+        guard let text = String(data: data, encoding: .utf8),
+              let range = text.range(of: #""retryDelay"\s*:\s*"[0-9.]+s""#, options: .regularExpression) else { return nil }
+        return Double(text[range].drop { !$0.isNumber }.prefix { $0.isNumber || $0 == "." })
     }
 
     /// `{"error":{"message"}}` from generateContent, `[{"error":{"message"}}]` from interactions.
