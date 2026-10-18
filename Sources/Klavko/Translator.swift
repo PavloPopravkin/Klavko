@@ -52,7 +52,7 @@ final class Translator: ObservableObject {
             MainActor.assumeIsolated {
                 guard let self else { return }
                 if let text, !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                    self.translate(text, direction(for: text))
+                    self.translate(text, self.direction(for: text))
                 } else {
                     self.job = nil
                     self.stage = .noSelection
