@@ -46,6 +46,8 @@ final class GeminiTranscriber: @unchecked Sendable {
     func transcribe(file: URL, key: String, model: String, smart: Bool, vocabulary: [String]) async throws -> String {
         guard !key.isEmpty else { throw Failure.noKey }
         let flac = try Self.flac(from: file)
+        // Audio goes inline, and a request may be 20 MB at most (base64 adds a third): longer dictation stays local.
+        guard flac.count < 14_000_000 else { throw Failure.server(tr("Запис задовгий для Google AI.", "The recording is too long for Google AI.")) }
         let duration = (try? AVAudioFile(forReading: file)).map { Double($0.length) / $0.fileFormat.sampleRate } ?? 10
         let deadline = 30 + duration / 4
         do {
@@ -164,7 +166,11 @@ final class GeminiTranscriber: @unchecked Sendable {
                 return try await post(path, body: body, key: key, deadline: deadline, modelInPath: modelInPath, retried: true)
             }
             throw Failure.quota
-        case 400: throw Failure.rejectedKey(Self.errorMessage(data))
+        case 400:
+            // A bad key is a 400 too ("API key not valid"); anything else is about the request.
+            let message = Self.errorMessage(data)
+            if message?.localizedCaseInsensitiveContains("api key") == true { throw Failure.rejectedKey(message) }
+            throw Failure.server(message ?? "HTTP 400")
         default: throw Failure.server(Self.errorMessage(data) ?? "HTTP \(http.statusCode)")
         }
     }
@@ -210,11 +216,21 @@ final class GeminiTranscriber: @unchecked Sendable {
     }
 }
 
-/// The Google AI key, kept in the login Keychain (not in the settings file).
+/// The Google AI key, kept in the login Keychain (not in the settings file). Read from the Keychain once,
+/// then from memory: each read may otherwise ask the user again after an update re-signs the app.
 enum GeminiKey {
     private static let service = "app.klavko.Klavko.google-ai"
+    /// Used from the main thread only (settings, starting dictation).
+    nonisolated(unsafe) private static var cached: String??
 
     static func load() -> String? {
+        if let cached { return cached }
+        let key = read()
+        cached = .some(key)
+        return key
+    }
+
+    private static func read() -> String? {
         var item: CFTypeRef?
         let query: [String: Any] = [kSecClass as String: kSecClassGenericPassword, kSecAttrService as String: service,
                                     kSecReturnData as String: true, kSecMatchLimit as String: kSecMatchLimitOne]
@@ -223,12 +239,18 @@ enum GeminiKey {
         return key
     }
 
-    static func save(_ key: String) {
+    /// False if the Keychain refused to store it.
+    @discardableResult
+    static func save(_ key: String) -> Bool {
         let query: [String: Any] = [kSecClass as String: kSecClassGenericPassword, kSecAttrService as String: service]
         SecItemDelete(query as CFDictionary)
-        guard !key.isEmpty else { return }
+        cached = .some(nil)
+        guard !key.isEmpty else { return true }
         var item = query
         item[kSecValueData as String] = Data(key.utf8)
-        SecItemAdd(item as CFDictionary, nil)
+        item[kSecAttrAccessible as String] = kSecAttrAccessibleAfterFirstUnlock
+        guard SecItemAdd(item as CFDictionary, nil) == errSecSuccess else { return false }
+        cached = .some(key)
+        return true
     }
 }

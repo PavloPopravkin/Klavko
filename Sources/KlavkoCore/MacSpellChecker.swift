@@ -23,7 +23,7 @@ public final class MacSpellChecker: SpellChecking {
 
     /// Languages whose macOS spell check passes any string ("λνπφη" is "correct" Greek), while their
     /// completions are real: a word counts as known there when its own completions include it.
-    private static let knownByCompletions: Set<String> = ["el", "he", "ar"]
+    public static let knownByCompletions: Set<String> = ["el", "he", "ar"]
 
     public func isValid(_ word: String, language: String) -> Bool {
         if Self.knownByCompletions.contains(language) {

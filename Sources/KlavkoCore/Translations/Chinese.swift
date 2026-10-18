@@ -202,5 +202,7 @@ extension Translations {
         "With Google AI the recording is sent to Google (with your key) when you finish, and any language is recognized, Russian too. The key is kept in the Keychain. If Google can’t be reached, this Mac recognizes the text. As in the Jot app.": "使用 Google AI 时，录音在结束后会（通过你的密钥）发送给 Google，并可识别任何语言，包括俄语。密钥保存在 Keychain 中。如果无法连接 Google，则由这台 Mac 识别文字。与 Jot 应用相同。",
         "Press the “Voice input” hotkey (fn by default), speak, press it again — the text appears at the cursor. Esc cancels. Speech is recognized by the NVIDIA Parakeet Ultra model on this Mac (with punctuation; Turkish, Hebrew and Arabic by macOS). Russian is inserted only if it is chosen above. Until the model is downloaded, the built-in macOS recognition is used.": "按下“语音输入”快捷键（默认为 fn），说话，再按一次——文字会出现在光标处。按 Esc 取消。语音由这台 Mac 上的 NVIDIA Parakeet Ultra 模型识别（含标点；土耳其语、希伯来语和阿拉伯语由 macOS 识别）。只有在上方选择了俄语时才会插入俄语。模型下载完成前，使用 macOS 内置识别。",
         "The exception is Google AI recognition, if you turn it on in the Voice settings: then recordings are sent to Google.": "例外是 Google AI 识别：如果你在“语音”设置中开启它，录音会发送给 Google。",
+        "The recording is too long for Google AI.": "录音太长，Google AI 无法处理。",
+        "Couldn’t save the key in the Keychain.": "无法将密钥存入钥匙串（Keychain）。",
     ]
 }

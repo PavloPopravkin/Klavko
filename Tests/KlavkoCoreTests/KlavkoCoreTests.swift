@@ -58,7 +58,8 @@ final class SystemLayoutsTests: XCTestCase {
     }
 
     func testConvertsSelectedTextBothWays() throws {
-        let layouts = SystemLayouts.enabledLayouts().map(\.map)
+        // Only English and Ukrainian: with more layouts enabled, a tie would depend on the order macOS lists them in.
+        let layouts = SystemLayouts.enabledLayouts().map(\.map).filter { ["en", "uk"].contains($0.language) }
         let english = try XCTUnwrap(layouts.first { $0.language == "en" })
         let ukrainian = try XCTUnwrap(layouts.first { $0.language == "uk" })
 

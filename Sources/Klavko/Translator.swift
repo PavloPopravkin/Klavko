@@ -62,11 +62,12 @@ final class Translator: ObservableObject {
         }
     }
 
-    /// From the selection's language to English, or from English into the user's own language: the first
-    /// non-English keyboard layout's (Ukrainian if there is none).
+    /// From the selection's language to English, or from English into the user's own language: the
+    /// interface language if it has a layout, else Ukrainian if it has one, else the first non-English layout's.
     private func direction(for text: String) -> TranslationDirection {
         let languages = SystemLayouts.enabledLayouts().map(\.map.language)
-        let home = languages.first { $0 != "en" } ?? "uk"
+        let own = languages.filter { $0 != "en" }
+        let home = [AppLanguage.current.rawValue, "uk"].first(where: own.contains) ?? own.first ?? "uk"
         return TranslationDirection(for: text, home: home, languages: languages)
     }
 

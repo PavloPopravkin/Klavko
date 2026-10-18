@@ -39,9 +39,10 @@ struct SettingsView: View {
         Task {
             do {
                 let model = try await Self.googleCheck.check(key: key)
-                GeminiKey.save(key)
                 settings.googleModel = model
-                googleStatus = (tr("Ключ працює", "The key works") + " · " + model, true)
+                googleStatus = GeminiKey.save(key)
+                    ? (tr("Ключ працює", "The key works") + " · " + model, true)
+                    : (tr("Не вдалося зберегти ключ у Keychain.", "Couldn’t save the key in the Keychain."), false)
             } catch {
                 googleStatus = (error.localizedDescription, false)
             }

@@ -135,6 +135,11 @@ final class VoiceDictation: ObservableObject {
             code = available
             languageTitle = Self.title(code)
         }
+        // Google AI hears any language: if macOS has none of the chosen ones, record with any recognizer
+        // (its text is only the preview and the fallback).
+        if Self.recognizer(code) == nil, google() != nil, let any = ["en", "uk"].first(where: { Self.recognizer($0) != nil }) {
+            code = any
+        }
         guard let recognizer = Self.recognizer(code) else {
             stage = .failed(tr("Розпізнавання мовлення на пристрої недоступне. Увімкніть Диктування в System Settings → Keyboard, щоб macOS завантажила мовні моделі.",
                            "On-device speech recognition isn’t available. Turn on Dictation in System Settings → Keyboard so macOS downloads the language models."))
@@ -227,15 +232,13 @@ final class VoiceDictation: ObservableObject {
                 let text = try await google.transcriber.transcribe(file: file, key: google.key, model: google.model,
                                                                     smart: google.smart, vocabulary: words)
                 guard let self, session == current else { return }
-                complete(with: text, language: "google")
+                guard text.isEmpty else { return complete(with: text, language: "google") }
+                Log.engine.notice("Google AI heard nothing; using this Mac's result")
+                fallBack(from: liveResult)
             } catch {
                 Log.engine.error("Google AI failed: \(error.localizedDescription, privacy: .public)")
                 guard let self, session == current else { return }
-                if let parakeet, parakeet.isDownloaded {
-                    finishWithParakeet(parakeet, liveResult: liveResult)
-                } else {
-                    complete(with: liveResult.text, language: liveResult.language)
-                }
+                fallBack(from: liveResult)
             }
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + 90) { [weak self] in
@@ -244,8 +247,17 @@ final class VoiceDictation: ObservableObject {
         }
     }
 
-    /// Recognizes the whole recording with Parakeet. It may hear Ukrainian as Russian; Russian is never
-    /// inserted — the macOS Ukrainian recognizer redoes it then.
+    /// Google AI gave nothing: Parakeet if it knows the languages, else the live macOS text.
+    private func fallBack(from liveResult: (language: String, text: String)) {
+        if let parakeet, parakeet.isDownloaded, parakeetUsable {
+            finishWithParakeet(parakeet, liveResult: liveResult)
+        } else {
+            complete(with: liveResult.text, language: liveResult.language)
+        }
+    }
+
+    /// Recognizes the whole recording with Parakeet. It may hear Ukrainian as Russian; unless Russian is one
+    /// of the chosen languages, such a result is redone by the macOS Ukrainian recognizer.
     private func finishWithParakeet(_ parakeet: ParakeetEngine, liveResult: (language: String, text: String)) {
         guard let file = fanout.writeRecording() else {
             complete(with: liveResult.text, language: liveResult.language)

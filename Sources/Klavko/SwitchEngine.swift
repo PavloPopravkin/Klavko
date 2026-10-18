@@ -286,7 +286,7 @@ final class SwitchEngine {
         if typedCharacter == "\"" && formattingAllowed(config.typography) {
             return handleStraightQuote(pair)
         }
-        if pair.current.map.isWordCharacter(keystroke) || pair.alternative.map.isWordCharacter(keystroke) {
+        if pair.current.map.isWordCharacter(keystroke) || alternatives.contains(where: { $0.map.isWordCharacter(keystroke) }) {
             return handleWordCharacter(keystroke, typedCharacter, pair)
         }
         return handlePunctuation(keystroke, typedCharacter, alternativeCharacter, pair)
@@ -633,21 +633,24 @@ final class SwitchEngine {
             return true
         }
         // The text is right but the layout isn't: no spelling "fix" in the wrong language. The key goes on as typed.
-        if switchLayoutQuietly(word, pair) { return false }
+        if switchLayoutQuietly(word, pair, trail: typedTrail) { return false }
         return correctSpelling(word, pair, trail: typedTrail)
     }
 
     /// "что" typed in the Ukrainian layout looks the same in the Russian one: there is nothing to retype,
     /// but the word is Russian, so the next ones are typed in the Russian layout. Returns true when it switched.
-    private func switchLayoutQuietly(_ word: [Keystroke], _ pair: Pair) -> Bool {
+    private func switchLayoutQuietly(_ word: [Keystroke], _ pair: Pair, trail: String) -> Bool {
         guard autoSwitchAllowed, let typed = pair.current.map.render(word) else { return false }
         let core = TextRules.coreWord(typed)
-        // Short words are too often words of both.
-        guard core.count > ShortWords.maxLength, !core.contains(where: \.isNumber),
+        // Cheap checks first: most words read differently in every other layout (Ukrainian vs English).
+        let same = alternatives.filter { $0.map.render(word) == typed }
+        // Short words are too often words of both; a capitalized word mid-sentence is likely a name;
+        // the user's exceptions are never touched.
+        guard !same.isEmpty, core.count > ShortWords.maxLength, !core.contains(where: \.isNumber),
+              !config.exceptions.contains(core.lowercased()),
+              core.first?.isUppercase != true || isSentenceStart(beforeLast: typed.count + trail.count),
               !spellChecker.isValid(core, language: pair.current.map.language),
-              let target = alternatives.first(where: { layout in
-                  layout.map.render(word) == typed && spellChecker.isValid(core, language: layout.map.language)
-              })
+              let target = same.first(where: { spellChecker.isValid(core, language: $0.map.language) })
         else { return false }
         SystemLayouts.select(target.source)
         onFix(.layout)
@@ -708,7 +711,8 @@ final class SwitchEngine {
     }
 
     private func correctSpelling(_ word: [Keystroke], _ pair: Pair, trail: String) -> Bool {
-        guard spellingAllowed, !word.isEmpty,
+        // Greek, Hebrew, Arabic: each check is a completions lookup, too slow for hundreds of candidates.
+        guard spellingAllowed, !word.isEmpty, !MacSpellChecker.knownByCompletions.contains(pair.current.map.language),
               let typed = pair.current.map.render(word) else { return false }
         let before = visibleText(beforeLast: typed.count + trail.count)
         guard !Self.looksLikeAddressOrCode(before: before, trail: trail),
@@ -839,11 +843,15 @@ final class SwitchEngine {
             guard let next = layouts.first(where: { $0.map.id == map.id }) else { continue }
             let converted = LayoutConverter.convert(fix.original, from: fix.from.map, to: next.map)
             guard converted.count == fix.converted.count, converted != fix.converted, converted != fix.original else { continue }
+            // Moving off an automatic fix says it was wrong, as switching it back by hand does.
+            let revertedAt = manualRevertStart(within: fix.converted.count)
             apply(Conversion(original: fix.original, converted: converted, from: fix.from, to: next,
                              automatic: false, scope: .word),
                   onScreen: fix.converted.count)
             // Mid-word the rest of the word is typed in the new layout; a finished word leaves the next one free.
             if !buffer.isEmpty { wordLocked = true }
+            reportRevertInWord()
+            if revertedAt != nil { reportRevert(of: TextRules.coreWord(converted)) }
             Log.engine.notice("Switched the word on to the next layout: \(next.map.language, privacy: .public)")
             return true
         }
@@ -1117,7 +1125,10 @@ final class SwitchEngine {
         if typing.count > 1, let known = typing.first(where: { spellChecker.isValid(word, language: $0.map.language) }) {
             return known.map.language
         }
-        return typing.first?.map.language
+        if let first = typing.first { return first.map.language }
+        // No layout types it all ("café" with é typed through Option): go by its alphabet.
+        let script = word.compactMap { Script(of: String($0)) }.first
+        return ((current.map { [$0] } ?? []) + alternatives).first { $0.map.script == script }?.map.language
     }
 
     /// The pair with each alternative layout in turn (likeliest first) and what the keys type in it,
