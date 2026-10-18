@@ -29,6 +29,9 @@ final class VoiceDictation: ObservableObject {
     var languages: () -> [String] = { ["uk", "en"] }
     /// The better recognizer, once its model is downloaded; macOS speech recognition otherwise.
     var parakeet: ParakeetEngine?
+    /// Google AI, when the user chose it and saved a key: it then recognizes the finished recording
+    /// (any language, Russian too); the recognizers on this Mac stay the fallback.
+    var google: () -> (transcriber: GeminiTranscriber, model: String, smart: Bool)? = { nil }
     /// The language to listen in first (the keyboard layout's).
     var preferredLanguage: () -> String = { "uk" }
     /// The user's spellings ("зсу" → "ЗСУ"), applied to everything recognized.
@@ -184,6 +187,10 @@ final class VoiceDictation: ObservableObject {
     private func liveFinished() {
         guard !completed, !secondPassRunning, let live else { return }
         let heard = live.text
+        if let google = google(), fanout.hasRecording {
+            finishWithGoogle(google, liveResult: (language: live.language, text: heard))
+            return
+        }
         if let parakeet, parakeet.isDownloaded, fanout.hasRecording {
             finishWithParakeet(parakeet, liveResult: (language: live.language, text: heard))
             return
@@ -193,6 +200,41 @@ final class VoiceDictation: ObservableObject {
             return
         }
         recognizeAgain(in: other, comparingWith: (language: live.language, text: heard))
+    }
+
+    /// Recognizes the whole recording with Google AI. If that fails (no internet, quota), Parakeet or the
+    /// live macOS result is used, so the dictation is never lost.
+    private func finishWithGoogle(_ google: (transcriber: GeminiTranscriber, model: String, smart: Bool),
+                                  liveResult: (language: String, text: String)) {
+        guard let file = fanout.writeRecording() else {
+            complete(with: liveResult.text, language: liveResult.language)
+            return
+        }
+        secondPassRunning = true
+        languageTitle = "Google AI"
+        let words = vocabulary().map(\.to)
+        let current = session
+        Task { [weak self] in
+            defer { try? FileManager.default.removeItem(at: file) }
+            do {
+                let text = try await google.transcriber.transcribe(file: file, model: google.model,
+                                                                    smart: google.smart, vocabulary: words)
+                guard let self, session == current else { return }
+                complete(with: text, language: "google")
+            } catch {
+                Log.engine.error("Google AI failed: \(error.localizedDescription, privacy: .public)")
+                guard let self, session == current else { return }
+                if let parakeet, parakeet.isDownloaded {
+                    finishWithParakeet(parakeet, liveResult: liveResult)
+                } else {
+                    complete(with: liveResult.text, language: liveResult.language)
+                }
+            }
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 90) { [weak self] in
+            guard let self, session == current else { return }
+            complete(with: liveResult.text, language: liveResult.language)
+        }
     }
 
     /// Recognizes the whole recording with Parakeet. It may hear Ukrainian as Russian; Russian is never

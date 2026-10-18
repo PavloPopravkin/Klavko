@@ -20,6 +20,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private let translator = Translator()
     private let dictation = VoiceDictation()
     private let parakeet = ParakeetEngine()
+    private let google = GeminiTranscriber()
     private var monitor: KeyboardMonitor?
     private var statusItem: NSStatusItem?
     private var settingsWindow: NSWindow?
@@ -73,6 +74,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
         // Used once its model is downloaded (opt-in, from Settings → Voice input); macOS recognition until then.
         dictation.parakeet = parakeet
+        dictation.google = { [unowned self] in
+            guard settings.voiceEngine == "google", GeminiKey.load() != nil else { return nil }
+            return (google, settings.googleModel ?? GeminiTranscriber.fallbackModel, settings.googleSmart)
+        }
         clipboard.isEnabled = { [unowned self] in settings.clipboardEnabled }
         clipboard.keepDays = { [unowned self] in settings.clipboardKeepDays }
         clipboard.ignoredApps = { [unowned self] in settings.clipboardIgnoredApps }

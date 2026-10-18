@@ -34,6 +34,9 @@ final class Settings: ObservableObject {
         static let clipboardKeepDays = "clipboardKeepDays"
         static let clipboardIgnoredApps = "clipboardIgnoredApps"
         static let voiceLanguage = "voiceLanguage"
+        static let voiceEngine = "voiceEngine"
+        static let googleSmart = "googleSmart"
+        static let googleModel = "googleModel"
         static let playSpellingSound = "playSpellingSound"
         static let spellingSoundName = "spellingSoundName"
         static let playCopySound = "playCopySound"
@@ -115,6 +118,21 @@ final class Settings: ObservableObject {
     /// The languages the user speaks: "auto" (Ukrainian and English), "uk" or "en". Never Russian.
     @Published var voiceLanguage: String {
         didSet { defaults.set(voiceLanguage, forKey: Key.voiceLanguage) }
+    }
+
+    /// Who recognizes speech: "local" (on this Mac) or "google" (Google AI, with the user's key).
+    @Published var voiceEngine: String {
+        didSet { defaults.set(voiceEngine, forKey: Key.voiceEngine) }
+    }
+
+    /// Google AI drops fillers and self-corrections instead of writing word for word.
+    @Published var googleSmart: Bool {
+        didSet { defaults.set(googleSmart, forKey: Key.googleSmart) }
+    }
+
+    /// The Google AI speech model the key can reach, found when the key was checked.
+    @Published var googleModel: String? {
+        didSet { defaults.set(googleModel, forKey: Key.googleModel) }
     }
 
     /// Dictated words the user taught Klavko to spell their way (heard → written), in the order added.
@@ -246,6 +264,8 @@ final class Settings: ObservableObject {
             // Terminals: words there are mostly commands, not natural language.
             // Code editors: "...", quotes and capitals mean something else in code.
             Key.offerVoiceCorrections: true,
+            Key.voiceEngine: "local",
+            Key.googleSmart: true,
             Key.checkForUpdates: true,
             Key.clipboardEnabled: true,
             Key.clipboardKeepDays: 30,
@@ -272,6 +292,9 @@ final class Settings: ObservableObject {
         AppLanguage.current = language
         let storedVoice = defaults.string(forKey: Key.voiceLanguage) ?? "auto"
         voiceLanguage = ["auto", "uk", "en"].contains(storedVoice) ? storedVoice : "auto"
+        voiceEngine = defaults.string(forKey: Key.voiceEngine) == "google" ? "google" : "local"
+        googleSmart = defaults.bool(forKey: Key.googleSmart)
+        googleModel = defaults.string(forKey: Key.googleModel)
         // Left over from the AI actions (removed in 0.10).
         defaults.removeObject(forKey: "aiModel")
         defaults.removeObject(forKey: "aiActions")

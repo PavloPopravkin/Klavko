@@ -19,9 +19,35 @@ struct SettingsView: View {
     @State private var newReplacementTo = ""
     @State private var newSpellingHeard = ""
     @State private var newSpellingWritten = ""
+    @State private var googleKey = GeminiKey.load() ?? ""
+    @State private var googleStatus: (text: String, ok: Bool)?
+    @State private var checkingGoogleKey = false
+    private static let googleCheck = GeminiTranscriber()
     @State private var tab: SettingsTab = .general
     /// The tab shown first (for snapshots).
     var initialTab: SettingsTab = .general
+
+    /// Saves the Google AI key once Google accepts it, and picks the speech model it can reach.
+    private func checkGoogleKey() {
+        let key = googleKey.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !key.isEmpty else {
+            GeminiKey.save("")
+            googleStatus = nil
+            return
+        }
+        checkingGoogleKey = true
+        Task {
+            do {
+                let model = try await Self.googleCheck.check(key: key)
+                GeminiKey.save(key)
+                settings.googleModel = model
+                googleStatus = (tr("Ключ працює", "The key works") + " · " + model, true)
+            } catch {
+                googleStatus = (error.localizedDescription, false)
+            }
+            checkingGoogleKey = false
+        }
+    }
 
     private func addException() {
         // Several words at once: "npm, ye ок".
@@ -249,6 +275,49 @@ struct SettingsView: View {
                                 + "cursor. Esc cancels. Speech is recognized by the NVIDIA Parakeet Ultra model on this Mac "
                                 + "(with punctuation); it never inserts Russian — such a result is redone by the macOS Ukrainian "
                                 + "recognizer. Until the model is downloaded, the built-in macOS recognition is used."))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    Section {
+                        Picker(tr("Розпізнає", "Recognized by"), selection: $settings.voiceEngine) {
+                            Text(tr("Цей Mac", "This Mac")).tag("local")
+                            Text("Google AI").tag("google")
+                        }
+                        if settings.voiceEngine == "google" {
+                            HStack(spacing: 8) {
+                                SecureField("", text: $googleKey, prompt: Text(tr("Ключ API Google AI", "Google AI API key")))
+                                    .labelsHidden()
+                                    .textFieldStyle(.roundedBorder)
+                                    .onSubmit(checkGoogleKey)
+                                if checkingGoogleKey {
+                                    ProgressView().controlSize(.small)
+                                } else {
+                                    Button(tr("Зберегти", "Save"), action: checkGoogleKey)
+                                }
+                            }
+                            if let googleStatus {
+                                Label(googleStatus.text, systemImage: googleStatus.ok ? "checkmark.seal.fill" : "exclamationmark.triangle.fill")
+                                    .foregroundStyle(googleStatus.ok ? .green : .red)
+                            } else if GeminiKey.load() == nil {
+                                Link(tr("Отримати ключ (безкоштовно) на aistudio.google.com", "Get a key (free) at aistudio.google.com"),
+                                     destination: URL(string: "https://aistudio.google.com/apikey")!)
+                            }
+                            Toggle(isOn: $settings.googleSmart) {
+                                Text(tr("Розумне розпізнавання", "Smart transcription"))
+                                Text(tr("Прибирає «ну», «е-е» і самовиправлення («о першій, ні, о другій» → «о другій»), оформлює списки.",
+                                        "Removes fillers and self-corrections (“at one, no, at two” → “at two”), formats lists."))
+                            }
+                        }
+                    } header: {
+                        Text(tr("Розпізнавання через Google AI", "Recognition with Google AI"))
+                    } footer: {
+                        Text(tr("З Google AI запис після натискання надсилається в Google (вашим ключем) і розпізнається будь-якою мовою, "
+                                + "зокрема російською. Ключ зберігається в Keychain. Якщо Google недоступний, текст розпізнає цей Mac. "
+                                + "Як у програмі Jot.",
+                                "With Google AI the recording is sent to Google (with your key) when you finish, and any language is "
+                                + "recognized, Russian too. The key is kept in the Keychain. If Google can’t be reached, this Mac "
+                                + "recognizes the text. As in the Jot app."))
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
