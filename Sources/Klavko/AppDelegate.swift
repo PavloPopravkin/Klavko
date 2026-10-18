@@ -387,12 +387,43 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                               #selector(installUpdate)))
             menu.addItem(.separator())
         }
-        menu.addItem(item(tr("Голосовий ввід", "Voice Input"), #selector(toggleVoice)))
-        menu.addItem(item(tr("Перекласти виділене", "Translate Selection"), #selector(startTranslation)))
-        menu.addItem(item(tr("Текст з екрана…", "Text from the Screen…"), #selector(captureScreenText)))
-        menu.addItem(item(tr("Історія буфера обміну", "Clipboard History"), #selector(showClipboard)))
-        menu.addItem(item(tr("Налаштування…", "Settings…"), #selector(showSettings), key: ","))
-        menu.addItem(item(tr("Вийти з Klavko", "Quit Klavko"), #selector(quit), key: "q"))
+        // Each action with its hotkey as set in Settings, so a changed shortcut shows here too.
+        let keyLayout = englishLayout()
+        func hotkey(_ action: HotkeyAction) -> String? { settings.shortcuts[action]?.displayName(layout: keyLayout) }
+        let actions: [(NSMenuItem, String?)] = [
+            (item(tr("Голосовий ввід", "Voice Input"), #selector(toggleVoice)), hotkey(.voice)),
+            (item(tr("Перекласти виділене", "Translate Selection"), #selector(startTranslation)), hotkey(.translate)),
+            (item(tr("Текст з екрана…", "Text from the Screen…"), #selector(captureScreenText)), hotkey(.screenText)),
+            (item(tr("Історія буфера обміну", "Clipboard History"), #selector(showClipboard)), hotkey(.clipboard)),
+        ]
+        let settingsItem = item(tr("Налаштування…", "Settings…"), #selector(showSettings))
+        let quitItem = item(tr("Вийти з Klavko", "Quit Klavko"), #selector(quit))
+        Self.showShortcuts(actions + [(settingsItem, "⌘,"), (quitItem, "⌘Q")])
+        actions.forEach { menu.addItem($0.0) }
+        menu.addItem(.separator())
+        menu.addItem(settingsItem)
+        menu.addItem(.separator())
+        menu.addItem(quitItem)
+    }
+
+    /// Puts each shortcut at the right edge of its item, in grey, all in one column. (Real key equivalents
+    /// can't show double taps like ⌘⌘ or fn, so every item shows its shortcut the same way.)
+    private static func showShortcuts(_ items: [(NSMenuItem, String?)]) {
+        let font = NSFont.menuFont(ofSize: 0)
+        func width(_ text: String) -> CGFloat { (text as NSString).size(withAttributes: [.font: font]).width }
+        let titles = items.map { width($0.0.title) }.max() ?? 0
+        let shortcuts = items.compactMap { $0.1 }.map(width).max() ?? 0
+        let paragraph = NSMutableParagraphStyle()
+        paragraph.tabStops = [NSTextTab(textAlignment: .right, location: ceil(titles + 36 + shortcuts))]
+        for (item, shortcut) in items {
+            let title = NSMutableAttributedString(string: item.title, attributes: [.font: font, .paragraphStyle: paragraph])
+            if let shortcut {
+                title.append(NSAttributedString(string: "\t" + shortcut, attributes: [
+                    .font: font, .paragraphStyle: paragraph, .foregroundColor: NSColor.secondaryLabelColor,
+                ]))
+            }
+            item.attributedTitle = title
+        }
     }
 
     private func item(_ title: String, _ action: Selector, key: String = "") -> NSMenuItem {
