@@ -14,6 +14,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private let correctionWatcher = VoiceCorrectionWatcher()
     private let learnPrompt = VoiceLearnPrompt()
     private let clipboard = ClipboardManager()
+    private let updater = Updater()
+    private let updatePrompt = UpdatePrompt()
     private lazy var clipboardWindow = ClipboardWindow(manager: clipboard)
     private let translator = Translator()
     private let dictation = VoiceDictation()
@@ -78,6 +80,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             if settings.playCopySound { playSound(named: settings.copySoundName) }
         }
         clipboard.prune()
+        updater.autoCheck = { [unowned self] in settings.checkForUpdates }
+        updater.skippedVersion = { [unowned self] in settings.skippedUpdateVersion }
+        updater.onAvailable = { [unowned self] release in
+            updatePrompt.show(release, current: updater.currentVersion,
+                              onUpdate: { [unowned self] in updater.install() },
+                              onSkip: { [unowned self] in settings.skippedUpdateVersion = release.version })
+        }
+        updater.start()
         clipboard.start()
         engine.onClipboard = { [unowned self] in
             MainActor.assumeIsolated { clipboardWindow.toggle() }
@@ -192,6 +202,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         // Developer check of the translator: --translate-check <text> <out.txt> writes the translation and quits.
         if let index = CommandLine.arguments.firstIndex(of: "--translate-check"), index + 2 < CommandLine.arguments.count {
             translator.check(CommandLine.arguments[index + 1], writeTo: URL(fileURLWithPath: CommandLine.arguments[index + 2]))
+        }
+        // Developer check of updating: --update-test <test copy of Klavko.app> <report.txt> installs the latest
+        // release over that copy (never over the running app) and quits.
+        if let index = CommandLine.arguments.firstIndex(of: "--update-test"), index + 2 < CommandLine.arguments.count {
+            updater.installForTest(at: URL(fileURLWithPath: CommandLine.arguments[index + 1]),
+                                   report: URL(fileURLWithPath: CommandLine.arguments[index + 2]))
         }
         // Developer check of Parakeet's language handling: --parakeet-check <audio> <out.txt>.
         if let index = CommandLine.arguments.firstIndex(of: "--parakeet-check"), index + 2 < CommandLine.arguments.count {
@@ -337,6 +353,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
 
         menu.addItem(.separator())
+        if let release = updater.available {
+            menu.addItem(item(tr("⬆︎ Оновити Klavko до \(release.version)", "⬆︎ Update Klavko to \(release.version)"),
+                              #selector(installUpdate)))
+            menu.addItem(.separator())
+        }
         menu.addItem(item(tr("Голосовий ввід", "Voice Input"), #selector(toggleVoice)))
         menu.addItem(item(tr("Перекласти виділене", "Translate Selection"), #selector(startTranslation)))
         menu.addItem(item(tr("Історія буфера обміну", "Clipboard History"), #selector(showClipboard)))
@@ -371,7 +392,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
     @objc private func showSettings() {
         if settingsWindow == nil {
-            let view = SettingsView(settings: settings, recorder: recorder, parakeet: parakeet, clipboard: clipboard,
+            let view = SettingsView(settings: settings, recorder: recorder, parakeet: parakeet, clipboard: clipboard, updater: updater,
                                     keyLayout: englishLayout(),
                                     previewSound: { [weak self] name in self?.playSound(named: name) })
             let window = NSWindow(contentViewController: NSHostingController(rootView: view))
@@ -388,7 +409,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     /// Renders every tab into `<name>-<tab>.png` next to `url`, then quits.
     private func snapshotSettings(to url: URL, tabs: [SettingsTab] = SettingsTab.allCases) {
         guard let tab = tabs.first else { return NSApp.terminate(nil) }
-        var view = SettingsView(settings: settings, recorder: recorder, parakeet: parakeet, clipboard: clipboard,
+        var view = SettingsView(settings: settings, recorder: recorder, parakeet: parakeet, clipboard: clipboard, updater: updater,
                                     keyLayout: englishLayout(),
                                 previewSound: { _ in })
         view.initialTab = tab
@@ -412,6 +433,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     @objc private func toggleVoice() {
         // After the menu closes, so the text lands in the app that was in front.
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { [weak self] in self?.dictation.toggle() }
+    }
+
+    @objc private func installUpdate() {
+        updater.install()
     }
 
     @objc private func showClipboard() {

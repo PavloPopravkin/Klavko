@@ -735,3 +735,13 @@ final class ForeignLatinTests: XCTestCase {
         XCTAssertFalse(LanguageGuess.looksForeignLatin("Відкрий GitHub і зроби commit"))
     }
 }
+
+final class AppVersionTests: XCTestCase {
+    func testComparison() {
+        XCTAssertTrue(AppVersion.isNewer("v0.12.0", than: "0.11.1"))
+        XCTAssertTrue(AppVersion.isNewer("0.11.10", than: "0.11.9"))
+        XCTAssertFalse(AppVersion.isNewer("0.11.1", than: "0.11.1"))
+        XCTAssertFalse(AppVersion.isNewer("1.0", than: "1.0.0"))
+        XCTAssertFalse(AppVersion.isNewer("0.11.0", than: "0.11.1"))
+    }
+}

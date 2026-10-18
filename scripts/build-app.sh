@@ -25,6 +25,13 @@ done
 IDENTITY="${KLAVKO_SIGN_IDENTITY:-$(security find-identity -v -p codesigning \
     | awk -F'"' '/Developer ID Application|Apple Development/ { print $2; exit }')}"
 IDENTITY="${IDENTITY:--}"
-codesign --force --options runtime --entitlements Resources/Klavko.entitlements --sign "$IDENTITY" "$APP"
+REQUIREMENTS=()
+if [ "$IDENTITY" = "-" ]; then
+    # Ad hoc signatures change with every build, and macOS ties the Accessibility permission to the
+    # signature's requirement: name the app by its identifier, so an update keeps the permission.
+    REQUIREMENTS=(--requirements '=designated => identifier "app.klavko.Klavko"')
+fi
+codesign --force --options runtime --entitlements Resources/Klavko.entitlements "${REQUIREMENTS[@]}" \
+    --sign "$IDENTITY" "$APP"
 
 echo "Built $APP (signed with: $IDENTITY)"

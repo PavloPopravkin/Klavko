@@ -23,6 +23,8 @@ enum AboutInfo {
 
 /// The "About" tab: what Klavko is, its version and author, a way to say thanks, and what it is built on.
 struct AboutSection: View {
+    @ObservedObject var settings: Settings
+    @ObservedObject var updater: Updater
     @State private var copied = false
 
     var body: some View {
@@ -41,6 +43,34 @@ struct AboutSection: View {
                 }
             }
             .padding(.vertical, 6)
+        }
+
+        Section {
+            Toggle(tr("Автоматично перевіряти оновлення", "Check for updates automatically"),
+                   isOn: $settings.checkForUpdates)
+            HStack(spacing: 8) {
+                updateStatus
+                Spacer()
+                switch updater.state {
+                case .available:
+                    Button(tr("Що нового", "What’s New")) { NSWorkspace.shared.open(Updater.releasesPage) }
+                    Button(tr("Оновити", "Update")) { updater.install() }
+                        .buttonStyle(.borderedProminent)
+                case .checking, .installing:
+                    ProgressView().controlSize(.small)
+                default:
+                    Button(tr("Перевірити зараз", "Check Now")) { Task { await updater.check(userInitiated: true) } }
+                }
+            }
+        } header: {
+            Text(tr("Оновлення", "Updates"))
+        } footer: {
+            Text(tr("Нові версії приходять зі сторінки релізів на GitHub. «Оновити» завантажує й перевіряє нову версію, "
+                    + "замінює програму й перезапускає її — нічого не треба встановлювати вручну.",
+                    "New versions come from the GitHub releases page. “Update” downloads and verifies the new version, "
+                    + "replaces the app and restarts it — nothing to install by hand."))
+                .font(.caption)
+                .foregroundStyle(.secondary)
         }
 
         if let donate = AboutInfo.donateURL {
@@ -94,10 +124,12 @@ struct AboutSection: View {
         Section {
             Text(tr("Усе працює на цьому Mac. Набраний текст, надиктоване, переклади й історія буфера обміну нікуди "
                     + "не надсилаються. Інтернет потрібен лише один раз: щоб завантажити модель розпізнавання мовлення "
-                    + "(з Hugging Face) і мови для перекладу (від Apple).",
+                    + "(з Hugging Face) і мови для перекладу (від Apple). А ще Klavko час від часу перевіряє на GitHub, "
+                    + "чи вийшла нова версія (це можна вимкнути вище).",
                     "Everything runs on this Mac. What you type, dictate, translate and copy is never sent anywhere. "
                     + "The internet is needed only once: to download the speech recognition model (from Hugging Face) "
-                    + "and the translation languages (from Apple)."))
+                    + "and the translation languages (from Apple). Klavko also checks GitHub now and then for a new "
+                    + "version (you can turn that off above)."))
                 .font(.callout)
                 .fixedSize(horizontal: false, vertical: true)
         } header: {
@@ -115,6 +147,25 @@ struct AboutSection: View {
             Text("© 2026 \(AboutInfo.author). " + tr("Klavko безкоштовний.", "Klavko is free."))
                 .font(.caption)
                 .foregroundStyle(.secondary)
+        }
+    }
+
+    @ViewBuilder private var updateStatus: some View {
+        switch updater.state {
+        case .idle:
+            Text(tr("Встановлено версію", "Installed version") + " \(updater.currentVersion)").foregroundStyle(.secondary)
+        case .checking:
+            Text(tr("Перевіряю…", "Checking…")).foregroundStyle(.secondary)
+        case .upToDate:
+            Label(tr("У вас остання версія", "You have the latest version"), systemImage: "checkmark.circle.fill")
+                .foregroundStyle(.green)
+        case .available(let release):
+            Label(tr("Доступна версія", "Version available:") + " \(release.version)", systemImage: "arrow.down.circle.fill")
+                .foregroundStyle(Color.accentColor)
+        case .installing(let release):
+            Text(tr("Встановлюю", "Installing") + " \(release.version)…").foregroundStyle(.secondary)
+        case .failed(let message):
+            Text(message).foregroundStyle(.red).fixedSize(horizontal: false, vertical: true)
         }
     }
 }
