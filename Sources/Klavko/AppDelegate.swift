@@ -456,7 +456,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         SystemLayouts.enabledLayouts().first { $0.map.language == "en" }?.map
     }
 
-    private static let flags = ["uk": "🇺🇦", "en": "🇺🇸"]
+    /// Arabic has no single country: it shows "AR". Russian shows a grey flag (`greyFlagLanguages`).
+    private static let flags = ["uk": "🇺🇦", "en": "🇺🇸", "de": "🇩🇪", "fr": "🇫🇷", "es": "🇪🇸", "it": "🇮🇹",
+                                "pt": "🇵🇹", "pl": "🇵🇱", "tr": "🇹🇷", "el": "🇬🇷", "he": "🇮🇱"]
+    private static let greyFlagLanguages: Set<String> = ["ru"]
+
+    private static func flag(language: String, layoutID: String?) -> String? {
+        language == "pt" && layoutID?.contains("Brazilian") == true ? "🇧🇷" : flags[language]
+    }
 
     /// Apps that continue "- " and "1." lists themselves.
     private static let appsWithOwnLists: Set<String> = [
@@ -478,11 +485,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         // Problems take priority over the flag.
         let warning: String? = monitor?.isRunning != true ? "keyboard.badge.exclamationmark"
             : secureInputActive ? "lock.circle" : nil
+        if warning == nil, settings.showFlag, let language = SystemLayouts.currentLanguage(),
+           Self.greyFlagLanguages.contains(language),
+           let image = NSImage(systemSymbolName: "flag.fill", accessibilityDescription: language.uppercased()) {
+            item.length = NSStatusItem.squareLength
+            button.title = ""
+            image.isTemplate = false
+            button.image = image.withSymbolConfiguration(.init(paletteColors: [.systemGray]))
+            return
+        }
         if warning == nil, settings.showFlag, let language = SystemLayouts.currentLanguage() {
+            let flag = Self.flag(language: language, layoutID: shownLayoutID)
             item.length = NSStatusItem.variableLength
             button.image = nil
-            button.title = Self.flags[language] ?? language.uppercased()
-            button.font = Self.flags[language] == nil ? .systemFont(ofSize: 12, weight: .semibold) : .systemFont(ofSize: 15)
+            button.title = flag ?? language.uppercased()
+            button.font = flag == nil ? .systemFont(ofSize: 12, weight: .semibold) : .systemFont(ofSize: 15)
             return
         }
 

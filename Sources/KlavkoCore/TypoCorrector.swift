@@ -103,7 +103,7 @@ public struct TypoCorrector {
         let systemFix = spellChecker.correction(for: lowered, language: language, context: context)?.lowercased()
 
         // A far-away key is too unlikely for a short word; only long words may have one.
-        let edits = Self.singleEdits(of: lowered, alphabet: Self.alphabet(for: language, word: lowered)) { typed, replacement in
+        let edits = Self.singleEdits(of: lowered, alphabet: Self.alphabet(for: language, layout: layout, word: lowered)) { typed, replacement in
             lowered.count >= 8 || KeyboardGeometry.areNeighbours(typed, replacement, layout: layout)
         }
         var words = spellChecker.validWords(among: Array(edits), language: language)
@@ -174,11 +174,13 @@ public struct TypoCorrector {
     private static let ukrainianAlphabet = Array("абвгґдеєжзиіїйклмнопрстуфхцчшщьюя'")
     private static let englishAlphabet = Array("abcdefghijklmnopqrstuvwxyz'")
 
-    private static func alphabet(for language: String, word: String) -> [Character] {
+    /// Other languages: the lowercase letters their layout types without Shift.
+    private static func alphabet(for language: String, layout: LayoutMap?, word: String) -> [Character] {
         switch language {
         case "uk": ukrainianAlphabet
         case "en": englishAlphabet
-        default: Array(Set(word))
+        default:
+            Array(Set(word).union(layout?.lowercaseLetters ?? []))
         }
     }
 

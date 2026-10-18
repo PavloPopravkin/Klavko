@@ -3,7 +3,7 @@
 extension Translations {
     public static let spanish: [String: String] = [
         "Version": "Versión",
-        "Keyboard layout switcher and typing assistant for Mac: Ukrainian and English.": "Cambio de distribución de teclado y asistente de escritura para Mac: ucraniano e inglés.",
+        "Keyboard layout switcher and typing assistant for Mac: Ukrainian, English, Russian and 10 more languages.": "Cambiador de distribución de teclado y asistente de escritura para Mac: ucraniano, inglés, ruso y 10 idiomas más.",
         "Check for updates automatically": "Buscar actualizaciones automáticamente",
         "What’s New": "Novedades",
         "Update": "Actualizar",
@@ -85,7 +85,7 @@ extension Translations {
         "Exceptions": "Excepciones",
         "Words Klavko never changes. Write them the way you type them (for example “ye” or “npm”). If you undo the fix of the same word twice, Klavko offers to add it here.": "Palabras que Klavko nunca cambia. Escríbelas tal como las tecleas (por ejemplo, «ye» o «npm»). Si deshaces dos veces la corrección de la misma palabra, Klavko te propondrá añadirla aquí.",
         "Fix typos": "Corregir errores",
-        "Ukrainian and English: missing and swapped letters, neighbouring keys (teh → the), a stuck Shift (HEllo → Hello). Doubtful words, names mid-sentence and words with digits stay as they are.": "Ucraniano e inglés: letras que faltan o cambiadas de sitio, teclas vecinas (teh → the), Shift atascado (HEllo → Hello). Las palabras dudosas, los nombres a mitad de frase y las palabras con cifras se dejan como están.",
+        "All layout languages: missing and swapped letters, neighbouring keys (teh → the), a stuck Shift (HEllo → Hello). Doubtful words, names mid-sentence and words with digits stay as they are.": "Todos los idiomas de distribución: letras que faltan o cambiadas de sitio, teclas vecinas (teh → the), Shift atascado (HEllo → Hello). Las palabras dudosas, los nombres a mitad de frase y las palabras con cifras se dejan como están.",
         "Add a missing space after punctuation": "Añadir el espacio que falta tras un signo de puntuación",
         "“Hi,there” → “Hi, there”. After a full stop only before a capital letter; numbers, addresses, hyphens, brackets and quotes are left alone.": "«Hi,there» → «Hi, there». Tras un punto, solo antes de una mayúscula; los números, direcciones, guiones, paréntesis y comillas no se tocan.",
         "Typos": "Errores",

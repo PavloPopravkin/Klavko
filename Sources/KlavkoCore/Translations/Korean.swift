@@ -3,7 +3,7 @@
 extension Translations {
     public static let korean: [String: String] = [
         "Version": "버전",
-        "Keyboard layout switcher and typing assistant for Mac: Ukrainian and English.": "Mac용 키보드 입력기 전환 및 타이핑 도우미: 우크라이나어와 영어.",
+        "Keyboard layout switcher and typing assistant for Mac: Ukrainian, English, Russian and 10 more languages.": "Mac용 키보드 레이아웃 전환 및 입력 도우미: 우크라이나어, 영어, 러시아어 외 10개 언어.",
         "Check for updates automatically": "업데이트 자동으로 확인",
         "What’s New": "새로운 기능",
         "Update": "업데이트",
@@ -85,7 +85,7 @@ extension Translations {
         "Exceptions": "예외",
         "Words Klavko never changes. Write them the way you type them (for example “ye” or “npm”). If you undo the fix of the same word twice, Klavko offers to add it here.": "Klavko가 절대 바꾸지 않는 단어입니다. 입력하는 그대로 적으세요(예: “ye” 또는 “npm”). 같은 단어의 수정을 두 번 취소하면 Klavko가 여기에 추가할지 제안합니다.",
         "Fix typos": "오타 수정",
-        "Ukrainian and English: missing and swapped letters, neighbouring keys (teh → the), a stuck Shift (HEllo → Hello). Doubtful words, names mid-sentence and words with digits stay as they are.": "우크라이나어와 영어: 빠졌거나 순서가 바뀐 글자, 이웃한 키(teh → the), Shift 고착(HEllo → Hello). 불확실한 단어, 문장 중간의 이름, 숫자가 포함된 단어는 그대로 둡니다.",
+        "All layout languages: missing and swapped letters, neighbouring keys (teh → the), a stuck Shift (HEllo → Hello). Doubtful words, names mid-sentence and words with digits stay as they are.": "모든 레이아웃 언어: 빠졌거나 순서가 바뀐 글자, 이웃한 키(teh → the), Shift 고착(HEllo → Hello). 불확실한 단어, 문장 중간의 이름, 숫자가 포함된 단어는 그대로 둡니다.",
         "Add a missing space after punctuation": "문장 부호 뒤에 빠진 공백 추가",
         "“Hi,there” → “Hi, there”. After a full stop only before a capital letter; numbers, addresses, hyphens, brackets and quotes are left alone.": "“Hi,there” → “Hi, there”. 마침표 뒤에는 대문자 앞에서만 적용되며, 숫자, 주소, 하이픈, 괄호, 따옴표는 건드리지 않습니다.",
         "Typos": "오타",

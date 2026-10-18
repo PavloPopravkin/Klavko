@@ -9,7 +9,20 @@ public final class MacSpellChecker: SpellChecking {
 
     public init() {}
 
+    /// The macOS dictionary for a layout language: "pt" is "pt_BR" or "pt_PT" there.
+    private var dictionaries: [String: String] = [:]
+
+    private func dictionary(_ language: String) -> String {
+        if let known = dictionaries[language] { return known }
+        let available = checker.availableLanguages
+        let found = available.contains(language) ? language
+            : available.first { $0.hasPrefix(language + "_") || $0.hasPrefix(language + "-") } ?? language
+        dictionaries[language] = found
+        return found
+    }
+
     public func isValid(_ word: String, language: String) -> Bool {
+        let language = dictionary(language)
         let range = checker.checkSpelling(of: word, startingAt: 0, language: language,
                                           wrap: false, inSpellDocumentWithTag: 0, wordCount: nil)
         return range.location == NSNotFound
@@ -20,6 +33,7 @@ public final class MacSpellChecker: SpellChecking {
     }
 
     public func completions(for prefix: String, language: String) -> [String] {
+        let language = dictionary(language)
         let key = language + ":" + prefix
         if let cached = completionCache[key] { return cached }
         let range = NSRange(location: 0, length: (prefix as NSString).length)
@@ -31,11 +45,13 @@ public final class MacSpellChecker: SpellChecking {
     }
 
     public func correction(for word: String, language: String, context: String) -> String? {
+        let language = dictionary(language)
         let (text, range) = Self.place(word, after: context)
         return checker.correction(forWordRange: range, in: text, language: language, inSpellDocumentWithTag: 0)
     }
 
     public func guesses(for word: String, language: String, context: String) -> [String] {
+        let language = dictionary(language)
         let (text, range) = Self.place(word, after: context)
         return checker.guesses(forWordRange: range, in: text, language: language, inSpellDocumentWithTag: 0) ?? []
     }
@@ -43,6 +59,7 @@ public final class MacSpellChecker: SpellChecking {
     /// One pass over all words instead of a call per word (hundreds of candidates in a few ms).
     public func validWords(among words: [String], language: String) -> Set<String> {
         guard !words.isEmpty else { return [] }
+        let language = dictionary(language)
         // A fixed language: automatic detection would judge each candidate in whatever language it resembles.
         checker.automaticallyIdentifiesLanguages = false
         guard checker.setLanguage(language) else {

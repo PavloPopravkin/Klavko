@@ -98,6 +98,10 @@ final class SwitchEngine {
     }
 
     private var layouts: [Layout] = []
+    /// Layouts the current one may have been meant as, most likely first (set with the current pair).
+    private var alternatives: [Layout] = []
+    /// Layout IDs in the order they were last typed in, latest first.
+    private var recentLayoutIDs: [String] = []
     /// One checker for both, so its completion cache is shared.
     private let spellChecker = MacSpellChecker()
     private lazy var analyzer = WordAnalyzer(spellChecker: spellChecker)
@@ -166,6 +170,9 @@ final class SwitchEngine {
             _ = spellChecker.isValid(word, language: language)
             _ = spellChecker.completions(for: String(word.prefix(3)), language: language)
             _ = spelling.correction(for: word + "q", language: language, layout: nil, allowCapitalized: false)
+        }
+        for language in Set(layouts.map(\.map.language)).subtracting(["uk", "en"]) {
+            _ = spellChecker.isValid("a", language: language)
         }
     }
 
@@ -254,6 +261,10 @@ final class SwitchEngine {
             wordLocked = true
         }
         bufferLayoutID = pair.current.map.id
+        if recentLayoutIDs.first != pair.current.map.id {
+            recentLayoutIDs.removeAll { $0 == pair.current.map.id }
+            recentLayoutIDs.insert(pair.current.map.id, at: 0)
+        }
         let keystroke = Keystroke(keyCode: keyCode, shift: flags.contains(.maskShift),
                                   capsLock: flags.contains(.maskAlphaShift))
 
@@ -278,7 +289,7 @@ final class SwitchEngine {
         if pair.current.map.isWordCharacter(keystroke) || pair.alternative.map.isWordCharacter(keystroke) {
             return handleWordCharacter(keystroke, typedCharacter, pair)
         }
-        return handlePunctuation(typedCharacter, alternativeCharacter, pair)
+        return handlePunctuation(keystroke, typedCharacter, alternativeCharacter, pair)
     }
 
     private func formattingAllowed(_ enabled: Bool) -> Bool { enabled && !excludedNow }
@@ -355,7 +366,7 @@ final class SwitchEngine {
         lastWord = []
         appendVisible("\"")
         let fixed = config.triggers.contains(.punctuation) && !locked
-            && fixFinishedWord(word, pair, typedTrail: "\"", alternativeTrail: "\"")
+            && fixFinishedWord(word, pair, typedTrail: "\"", alternativeTrail: { _ in "\"" })
         let language = pair.current.map.language
         let quote = closesTypedWord ? Typography.quote(after: "x", language: language)
             : opensWord ? Typography.quote(after: "", language: language)
@@ -414,7 +425,7 @@ final class SwitchEngine {
         let locked = wordLocked
         endWord()
         appendVisible(" ")
-        if config.triggers.contains(.space), !locked, fixFinishedWord(word, pair, typedTrail: " ", alternativeTrail: " ") {
+        if config.triggers.contains(.space), !locked, fixFinishedWord(word, pair, typedTrail: " ", alternativeTrail: { _ in " " }) {
             settleLoneLetter(afterFixedWord: true, word, pair, pendingCharacters: 0)
             return false
         }
@@ -444,7 +455,7 @@ final class SwitchEngine {
         let list = keyCode != KeyCode.tab && !shift && formattingAllowed(config.listContinuation) && !appContinuesLists()
             ? currentLineBeforeCaret().flatMap(ListContinuation.action) : nil
         let fixed = config.triggers.contains(trigger) && !locked
-            && fixFinishedWord(word, pair, typedTrail: "", alternativeTrail: "")
+            && fixFinishedWord(word, pair, typedTrail: "", alternativeTrail: { _ in "" })
         let letterSettled = settleLoneLetter(afterFixedWord: fixed, word, pair, pendingCharacters: 0)
         reset()
 
@@ -498,7 +509,8 @@ final class SwitchEngine {
 
     /// Punctuation or a digit ends the word. After a layout fix, the mark is typed as the new layout has it
     /// ("ghbdsn?" -> "привіт,").
-    private func handlePunctuation(_ typedCharacter: String, _ alternativeCharacter: String, _ pair: Pair) -> Bool {
+    private func handlePunctuation(_ keystroke: Keystroke, _ typedCharacter: String, _ alternativeCharacter: String,
+                                   _ pair: Pair) -> Bool {
         typedSinceJump = true
         let word = buffer
         let locked = wordLocked
@@ -506,7 +518,8 @@ final class SwitchEngine {
         lastWord = []
         appendVisible(typedCharacter)
         if config.triggers.contains(.punctuation), !locked,
-           fixFinishedWord(word, pair, typedTrail: typedCharacter, alternativeTrail: alternativeCharacter) {
+           fixFinishedWord(word, pair, typedTrail: typedCharacter,
+                           alternativeTrail: { $0.character(for: keystroke) ?? alternativeCharacter }) {
             settleLoneLetter(afterFixedWord: true, word, pair, pendingCharacters: 0)
             return false
         }
@@ -611,7 +624,9 @@ final class SwitchEngine {
     // MARK: - Automatic fixes
 
     /// A wrong layout first; if the layout is fine, maybe a spelling mistake.
-    private func fixFinishedWord(_ word: [Keystroke], _ pair: Pair, typedTrail: String, alternativeTrail: String) -> Bool {
+    /// `alternativeTrail`: the trigger key as the layout converted into types it.
+    private func fixFinishedWord(_ word: [Keystroke], _ pair: Pair, typedTrail: String,
+                                 alternativeTrail: (LayoutMap) -> String) -> Bool {
         replaceWholeWord(word, pair, trail: typedTrail)
             || capitalizeEnglishI(word, pair, trail: typedTrail)
             || autoConvert(word, pair, typedTrail: typedTrail, alternativeTrail: alternativeTrail)
@@ -645,17 +660,20 @@ final class SwitchEngine {
     }
 
     /// The word is finished. Returns true when it was converted; the trigger key is then typed by us.
-    private func autoConvert(_ word: [Keystroke], _ pair: Pair, typedTrail: String, alternativeTrail: String) -> Bool {
-        guard autoSwitchAllowed, !word.isEmpty,
-              let typed = pair.current.map.render(word),
-              let alternative = pair.alternative.map.render(word),
-              analyzer.shouldConvert(typed: typed, typedLanguage: pair.current.map.language,
-                                     alternative: alternative, alternativeLanguage: pair.alternative.map.language,
-                                     contextLanguage: languageOfPreviousWord(beforeLast: typed.count + typedTrail.count))
-        else { return false }
+    private func autoConvert(_ word: [Keystroke], _ pair: Pair, typedTrail: String,
+                             alternativeTrail: (LayoutMap) -> String) -> Bool {
+        guard autoSwitchAllowed, !word.isEmpty, let typed = pair.current.map.render(word) else { return false }
+        let context = languageOfPreviousWord(beforeLast: typed.count + typedTrail.count)
+        // The first layout in which the keys spell a real word.
+        guard let found = candidates(for: word, pair).first(where: { option in
+            analyzer.shouldConvert(typed: typed, typedLanguage: option.pair.current.map.language,
+                                   alternative: option.text, alternativeLanguage: option.pair.alternative.map.language,
+                                   contextLanguage: context)
+        }) else { return false }
+        let (pair, alternative) = found
 
         let converted = Self.englishI(alternative, language: pair.alternative.map.language)
-        apply(Conversion(original: typed + typedTrail, converted: converted + alternativeTrail,
+        apply(Conversion(original: typed + typedTrail, converted: converted + alternativeTrail(pair.alternative.map),
                          from: pair.current, to: pair.alternative, automatic: true, scope: .word),
               onScreen: typed.count)
         Log.engine.notice("Auto-converted word \(pair.current.map.language, privacy: .public)→\(pair.alternative.map.language, privacy: .public), \(word.count) chars")
@@ -687,10 +705,12 @@ final class SwitchEngine {
         guard autoSwitchAllowed, config.switchWhileTyping, !wordLocked,
               buffer.count >= analyzer.minimumPrefixLength, buffer.count <= 7,
               let typed = pair.current.map.render(buffer),
-              let alternative = pair.alternative.map.render(buffer),
-              analyzer.shouldConvertPrefix(typed: typed, typedLanguage: pair.current.map.language,
-                                           alternative: alternative, alternativeLanguage: pair.alternative.map.language)
+              let found = candidates(for: buffer, pair).first(where: { option in
+                  analyzer.shouldConvertPrefix(typed: typed, typedLanguage: option.pair.current.map.language,
+                                               alternative: option.text, alternativeLanguage: option.pair.alternative.map.language)
+              })
         else { return false }
+        let (pair, alternative) = found
 
         apply(Conversion(original: typed, converted: alternative, from: pair.current,
                          to: pair.alternative, automatic: true, scope: .word),
@@ -778,7 +798,8 @@ final class SwitchEngine {
     }
 
     private func convertWord() {
-        guard let pair = currentPair() else { return }
+        guard var pair = currentPair() else { return }
+        pair = likeliestPair(for: buffer.isEmpty ? lastWord : buffer, pair)
 
         if !buffer.isEmpty {
             // Mid-word: the same keystrokes now render in the new layout, so the buffer stays valid.
@@ -803,8 +824,13 @@ final class SwitchEngine {
 
     /// Everything typed since the caret last jumped, into the other layout.
     private func convertPhrase() {
-        guard let pair = currentPair() else { return }
+        guard var pair = currentPair() else { return }
         let text = String(visible[contextLength...])
+        if let best = LayoutChoice.best(for: text, from: pair.current.map, among: alternatives.map(\.map),
+                                        spellChecker: spellChecker),
+           let layout = alternatives.first(where: { $0.map.id == best.id }) {
+            pair = (pair.current, layout)
+        }
         let converted = LayoutConverter.convert(text, from: pair.current.map, to: pair.alternative.map)
         guard !text.isEmpty, converted != text, converted.count == text.count else { return }
         let revertedAt = manualRevertStart(within: text.count)
@@ -1023,16 +1049,44 @@ final class SwitchEngine {
         return true
     }
 
-    /// "uk" or "en" by the alphabet of the word before the last `count` characters; nil if there is none.
+    /// The language of the word before the last `count` characters, by the layout that types its letters
+    /// (the current one first, then the likeliest alternatives); nil if there is none.
     private func languageOfPreviousWord(beforeLast count: Int) -> String? {
         guard count <= visible.count else { return nil }
         let before = visible.dropLast(count).suffix(60).reversed().drop { !$0.isLetter }
-        guard let letter = before.first?.unicodeScalars.first?.value else { return nil }
-        switch letter {
-        case 0x0400...0x04FF: return "uk"
-        case 0x0041...0x024F: return "en"
-        default: return nil
+        let word = String(before.prefix { $0.isLetter }.reversed()).lowercased()
+        guard !word.isEmpty else { return nil }
+        let current = layouts.first { $0.map.id == SystemLayouts.currentLayoutID() }
+        let candidates = (current.map { [$0] } ?? []) + alternatives
+        return candidates.first { layout in word.allSatisfy { layout.map.keystroke(for: String($0)) != nil } }?.map.language
+    }
+
+    /// The pair with each alternative layout in turn (likeliest first) and what the keys type in it,
+    /// skipping layouts where they type exactly the same (English and German share most keys).
+    private func candidates(for word: [Keystroke], _ pair: Pair) -> [(pair: Pair, text: String)] {
+        guard let typed = pair.current.map.render(word) else { return [] }
+        return alternatives.compactMap { layout in
+            guard let text = layout.map.render(word), text != typed else { return nil }
+            return ((pair.current, layout), text)
         }
+    }
+
+    /// For a switch by hand: the alternative in which the keys spell a real word (or start one),
+    /// else the likeliest alternative.
+    private func likeliestPair(for word: [Keystroke], _ pair: Pair) -> Pair {
+        let options = candidates(for: word, pair)
+        func real(_ text: String, _ language: String) -> Bool {
+            let core = TextRules.coreWord(text)
+            return !core.isEmpty && spellChecker.isValid(core, language: language)
+        }
+        func started(_ text: String, _ language: String) -> Bool {
+            let core = TextRules.coreWord(text).lowercased()
+            return !core.isEmpty && spellChecker.hasCompletions(core, language: language)
+        }
+        return options.first { real($0.text, $0.pair.alternative.map.language) }?.pair
+            ?? options.first { started($0.text, $0.pair.alternative.map.language) }?.pair
+            ?? options.first?.pair
+            ?? pair
     }
 
     /// What's on screen before the last `count` characters (empty if unknown).
@@ -1069,15 +1123,18 @@ final class SwitchEngine {
         return ".!?…\n".contains(previous)
     }
 
-    /// The active layout and the one to convert into (Ukrainian <-> English).
+    /// The active layout and the likeliest one to convert into; also sets `alternatives`.
     private func currentPair() -> Pair? {
         guard let currentID = SystemLayouts.currentLayoutID() else { return nil }
-        guard let current = layouts.first(where: { $0.map.id == currentID }),
-              let alternative = layouts.first(where: { $0.map.language != current.map.language })
-        else {
+        let current = layouts.first(where: { $0.map.id == currentID })
+        alternatives = current.map { current in
+            LayoutChoice.alternatives(to: current.map, among: layouts.map(\.map), recent: recentLayoutIDs)
+                .compactMap { map in layouts.first { $0.map.id == map.id } }
+        } ?? []
+        guard let current, let alternative = alternatives.first else {
             if lastMissingLayoutID != currentID {
                 lastMissingLayoutID = currentID
-                Log.engine.notice("No uk/en pair for current layout \(currentID, privacy: .public)")
+                Log.engine.notice("No second layout for current layout \(currentID, privacy: .public)")
             }
             return nil
         }

@@ -3,7 +3,7 @@
 extension Translations {
     public static let chinese: [String: String] = [
         "Version": "版本",
-        "Keyboard layout switcher and typing assistant for Mac: Ukrainian and English.": "适用于 Mac 的键盘布局切换与输入助手：支持乌克兰语和英语。",
+        "Keyboard layout switcher and typing assistant for Mac: Ukrainian, English, Russian and 10 more languages.": "Mac 键盘布局切换与输入助手：乌克兰语、英语、俄语及另外 10 种语言。",
         "Check for updates automatically": "自动检查更新",
         "What’s New": "新功能",
         "Update": "更新",
@@ -85,7 +85,7 @@ extension Translations {
         "Exceptions": "例外",
         "Words Klavko never changes. Write them the way you type them (for example “ye” or “npm”). If you undo the fix of the same word twice, Klavko offers to add it here.": "Klavko 永远不会改动的单词。请按你输入的方式书写（例如“ye”或“npm”）。如果你对同一个单词的修正撤销两次，Klavko 会建议将其加入这里。",
         "Fix typos": "修正拼写错误",
-        "Ukrainian and English: missing and swapped letters, neighbouring keys (teh → the), a stuck Shift (HEllo → Hello). Doubtful words, names mid-sentence and words with digits stay as they are.": "乌克兰语和英语：漏输和颠倒的字母、相邻的按键（teh → the）、卡住的 Shift（HEllo → Hello）。存疑的单词、句中的名字以及含数字的单词保持不变。",
+        "All layout languages: missing and swapped letters, neighbouring keys (teh → the), a stuck Shift (HEllo → Hello). Doubtful words, names mid-sentence and words with digits stay as they are.": "所有布局语言：漏输和颠倒的字母、相邻的按键（teh → the）、卡住的 Shift（HEllo → Hello）。存疑的单词、句中的名字以及含数字的单词保持不变。",
         "Add a missing space after punctuation": "自动补上标点后缺少的空格",
         "“Hi,there” → “Hi, there”. After a full stop only before a capital letter; numbers, addresses, hyphens, brackets and quotes are left alone.": "“Hi,there” → “Hi, there”。句号后仅在大写字母前补空格；数字、地址、连字符、括号和引号保持不变。",
         "Typos": "拼写错误",

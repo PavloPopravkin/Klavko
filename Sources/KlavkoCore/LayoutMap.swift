@@ -17,8 +17,10 @@ public struct Keystroke: Hashable, Sendable {
 public struct LayoutMap: Sendable {
     /// Input source ID, e.g. "com.apple.keylayout.Ukrainian-PC".
     public let id: String
-    /// Primary language of the layout: "uk" or "en".
+    /// Primary language of the layout, two letters: "uk", "en", "ru", "de"…
     public let language: String
+    /// The alphabet its letter keys type.
+    public let script: Script
     private let table: [Keystroke: String]
     /// Character -> simplest keystroke producing it (no Caps Lock, Shift only when needed).
     private let reverse: [String: Keystroke]
@@ -34,11 +36,25 @@ public struct LayoutMap: Sendable {
             reverse[character] = keystroke
         }
         self.reverse = reverse
+
+        var counts: [Script: Int] = [:]
+        for (keystroke, character) in table where !keystroke.shift && !keystroke.capsLock {
+            if let script = Script(of: character) { counts[script, default: 0] += 1 }
+        }
+        self.script = counts.max { $0.value != $1.value ? $0.value < $1.value : $0.key.rawValue > $1.key.rawValue }?.key ?? .other
     }
 
     /// Unshifted beats shifted; otherwise the lower key code wins (deterministic).
     private static func isSimpler(_ a: Keystroke, than b: Keystroke) -> Bool {
         a.shift != b.shift ? !a.shift : a.keyCode < b.keyCode
+    }
+
+    /// Letters the layout types without Shift or Caps Lock, lowercase.
+    public var lowercaseLetters: Set<Character> {
+        Set(table.compactMap { keystroke, character in
+            !keystroke.shift && !keystroke.capsLock && TextRules.isWordCharacter(character)
+                ? character.lowercased().first : nil
+        })
     }
 
     public func character(for keystroke: Keystroke) -> String? {
@@ -63,6 +79,25 @@ public struct LayoutMap: Sendable {
     public func isWordCharacter(_ keystroke: Keystroke) -> Bool {
         guard let character = table[keystroke] else { return false }
         return TextRules.isWordCharacter(character)
+    }
+}
+
+/// The alphabet of a letter. Wrong-layout typing is mostly typing in one alphabet while meaning another.
+public enum Script: String, Sendable {
+    case latin, cyrillic, greek, hebrew, arabic, other
+
+    /// nil for anything but a single letter.
+    public init?(of text: String) {
+        guard text.count == 1, let character = text.first, character.isLetter,
+              let value = character.unicodeScalars.first?.value else { return nil }
+        switch value {
+        case 0x0041...0x024F, 0x1E00...0x1EFF: self = .latin
+        case 0x0400...0x052F: self = .cyrillic
+        case 0x0370...0x03FF, 0x1F00...0x1FFF: self = .greek
+        case 0x0590...0x05FF: self = .hebrew
+        case 0x0600...0x06FF, 0x0750...0x077F: self = .arabic
+        default: self = .other
+        }
     }
 }
 

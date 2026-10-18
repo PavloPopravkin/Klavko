@@ -3,7 +3,7 @@
 extension Translations {
     public static let french: [String: String] = [
         "Version": "Version",
-        "Keyboard layout switcher and typing assistant for Mac: Ukrainian and English.": "Commutateur de disposition clavier et assistant de saisie pour Mac : ukrainien et anglais.",
+        "Keyboard layout switcher and typing assistant for Mac: Ukrainian, English, Russian and 10 more languages.": "Changement automatique de disposition et assistant de saisie pour Mac : ukrainien, anglais, russe et 10 autres langues.",
         "Check for updates automatically": "Rechercher automatiquement les mises à jour",
         "What’s New": "Nouveautés",
         "Update": "Mettre à jour",
@@ -85,7 +85,7 @@ extension Translations {
         "Exceptions": "Exceptions",
         "Words Klavko never changes. Write them the way you type them (for example “ye” or “npm”). If you undo the fix of the same word twice, Klavko offers to add it here.": "Mots que Klavko ne modifie jamais. Écrivez-les comme vous les saisissez (par exemple « ye » ou « npm »). Si vous annulez deux fois la correction du même mot, Klavko propose de l’ajouter ici.",
         "Fix typos": "Corriger les fautes de frappe",
-        "Ukrainian and English: missing and swapped letters, neighbouring keys (teh → the), a stuck Shift (HEllo → Hello). Doubtful words, names mid-sentence and words with digits stay as they are.": "Ukrainien et anglais : lettres manquantes ou inversées, touches voisines (teh → the), Maj bloquée (HEllo → Hello). Les mots douteux, les noms en milieu de phrase et les mots contenant des chiffres restent inchangés.",
+        "All layout languages: missing and swapped letters, neighbouring keys (teh → the), a stuck Shift (HEllo → Hello). Doubtful words, names mid-sentence and words with digits stay as they are.": "Toutes les langues des dispositions : lettres manquantes ou inversées, touches voisines (teh → the), Maj bloquée (HEllo → Hello). Les mots douteux, les noms en milieu de phrase et les mots contenant des chiffres restent inchangés.",
         "Add a missing space after punctuation": "Ajouter une espace manquante après la ponctuation",
         "“Hi,there” → “Hi, there”. After a full stop only before a capital letter; numbers, addresses, hyphens, brackets and quotes are left alone.": "« Hi,there » → « Hi, there ». Après un point, uniquement devant une majuscule ; les nombres, adresses, traits d’union, parenthèses et guillemets ne sont pas modifiés.",
         "Typos": "Fautes de frappe",

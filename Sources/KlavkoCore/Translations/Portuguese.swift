@@ -3,7 +3,7 @@
 extension Translations {
     public static let portuguese: [String: String] = [
         "Version": "Versão",
-        "Keyboard layout switcher and typing assistant for Mac: Ukrainian and English.": "Alternador de layout de teclado e assistente de digitação para Mac: ucraniano e inglês.",
+        "Keyboard layout switcher and typing assistant for Mac: Ukrainian, English, Russian and 10 more languages.": "Alternador de layout de teclado e assistente de digitação para Mac: ucraniano, inglês, russo e mais 10 idiomas.",
         "Check for updates automatically": "Buscar atualizações automaticamente",
         "What’s New": "Novidades",
         "Update": "Atualizar",
@@ -85,7 +85,7 @@ extension Translations {
         "Exceptions": "Exceções",
         "Words Klavko never changes. Write them the way you type them (for example “ye” or “npm”). If you undo the fix of the same word twice, Klavko offers to add it here.": "Palavras que o Klavko nunca altera. Escreva-as como você as digita (por exemplo, “ye” ou “npm”). Se você desfizer duas vezes a correção da mesma palavra, o Klavko oferece adicioná-la aqui.",
         "Fix typos": "Corrigir erros de digitação",
-        "Ukrainian and English: missing and swapped letters, neighbouring keys (teh → the), a stuck Shift (HEllo → Hello). Doubtful words, names mid-sentence and words with digits stay as they are.": "Ucraniano e inglês: letras faltando ou trocadas de lugar, teclas vizinhas (teh → the), Shift preso (HEllo → Hello). Palavras duvidosas, nomes no meio da frase e palavras com números ficam como estão.",
+        "All layout languages: missing and swapped letters, neighbouring keys (teh → the), a stuck Shift (HEllo → Hello). Doubtful words, names mid-sentence and words with digits stay as they are.": "Todos os idiomas dos layouts: letras faltando ou trocadas de lugar, teclas vizinhas (teh → the), Shift preso (HEllo → Hello). Palavras duvidosas, nomes no meio da frase e palavras com números ficam como estão.",
         "Add a missing space after punctuation": "Adicionar o espaço que falta após pontuação",
         "“Hi,there” → “Hi, there”. After a full stop only before a capital letter; numbers, addresses, hyphens, brackets and quotes are left alone.": "“Hi,there” → “Hi, there”. Depois de ponto final, só antes de letra maiúscula; números, endereços, hifens, parênteses e aspas não são alterados.",
         "Typos": "Erros de digitação",

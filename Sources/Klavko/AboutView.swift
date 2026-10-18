@@ -36,8 +36,8 @@ struct AboutSection: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Klavko").font(.system(size: 22, weight: .bold))
                     Text(tr("Версія", "Version") + " " + AboutInfo.version).foregroundStyle(.secondary)
-                    Text(tr("Перемикач розкладки й помічник для набору тексту на Mac: українська та англійська.",
-                             "Keyboard layout switcher and typing assistant for Mac: Ukrainian and English."))
+                    Text(tr("Перемикач розкладки й помічник для набору тексту на Mac: українська, англійська, російська та ще 10 мов.",
+                             "Keyboard layout switcher and typing assistant for Mac: Ukrainian, English, Russian and 10 more languages."))
                         .font(.callout)
                         .fixedSize(horizontal: false, vertical: true)
                 }

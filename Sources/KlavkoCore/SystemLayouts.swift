@@ -1,11 +1,13 @@
 import Carbon
 import Foundation
 
-/// Reads enabled Ukrainian and English keyboard layouts from macOS (Text Input Sources).
+/// Reads enabled keyboard layouts of the languages Klavko knows from macOS (Text Input Sources).
 public enum SystemLayouts {
-    public static let supportedLanguages = ["uk", "en"]
+    /// Languages whose words Klavko can tell apart: each has a macOS dictionary and a plain layout
+    /// (one character per key; Chinese, Japanese and Korean are typed through input methods instead).
+    public static let supportedLanguages = ["uk", "en", "ru", "de", "fr", "es", "it", "pt", "pl", "tr", "el", "he", "ar"]
 
-    /// Enabled keyboard layouts whose primary language is Ukrainian or English.
+    /// Enabled keyboard layouts whose primary language is one of `supportedLanguages`.
     public static func enabledLayouts() -> [(source: TISInputSource, map: LayoutMap)] {
         let filter = [kTISPropertyInputSourceType as String: kTISTypeKeyboardLayout as String] as CFDictionary
         guard let list = TISCreateInputSourceList(filter, false)?.takeRetainedValue() as? [TISInputSource] else {

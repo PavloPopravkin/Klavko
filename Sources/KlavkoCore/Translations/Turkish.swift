@@ -3,7 +3,7 @@
 extension Translations {
     public static let turkish: [String: String] = [
         "Version": "Sürüm",
-        "Keyboard layout switcher and typing assistant for Mac: Ukrainian and English.": "Mac için klavye düzeni değiştirici ve yazma asistanı: Ukraynaca ve İngilizce.",
+        "Keyboard layout switcher and typing assistant for Mac: Ukrainian, English, Russian and 10 more languages.": "Mac için klavye düzeni değiştirici ve yazma yardımcısı: Ukraynaca, İngilizce, Rusça ve 10 dil daha.",
         "Check for updates automatically": "Güncellemeleri otomatik denetle",
         "What’s New": "Yenilikler",
         "Update": "Güncelle",
@@ -85,7 +85,7 @@ extension Translations {
         "Exceptions": "İstisnalar",
         "Words Klavko never changes. Write them the way you type them (for example “ye” or “npm”). If you undo the fix of the same word twice, Klavko offers to add it here.": "Klavko’nun asla değiştirmediği kelimeler. Yazdığınız şekilde girin (örneğin “ye” veya “npm”). Aynı kelimenin düzeltmesini iki kez geri alırsanız Klavko onu buraya eklemeyi önerir.",
         "Fix typos": "Yazım hatalarını düzelt",
-        "Ukrainian and English: missing and swapped letters, neighbouring keys (teh → the), a stuck Shift (HEllo → Hello). Doubtful words, names mid-sentence and words with digits stay as they are.": "Ukraynaca ve İngilizce: eksik ve yer değiştirmiş harfler, komşu tuşlar (teh → the), takılı kalan Shift (HEllo → Hello). Şüpheli kelimeler, cümle ortasındaki adlar ve rakam içeren kelimeler olduğu gibi kalır.",
+        "All layout languages: missing and swapped letters, neighbouring keys (teh → the), a stuck Shift (HEllo → Hello). Doubtful words, names mid-sentence and words with digits stay as they are.": "Tüm düzen dilleri: eksik ve yer değiştirmiş harfler, komşu tuşlar (teh → the), takılı kalan Shift (HEllo → Hello). Şüpheli kelimeler, cümle ortasındaki adlar ve rakam içeren kelimeler olduğu gibi kalır.",
         "Add a missing space after punctuation": "Noktalama işaretlerinden sonra eksik boşluğu ekle",
         "“Hi,there” → “Hi, there”. After a full stop only before a capital letter; numbers, addresses, hyphens, brackets and quotes are left alone.": "“Hi,there” → “Hi, there”. Noktadan sonra yalnızca büyük harften önce; sayılar, adresler, tireler, parantezler ve tırnaklar değiştirilmez.",
         "Typos": "Yazım hataları",

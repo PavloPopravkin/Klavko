@@ -3,7 +3,7 @@
 extension Translations {
     public static let italian: [String: String] = [
         "Version": "Versione",
-        "Keyboard layout switcher and typing assistant for Mac: Ukrainian and English.": "Selettore del layout di tastiera e assistente di scrittura per Mac: ucraino e inglese.",
+        "Keyboard layout switcher and typing assistant for Mac: Ukrainian, English, Russian and 10 more languages.": "Selettore di layout di tastiera e assistente di scrittura per Mac: ucraino, inglese, russo e altre 10 lingue.",
         "Check for updates automatically": "Controlla automaticamente gli aggiornamenti",
         "What’s New": "Novità",
         "Update": "Aggiorna",
@@ -85,7 +85,7 @@ extension Translations {
         "Exceptions": "Eccezioni",
         "Words Klavko never changes. Write them the way you type them (for example “ye” or “npm”). If you undo the fix of the same word twice, Klavko offers to add it here.": "Parole che Klavko non modifica mai. Scrivile come le digiti (ad esempio “ye” o “npm”). Se annulli due volte la correzione della stessa parola, Klavko propone di aggiungerla qui.",
         "Fix typos": "Correggi i refusi",
-        "Ukrainian and English: missing and swapped letters, neighbouring keys (teh → the), a stuck Shift (HEllo → Hello). Doubtful words, names mid-sentence and words with digits stay as they are.": "Ucraino e inglese: lettere mancanti o scambiate, tasti vicini (teh → the), Maiusc bloccato (HEllo → Hello). Le parole dubbie, i nomi a metà frase e le parole con cifre restano invariati.",
+        "All layout languages: missing and swapped letters, neighbouring keys (teh → the), a stuck Shift (HEllo → Hello). Doubtful words, names mid-sentence and words with digits stay as they are.": "Tutte le lingue dei layout: lettere mancanti o scambiate, tasti vicini (teh → the), Maiusc bloccato (HEllo → Hello). Le parole dubbie, i nomi a metà frase e le parole con cifre restano invariati.",
         "Add a missing space after punctuation": "Aggiungi lo spazio mancante dopo la punteggiatura",
         "“Hi,there” → “Hi, there”. After a full stop only before a capital letter; numbers, addresses, hyphens, brackets and quotes are left alone.": "“Hi,there” → “Hi, there”. Dopo il punto solo prima di una lettera maiuscola; numeri, indirizzi, trattini, parentesi e virgolette non vengono modificati.",
         "Typos": "Refusi",

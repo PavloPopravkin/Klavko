@@ -3,7 +3,7 @@
 extension Translations {
     public static let polish: [String: String] = [
         "Version": "Wersja",
-        "Keyboard layout switcher and typing assistant for Mac: Ukrainian and English.": "Przełącznik układu klawiatury i asystent pisania na Maca: ukraiński i angielski.",
+        "Keyboard layout switcher and typing assistant for Mac: Ukrainian, English, Russian and 10 more languages.": "Przełącznik układu klawiatury i asystent pisania na Maca: ukraiński, angielski, rosyjski i 10 innych języków.",
         "Check for updates automatically": "Automatycznie sprawdzaj aktualizacje",
         "What’s New": "Co nowego",
         "Update": "Zaktualizuj",
@@ -85,7 +85,7 @@ extension Translations {
         "Exceptions": "Wyjątki",
         "Words Klavko never changes. Write them the way you type them (for example “ye” or “npm”). If you undo the fix of the same word twice, Klavko offers to add it here.": "Słowa, których Klavko nigdy nie zmienia. Wpisuj je tak, jak je piszesz (na przykład „ye” lub „npm”). Jeśli dwukrotnie cofniesz poprawkę tego samego słowa, Klavko sam zaproponuje dodanie go tutaj.",
         "Fix typos": "Poprawiaj literówki",
-        "Ukrainian and English: missing and swapped letters, neighbouring keys (teh → the), a stuck Shift (HEllo → Hello). Doubtful words, names mid-sentence and words with digits stay as they are.": "Ukraiński i angielski: brakujące i przestawione litery, sąsiednie klawisze (teh → the), zablokowany Shift (HEllo → Hello). Wątpliwe słowa, imiona w środku zdania i słowa z cyframi pozostają bez zmian.",
+        "All layout languages: missing and swapped letters, neighbouring keys (teh → the), a stuck Shift (HEllo → Hello). Doubtful words, names mid-sentence and words with digits stay as they are.": "Wszystkie języki układów: brakujące i przestawione litery, sąsiednie klawisze (teh → the), zablokowany Shift (HEllo → Hello). Wątpliwe słowa, imiona w środku zdania i słowa z cyframi pozostają bez zmian.",
         "Add a missing space after punctuation": "Dodawaj brakującą spację po znakach interpunkcyjnych",
         "“Hi,there” → “Hi, there”. After a full stop only before a capital letter; numbers, addresses, hyphens, brackets and quotes are left alone.": "„Hi,there” → „Hi, there”. Po kropce tylko przed wielką literą; liczby, adresy, łączniki, nawiasy i cudzysłowy pozostają bez zmian.",
         "Typos": "Literówki",

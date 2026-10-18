@@ -3,7 +3,7 @@
 extension Translations {
     public static let russian: [String: String] = [
         "Version": "Версия",
-        "Keyboard layout switcher and typing assistant for Mac: Ukrainian and English.": "Переключатель раскладки и помощник для набора текста на Mac: украинский и английский.",
+        "Keyboard layout switcher and typing assistant for Mac: Ukrainian, English, Russian and 10 more languages.": "Переключатель раскладки и помощник для набора текста на Mac: украинский, английский, русский и ещё 10 языков.",
         "Check for updates automatically": "Автоматически проверять обновления",
         "What’s New": "Что нового",
         "Update": "Обновить",
@@ -85,7 +85,7 @@ extension Translations {
         "Exceptions": "Исключения",
         "Words Klavko never changes. Write them the way you type them (for example “ye” or “npm”). If you undo the fix of the same word twice, Klavko offers to add it here.": "Слова, которые Klavko никогда не меняет. Записывайте их так, как набираете (например, «ye» или «npm»). Если вы дважды отмените исправление одного и того же слова, Klavko сам предложит добавить его сюда.",
         "Fix typos": "Исправлять опечатки",
-        "Ukrainian and English: missing and swapped letters, neighbouring keys (teh → the), a stuck Shift (HEllo → Hello). Doubtful words, names mid-sentence and words with digits stay as they are.": "Украинский и английский: пропущенные и переставленные буквы, соседние клавиши (рлбиш → робиш), залипший Shift (ПРивіт → Привіт). Сомнительные слова, имена в середине предложения и слова с цифрами не меняются.",
+        "All layout languages: missing and swapped letters, neighbouring keys (teh → the), a stuck Shift (HEllo → Hello). Doubtful words, names mid-sentence and words with digits stay as they are.": "Все языки раскладок: пропущенные и переставленные буквы, соседние клавиши (рлбиш → робиш), залипший Shift (ПРивіт → Привіт). Сомнительные слова, имена в середине предложения и слова с цифрами не меняются.",
         "Add a missing space after punctuation": "Добавлять пропущенный пробел после знаков препинания",
         "“Hi,there” → “Hi, there”. After a full stop only before a capital letter; numbers, addresses, hyphens, brackets and quotes are left alone.": "«Привіт,як» → «Привіт, як». После точки — только перед заглавной буквой; числа, адреса, дефисы, скобки и кавычки не меняются.",
         "Typos": "Опечатки",

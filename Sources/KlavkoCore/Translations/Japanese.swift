@@ -3,7 +3,7 @@
 extension Translations {
     public static let japanese: [String: String] = [
         "Version": "バージョン",
-        "Keyboard layout switcher and typing assistant for Mac: Ukrainian and English.": "Mac 用のキーボードレイアウト切り替え・入力アシスタント：ウクライナ語と英語に対応。",
+        "Keyboard layout switcher and typing assistant for Mac: Ukrainian, English, Russian and 10 more languages.": "Mac 用のキーボードレイアウト切り替えと入力アシスタント：ウクライナ語、英語、ロシア語ほか 10 言語。",
         "Check for updates automatically": "アップデートを自動的に確認",
         "What’s New": "新機能",
         "Update": "アップデート",
@@ -85,7 +85,7 @@ extension Translations {
         "Exceptions": "例外",
         "Words Klavko never changes. Write them the way you type them (for example “ye” or “npm”). If you undo the fix of the same word twice, Klavko offers to add it here.": "Klavko が絶対に変更しない単語です。入力したとおりに書いてください（例：「ye」や「npm」）。同じ単語の修正を 2 回取り消すと、Klavko がここへの追加を提案します。",
         "Fix typos": "タイプミスを修正",
-        "Ukrainian and English: missing and swapped letters, neighbouring keys (teh → the), a stuck Shift (HEllo → Hello). Doubtful words, names mid-sentence and words with digits stay as they are.": "ウクライナ語と英語：抜けた文字や入れ替わった文字、隣のキーの打ち間違い（teh → the）、Shift の押しっぱなし（HEllo → Hello）。自信のない単語、文中の名前、数字を含む単語はそのままにします。",
+        "All layout languages: missing and swapped letters, neighbouring keys (teh → the), a stuck Shift (HEllo → Hello). Doubtful words, names mid-sentence and words with digits stay as they are.": "すべてのレイアウト言語：抜けた文字や入れ替わった文字、隣のキーの打ち間違い（teh → the）、Shift の押しっぱなし（HEllo → Hello）。自信のない単語、文中の名前、数字を含む単語はそのままにします。",
         "Add a missing space after punctuation": "句読点の後の抜けたスペースを補う",
         "“Hi,there” → “Hi, there”. After a full stop only before a capital letter; numbers, addresses, hyphens, brackets and quotes are left alone.": "「Hi,there」→「Hi, there」。ピリオドの後は大文字の前のみ。数字、アドレス、ハイフン、括弧、引用符はそのままにします。",
         "Typos": "タイプミス",

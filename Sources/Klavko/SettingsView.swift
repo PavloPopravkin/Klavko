@@ -147,10 +147,10 @@ struct SettingsView: View {
                     Section {
                         Toggle(isOn: $settings.correctSpelling) {
                             Text(tr("Виправляти помилки", "Fix typos"))
-                            Text(tr("Українська та англійська: пропущені й переставлені літери, сусідні клавіші "
+                            Text(tr("Усі мови розкладок: пропущені й переставлені літери, сусідні клавіші "
                                     + "(рлбиш → робиш), залипання Shift (ПРивіт → Привіт). "
                                     + "Сумнівні слова, імена посеред речення та слова з цифрами не змінюються.",
-                                    "Ukrainian and English: missing and swapped letters, neighbouring keys "
+                                    "All layout languages: missing and swapped letters, neighbouring keys "
                                     + "(teh → the), a stuck Shift (HEllo → Hello). "
                                     + "Doubtful words, names mid-sentence and words with digits stay as they are."))
                         }

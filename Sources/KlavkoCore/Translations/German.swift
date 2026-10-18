@@ -3,7 +3,7 @@
 extension Translations {
     public static let german: [String: String] = [
         "Version": "Version",
-        "Keyboard layout switcher and typing assistant for Mac: Ukrainian and English.": "Tastaturlayout-Umschalter und Schreibassistent für den Mac: Ukrainisch und Englisch.",
+        "Keyboard layout switcher and typing assistant for Mac: Ukrainian, English, Russian and 10 more languages.": "Tastaturlayout-Umschalter und Schreibassistent für den Mac: Ukrainisch, Englisch, Russisch und 10 weitere Sprachen.",
         "Check for updates automatically": "Automatisch nach Updates suchen",
         "What’s New": "Neue Funktionen",
         "Update": "Aktualisieren",
@@ -85,7 +85,7 @@ extension Translations {
         "Exceptions": "Ausnahmen",
         "Words Klavko never changes. Write them the way you type them (for example “ye” or “npm”). If you undo the fix of the same word twice, Klavko offers to add it here.": "Wörter, die Klavko nie ändert. Schreib sie so, wie du sie tippst (zum Beispiel „ye“ oder „npm“). Wenn du die Korrektur desselben Wortes zweimal rückgängig machst, schlägt Klavko selbst vor, es hier hinzuzufügen.",
         "Fix typos": "Tippfehler korrigieren",
-        "Ukrainian and English: missing and swapped letters, neighbouring keys (teh → the), a stuck Shift (HEllo → Hello). Doubtful words, names mid-sentence and words with digits stay as they are.": "Ukrainisch und Englisch: fehlende und vertauschte Buchstaben, benachbarte Tasten (teh → the), hängende Umschalttaste (HEllo → Hello). Unsichere Wörter, Namen mitten im Satz und Wörter mit Ziffern bleiben unverändert.",
+        "All layout languages: missing and swapped letters, neighbouring keys (teh → the), a stuck Shift (HEllo → Hello). Doubtful words, names mid-sentence and words with digits stay as they are.": "Alle Layoutsprachen: fehlende und vertauschte Buchstaben, benachbarte Tasten (teh → the), hängende Umschalttaste (HEllo → Hello). Unsichere Wörter, Namen mitten im Satz und Wörter mit Ziffern bleiben unverändert.",
         "Add a missing space after punctuation": "Fehlendes Leerzeichen nach Satzzeichen ergänzen",
         "“Hi,there” → “Hi, there”. After a full stop only before a capital letter; numbers, addresses, hyphens, brackets and quotes are left alone.": "„Hi,there“ → „Hi, there“. Nach einem Punkt nur vor einem Großbuchstaben; Zahlen, Adressen, Bindestriche, Klammern und Anführungszeichen bleiben unverändert.",
         "Typos": "Tippfehler",

@@ -78,17 +78,23 @@ public enum Typography {
             ?? rules.first { $0.isWord && $0.from.lowercased() == word.lowercased() }
     }
 
-    /// The curly quote for a straight `"` typed after `before`: «» in Ukrainian, “” in English.
+    /// The curly quote for a straight `"` typed after `before`, as the language writes them:
+    /// «» in Ukrainian, “” in English, „“ in German…
     /// Opening at the start, after a space or an opening bracket; closing otherwise — after a word,
     /// a mark, or right after an opening quote (two presses give «»).
     public static func quote(after before: String, language: String) -> Character {
         let opening = before.last.map { $0.isWhitespace || "([{".contains($0) } ?? true
-        if language == "uk" { return opening ? "«" : "»" }
-        return opening ? "“" : "”"
+        let (open, close) = quotes[language] ?? ("“", "”")
+        return opening ? open : close
     }
 
     /// "слово - " / "слово -- " → "слово — ": how many hyphens (1 or 2) before the Space being typed
     /// form a dash. Not at the start of a line ("- пункт" is a list) or in "--flag".
+    private static let quotes: [String: (Character, Character)] = [
+        "uk": ("«", "»"), "ru": ("«", "»"), "fr": ("«", "»"), "es": ("«", "»"), "it": ("«", "»"),
+        "pt": ("«", "»"), "el": ("«", "»"), "ar": ("«", "»"), "de": ("„", "“"), "pl": ("„", "”"),
+    ]
+
     public static func dashHyphens(before: String) -> Int {
         for count in [2, 1] {
             let hyphens = String(repeating: "-", count: count)

@@ -17,12 +17,20 @@ enum SelectionConverter {
         borrowedUntil = Date().addingTimeInterval(1.5)
     }
 
+    private static let spellChecker = MacSpellChecker()
+
     /// Retypes the selection in the other layout ("ghbdsn" → "привіт") and switches to that layout.
     static func convert(layouts: [(source: TISInputSource, map: LayoutMap)], onConverted: @escaping () -> Void) {
         var target: TISInputSource?
         transform({ text in
-            guard let from = LayoutConverter.sourceLayout(of: text, among: layouts.map(\.map)),
-                  let to = layouts.first(where: { $0.map.language != from.language }) else { return nil }
+            // On a tie (English and German type the same letters) the selection is in the current layout.
+            let current = SystemLayouts.currentLayoutID()
+            let maps = layouts.map(\.map).sorted { $0.id == current && $1.id != current }
+            guard let from = LayoutConverter.sourceLayout(of: text, among: maps),
+                  let best = LayoutChoice.best(for: text, from: from,
+                                               among: LayoutChoice.alternatives(to: from, among: maps),
+                                               spellChecker: spellChecker),
+                  let to = layouts.first(where: { $0.map.id == best.id }) else { return nil }
             target = to.source
             Log.engine.notice("Converting selection \(from.language, privacy: .public)→\(to.map.language, privacy: .public), \(text.count) chars")
             return LayoutConverter.convert(text, from: from, to: to.map)
