@@ -627,10 +627,32 @@ final class SwitchEngine {
     /// `alternativeTrail`: the trigger key as the layout converted into types it.
     private func fixFinishedWord(_ word: [Keystroke], _ pair: Pair, typedTrail: String,
                                  alternativeTrail: (LayoutMap) -> String) -> Bool {
-        replaceWholeWord(word, pair, trail: typedTrail)
+        if replaceWholeWord(word, pair, trail: typedTrail)
             || capitalizeEnglishI(word, pair, trail: typedTrail)
-            || autoConvert(word, pair, typedTrail: typedTrail, alternativeTrail: alternativeTrail)
-            || correctSpelling(word, pair, trail: typedTrail)
+            || autoConvert(word, pair, typedTrail: typedTrail, alternativeTrail: alternativeTrail) {
+            return true
+        }
+        // The text is right but the layout isn't: no spelling "fix" in the wrong language. The key goes on as typed.
+        if switchLayoutQuietly(word, pair) { return false }
+        return correctSpelling(word, pair, trail: typedTrail)
+    }
+
+    /// "что" typed in the Ukrainian layout looks the same in the Russian one: there is nothing to retype,
+    /// but the word is Russian, so the next ones are typed in the Russian layout. Returns true when it switched.
+    private func switchLayoutQuietly(_ word: [Keystroke], _ pair: Pair) -> Bool {
+        guard autoSwitchAllowed, let typed = pair.current.map.render(word) else { return false }
+        let core = TextRules.coreWord(typed)
+        // Short words are too often words of both.
+        guard core.count > ShortWords.maxLength, !core.contains(where: \.isNumber),
+              !spellChecker.isValid(core, language: pair.current.map.language),
+              let target = alternatives.first(where: { layout in
+                  layout.map.render(word) == typed && spellChecker.isValid(core, language: layout.map.language)
+              })
+        else { return false }
+        SystemLayouts.select(target.source)
+        onFix(.layout)
+        Log.engine.notice("Switched layout without retyping \(pair.current.map.language, privacy: .public)→\(target.map.language, privacy: .public), \(word.count) chars")
+        return true
     }
 
     /// English "i" on its own is always "I".
@@ -1065,8 +1087,14 @@ final class SwitchEngine {
         let word = String(before.prefix { $0.isLetter }.reversed()).lowercased()
         guard !word.isEmpty else { return nil }
         let current = layouts.first { $0.map.id == SystemLayouts.currentLayoutID() }
-        let candidates = (current.map { [$0] } ?? []) + alternatives
-        return candidates.first { layout in word.allSatisfy { layout.map.keystroke(for: String($0)) != nil } }?.map.language
+        let typing = ((current.map { [$0] } ?? []) + alternatives).filter { layout in
+            word.allSatisfy { layout.map.keystroke(for: String($0)) != nil }
+        }
+        // Several layouts type it (Ukrainian and Russian share most letters): the one whose dictionary knows it.
+        if typing.count > 1, let known = typing.first(where: { spellChecker.isValid(word, language: $0.map.language) }) {
+            return known.map.language
+        }
+        return typing.first?.map.language
     }
 
     /// The pair with each alternative layout in turn (likeliest first) and what the keys type in it,
