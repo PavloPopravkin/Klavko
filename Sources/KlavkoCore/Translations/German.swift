@@ -2,6 +2,14 @@
 
 extension Translations {
     public static let german: [String: String] = [
+        "Text from the Screen…": "Text vom Bildschirm …",
+        "Allow Klavko to record the screen: System Settings → Privacy & Security → Screen & System Audio Recording. Then restart Klavko and try again.": "Erlaube Klavko die Bildschirmaufnahme: Systemeinstellungen → Datenschutz & Sicherheit → Bildschirm- & Systemaudioaufnahme. Starte Klavko dann neu und versuche es noch einmal.",
+        "No text found in the selected area.": "Im gewählten Bereich wurde kein Text gefunden.",
+        "Original": "Original",
+        "Text from the screen": "Text vom Bildschirm",
+        "Recognized on this Mac": "Auf diesem Mac erkannt",
+        "Selected text": "Markierter Text",
+        "Text from the screen (read and translate)": "Text vom Bildschirm (lesen und übersetzen)",
         "My language": "Meine Sprache",
         "Translate into": "Übersetzen ins",
         "Text in my language is translated into the chosen language, text in any other language into mine. The languages can also be changed right in the translation panel.": "Text in meiner Sprache wird in die gewählte Sprache übersetzt, Text in jeder anderen Sprache in meine. Die Sprachen lassen sich auch direkt im Übersetzungsfenster ändern.",
@@ -146,7 +154,6 @@ extension Translations {
         "The macOS translator doesn’t support this language pair.": "Der macOS-Übersetzer unterstützt dieses Sprachpaar nicht.",
         "Nothing to translate.": "Nichts zu übersetzen.",
         "Couldn’t translate: ": "Übersetzung fehlgeschlagen: ",
-        "Klavko · Translation": "Klavko · Übersetzung",
         "Translate the other way": "In die andere Richtung übersetzen",
         "Translation needs macOS 15 Sequoia or later.": "Die Übersetzung benötigt macOS 15 Sequoia oder neuer.",
         "Select some text first, then press the hotkey.": "Wähle zuerst Text aus und drücke dann das Tastenkürzel.",

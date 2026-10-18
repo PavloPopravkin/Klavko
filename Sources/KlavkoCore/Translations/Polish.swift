@@ -2,6 +2,14 @@
 
 extension Translations {
     public static let polish: [String: String] = [
+        "Text from the Screen…": "Tekst z ekranu…",
+        "Allow Klavko to record the screen: System Settings → Privacy & Security → Screen & System Audio Recording. Then restart Klavko and try again.": "Pozwól Klavko nagrywać ekran: Ustawienia systemowe → Prywatność i ochrona → Nagrywanie ekranu i dźwięku systemowego. Potem uruchom ponownie Klavko i spróbuj jeszcze raz.",
+        "No text found in the selected area.": "W wybranym obszarze nie znaleziono tekstu.",
+        "Original": "Oryginał",
+        "Text from the screen": "Tekst z ekranu",
+        "Recognized on this Mac": "Rozpoznano na tym Macu",
+        "Selected text": "Zaznaczony tekst",
+        "Text from the screen (read and translate)": "Tekst z ekranu (odczytaj i przetłumacz)",
         "My language": "Mój język",
         "Translate into": "Tłumacz na",
         "Text in my language is translated into the chosen language, text in any other language into mine. The languages can also be changed right in the translation panel.": "Tekst w moim języku jest tłumaczony na wybrany język, a tekst w każdym innym języku — na mój. Języki można też zmienić bezpośrednio w oknie tłumaczenia.",
@@ -146,7 +154,6 @@ extension Translations {
         "The macOS translator doesn’t support this language pair.": "Tłumacz macOS nie obsługuje tej pary języków.",
         "Nothing to translate.": "Nie ma nic do przetłumaczenia.",
         "Couldn’t translate: ": "Nie udało się przetłumaczyć: ",
-        "Klavko · Translation": "Klavko · Tłumaczenie",
         "Translate the other way": "Przetłumacz w drugą stronę",
         "Translation needs macOS 15 Sequoia or later.": "Tłumaczenie wymaga macOS 15 Sequoia lub nowszego.",
         "Select some text first, then press the hotkey.": "Najpierw zaznacz tekst, a potem naciśnij skrót.",

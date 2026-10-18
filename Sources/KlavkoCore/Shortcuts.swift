@@ -82,7 +82,7 @@ public enum Shortcut: Codable, Hashable, Sendable {
 }
 
 public enum HotkeyAction: String, Codable, CaseIterable, Sendable {
-    case convertWord, convertText, undo, changeCase, translate, clipboard, voice
+    case convertWord, convertText, undo, changeCase, translate, screenText, clipboard, voice
 
     public var title: String {
         switch self {
@@ -91,6 +91,7 @@ public enum HotkeyAction: String, Codable, CaseIterable, Sendable {
         case .undo: tr("Скасувати або повернути виправлення", "Undo or redo a fix")
         case .changeCase: tr("Змінити регістр (слово або виділене)", "Change case (word or selection)")
         case .translate: tr("Перекласти виділене", "Translate Selection")
+        case .screenText: tr("Текст з екрана (розпізнати й перекласти)", "Text from the screen (read and translate)")
         case .clipboard: tr("Історія буфера обміну", "Clipboard history")
         case .voice: tr("Голосовий ввід (почати / вставити)", "Voice input (start / insert)")
         }
@@ -103,6 +104,7 @@ public enum HotkeyAction: String, Codable, CaseIterable, Sendable {
         case .undo: nil
         case .changeCase: nil
         case .translate: Shortcut(modifiers: [.command], double: true)
+        case .screenText: Shortcut(keyCode: 12, modifiers: [.control])  // ⌃Q
         case .clipboard: Shortcut(keyCode: 9, modifiers: [.option, .command])  // ⌥⌘V
         case .voice: Shortcut(modifiers: [.function], double: false)
         }

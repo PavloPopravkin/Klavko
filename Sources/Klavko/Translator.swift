@@ -3,9 +3,10 @@ import KlavkoCore
 import SwiftUI
 import Translation
 
-/// "Translate the selection": copies the selected text, translates it Ukrainian ↔ English with the
-/// translator built into macOS (on this Mac, no account or key) and shows the result in a small panel
-/// near the mouse; Return puts it in place of the selection, ⌘C copies it.
+/// "Translate the selection" and "text from the screen": translates the selected text (or text read off
+/// the screen) with the translator built into macOS (on this Mac, no account or key) and shows it in a
+/// small panel near the mouse. Return puts the translation in place of the selection, ⌘C copies what is
+/// shown; a switch shows the original text instead.
 @MainActor
 final class Translator: ObservableObject {
     enum Stage: Equatable {
@@ -25,6 +26,10 @@ final class Translator: ObservableObject {
 
     @Published private(set) var stage: Stage = .working
     @Published private(set) var job: Job?
+    /// Show the text as it was (read off the screen or selected) instead of its translation.
+    @Published var showOriginal = false
+    /// The text came from the screen (OCR), not from a selection: nothing to replace.
+    @Published private(set) var fromScreen = false
 
     /// The default pair from Settings: (own language, other language).
     var defaultPair: () -> (own: String, other: String) = { ("uk", "en") }
@@ -41,6 +46,8 @@ final class Translator: ObservableObject {
 
     func start() {
         close()
+        fromScreen = false
+        showOriginal = false
         sourceApp = NSWorkspace.shared.frontmostApplication
         anchor = NSEvent.mouseLocation
         // Without the clipboard where the app allows it; ⌘C (clipboard restored) elsewhere.
@@ -65,6 +72,33 @@ final class Translator: ObservableObject {
         }
     }
 
+    /// Text read off the screen: translated like a selection, shown next to `point` (where the area ended).
+    func show(screenText text: String, at point: NSPoint) {
+        close()
+        fromScreen = true
+        showOriginal = false
+        selection = nil
+        sourceApp = NSWorkspace.shared.frontmostApplication
+        anchor = point
+        if text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            job = nil
+            stage = .failed(tr("У вибраній області не знайдено тексту.", "No text found in the selected area."))
+        } else {
+            translate(text, direction(for: text))
+        }
+        showPanel()
+    }
+
+    /// A problem before there is any text (for example no permission to read the screen).
+    func showProblem(_ message: String, at point: NSPoint) {
+        close()
+        fromScreen = true
+        job = nil
+        anchor = point
+        stage = .failed(message)
+        showPanel()
+    }
+
     /// The Settings pair: text in the own language goes into the other one, anything else into the own one.
     private func direction(for text: String) -> TranslationDirection {
         let pair = defaultPair()
@@ -86,6 +120,12 @@ final class Translator: ObservableObject {
         translate(job.text, TranslationDirection(source: source, target: target))
     }
 
+    /// A short label for the panel: "🇺🇦 UA", "RU". Ukrainian shows "UA": its code "UK" reads as Britain.
+    static func shortName(_ code: String) -> String {
+        let label = code == "uk" ? "UA" : code.uppercased()
+        return LanguageFlags.emoji[code].map { "\($0) \(label)" } ?? label
+    }
+
     /// A language's name in the interface language, with its flag: "🇺🇦 Українська".
     static func languageName(_ code: String) -> String {
         let locale = AppLanguage.current.locale
@@ -101,7 +141,7 @@ final class Translator: ObservableObject {
 
     /// Puts the result in place of the selection.
     func replace() {
-        guard case .result(let text) = stage else { return }
+        guard !fromScreen, let text = shownText else { return }
         let app = sourceApp
         let selection = selection
         close()
@@ -111,8 +151,15 @@ final class Translator: ObservableObject {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) { SelectionConverter.paste(text) }
     }
 
+    /// What the panel shows: the original or the translation (nil while there is nothing to show).
+    var shownText: String? {
+        if showOriginal { return job?.text }
+        if case .result(let text) = stage { return text }
+        return nil
+    }
+
     func copyResult() {
-        guard case .result(let text) = stage else { return }
+        guard let text = shownText else { return }
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(text, forType: .string)
         let app = sourceApp
@@ -202,6 +249,26 @@ final class Translator: ObservableObject {
         }
     }
 
+    /// Developer check of the panel's look: a screen text and its translation, into `url`.
+    func snapshot(to url: URL) {
+        fromScreen = true
+        let text = "Знижка 30% на всі товари до неділі\nПодробиці на сайті магазину"
+        job = Job(id: 1, text: text, direction: TranslationDirection(source: "uk", target: "en"))
+        stage = .result("30% off all products until Sunday\nDetails on the store website")
+        let view = NSHostingView(rootView: TranslatorPanelView(translator: self).background(Color(nsColor: .windowBackgroundColor)))
+        view.frame = NSRect(origin: .zero, size: view.fittingSize)
+        let window = NSWindow(contentRect: view.frame, styleMask: [.borderless], backing: .buffered, defer: false)
+        window.contentView = view
+        window.orderBack(nil)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+            if let bitmap = view.bitmapImageRepForCachingDisplay(in: view.bounds) {
+                view.cacheDisplay(in: view.bounds, to: bitmap)
+                try? bitmap.representation(using: .png, properties: [:])?.write(to: url)
+            }
+            NSApp.terminate(nil)
+        }
+    }
+
     private func showPanel() {
         let controller = NSHostingController(rootView: TranslatorPanelView(translator: self))
         controller.sizingOptions = [.preferredContentSize]
@@ -258,44 +325,77 @@ private struct TranslatorPanelView: View {
     @ObservedObject var translator: Translator
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text(tr("Klavko · Переклад", "Klavko · Translation")).font(.headline)
-            if let job = translator.job {
-                // From / into: a change translates the text in the panel again right away.
-                HStack(spacing: 6) {
-                    languagePicker(job.direction.source) { translator.setSource($0) }
-                    Button {
-                        translator.swapDirection()
-                    } label: {
-                        Image(systemName: "arrow.left.arrow.right")
-                    }
-                    .buttonStyle(.borderless)
-                    .help(tr("Перекласти в інший бік", "Translate the other way"))
-                    languagePicker(job.direction.target) { translator.setTarget($0) }
-                }
-            }
+        VStack(alignment: .leading, spacing: 10) {
+            header
             content
         }
-        .padding(16)
+        .padding(.horizontal, 16)
+        .padding(.top, 6)
+        .padding(.bottom, 14)
         .frame(width: 440)
         .modifier(TranslationRunner(translator: translator))
     }
 
-    private func languagePicker(_ selected: String, onChange: @escaping (String) -> Void) -> some View {
-        Picker("", selection: Binding(get: { selected }, set: onChange)) {
-            ForEach(TranslationDirection.languages, id: \.self) { code in
-                Text(Translator.languageName(code)).tag(code)
+    /// Original / translation on the left; the languages, small, on the right.
+    private var header: some View {
+        HStack(spacing: 8) {
+            if translator.job != nil {
+                Picker("", selection: $translator.showOriginal) {
+                    Text(tr("Переклад", "Translation")).tag(false)
+                    Text(tr("Оригінал", "Original")).tag(true)
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+                .controlSize(.small)
+                .fixedSize()
+            } else {
+                Text(translator.fromScreen ? tr("Текст з екрана", "Text from the screen")
+                                           : tr("Переклад", "Translation"))
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(.secondary)
+            }
+            Spacer(minLength: 8)
+            if let job = translator.job {
+                // A change translates the text in the panel again right away.
+                HStack(spacing: 2) {
+                    languageMenu(job.direction.source) { translator.setSource($0) }
+                    Button {
+                        translator.swapDirection()
+                    } label: {
+                        Image(systemName: "arrow.right").font(.system(size: 10, weight: .semibold))
+                    }
+                    .buttonStyle(.borderless)
+                    .foregroundStyle(.secondary)
+                    .help(tr("Перекласти в інший бік", "Translate the other way"))
+                    languageMenu(job.direction.target) { translator.setTarget($0) }
+                }
+                .opacity(translator.showOriginal ? 0.45 : 1)
             }
         }
-        .labelsHidden()
-        .frame(maxWidth: .infinity)
+    }
+
+    private func languageMenu(_ selected: String, onChange: @escaping (String) -> Void) -> some View {
+        Menu {
+            ForEach(TranslationDirection.languages, id: \.self) { code in
+                Button(Translator.languageName(code)) { onChange(code) }
+            }
+        } label: {
+            Text(Translator.shortName(selected)).font(.system(size: 12, weight: .medium))
+        }
+        .menuStyle(.borderlessButton)
+        .menuIndicator(.hidden)
+        .fixedSize()
+        .help(Translator.languageName(selected))
     }
 
     @ViewBuilder private var content: some View {
-        if #unavailable(macOS 15.0) {
+        if #unavailable(macOS 15.0), !translator.showOriginal {
             Text(tr("Переклад працює на macOS 15 Sequoia і новіших.", "Translation needs macOS 15 Sequoia or later."))
                 .foregroundStyle(.secondary)
             closeRow
+        } else if translator.showOriginal, let original = translator.job?.text {
+            textBody(original)
+            actions
         } else {
             switch translator.stage {
             case .noSelection:
@@ -309,29 +409,50 @@ private struct TranslatorPanelView: View {
                     Text(translator.stage == .downloading
                          ? tr("Завантажую мови для перекладу (один раз)…", "Downloading translation languages (once)…")
                          : tr("Перекладаю…", "Translating…"))
+                        .foregroundStyle(.secondary)
                 }
+                .padding(.vertical, 6)
                 closeRow
 
             case .result(let text):
-                ScrollView {
-                    Text(text)
-                        .textSelection(.enabled)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                }
-                .frame(maxHeight: 260)
-                .fixedSize(horizontal: false, vertical: true)
-                HStack {
-                    Text(tr("Перекладач macOS, на цьому Mac", "macOS translator, on this Mac")).font(.caption).foregroundStyle(.secondary)
-                    Spacer()
-                    Button(tr("Копіювати", "Copy")) { translator.copyResult() }
-                        .keyboardShortcut("c", modifiers: .command)
-                    Button(tr("Замінити", "Replace")) { translator.replace() }
-                        .keyboardShortcut(.defaultAction)
-                }
+                textBody(text)
+                actions
 
             case .failed(let message):
-                Text(message).foregroundStyle(.secondary)
+                Text(message).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
                 closeRow
+            }
+        }
+    }
+
+    /// The text itself, first and large.
+    private func textBody(_ text: String) -> some View {
+        ScrollView {
+            Text(text)
+                .font(.system(size: 14))
+                .textSelection(.enabled)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .frame(maxHeight: 300)
+        .fixedSize(horizontal: false, vertical: true)
+    }
+
+    private var actions: some View {
+        HStack {
+            Text(translator.showOriginal
+                 ? (translator.fromScreen ? tr("Розпізнано на цьому Mac", "Recognized on this Mac") : tr("Виділений текст", "Selected text"))
+                 : tr("Перекладач macOS, на цьому Mac", "macOS translator, on this Mac"))
+                .font(.caption)
+                .foregroundStyle(.tertiary)
+            Spacer()
+            if translator.fromScreen {
+                Button(tr("Копіювати", "Copy")) { translator.copyResult() }
+                    .keyboardShortcut(.defaultAction)
+            } else {
+                Button(tr("Копіювати", "Copy")) { translator.copyResult() }
+                    .keyboardShortcut("c", modifiers: .command)
+                Button(tr("Замінити", "Replace")) { translator.replace() }
+                    .keyboardShortcut(.defaultAction)
             }
         }
     }

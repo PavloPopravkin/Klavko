@@ -18,6 +18,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private let updatePrompt = UpdatePrompt()
     private lazy var clipboardWindow = ClipboardWindow(manager: clipboard)
     private let translator = Translator()
+    private let screenText = ScreenTextCapture()
     private let dictation = VoiceDictation()
     private let parakeet = ParakeetEngine()
     private let google = GeminiTranscriber()
@@ -96,6 +97,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         clipboard.start()
         engine.onClipboard = { [unowned self] in
             MainActor.assumeIsolated { clipboardWindow.toggle() }
+        }
+        screenText.languages = { [unowned self] in
+            [settings.translationOwn, settings.translationOther] + SystemLayouts.enabledLayouts().map(\.map.language)
+        }
+        screenText.onText = { [unowned self] text, point in translator.show(screenText: text, at: point) }
+        screenText.onProblem = { [unowned self] message, point in translator.showProblem(message, at: point) }
+        engine.onScreenText = { [unowned self] in
+            MainActor.assumeIsolated { screenText.start() }
         }
         translator.defaultPair = { [unowned self] in (settings.translationOwn, settings.translationOther) }
         engine.onTranslate = { [unowned self] in
@@ -224,6 +233,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                 try? result.write(to: out, atomically: true, encoding: .utf8)
                 NSApp.terminate(nil)
             }
+        }
+        // Developer check of the translation panel: --snapshot-translation <file.png>.
+        if let index = CommandLine.arguments.firstIndex(of: "--snapshot-translation"), index + 1 < CommandLine.arguments.count {
+            translator.snapshot(to: URL(fileURLWithPath: CommandLine.arguments[index + 1]))
+        }
+        // Developer check of screen text recognition: --ocr-check <image> <out.txt>.
+        if let index = CommandLine.arguments.firstIndex(of: "--ocr-check"), index + 2 < CommandLine.arguments.count {
+            ScreenTextCapture.check(URL(fileURLWithPath: CommandLine.arguments[index + 1]),
+                                    writeTo: URL(fileURLWithPath: CommandLine.arguments[index + 2]),
+                                    languages: ["uk", "en"])
         }
         // Developer check of the clipboard window: --snapshot-clipboard <file.png>.
         if let index = CommandLine.arguments.firstIndex(of: "--snapshot-clipboard"), index + 1 < CommandLine.arguments.count {
@@ -366,6 +385,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         }
         menu.addItem(item(tr("Голосовий ввід", "Voice Input"), #selector(toggleVoice)))
         menu.addItem(item(tr("Перекласти виділене", "Translate Selection"), #selector(startTranslation)))
+        menu.addItem(item(tr("Текст з екрана…", "Text from the Screen…"), #selector(captureScreenText)))
         menu.addItem(item(tr("Історія буфера обміну", "Clipboard History"), #selector(showClipboard)))
         menu.addItem(item(tr("Налаштування…", "Settings…"), #selector(showSettings), key: ","))
         menu.addItem(item(tr("Вийти з Klavko", "Quit Klavko"), #selector(quit), key: "q"))
@@ -445,6 +465,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         updater.install()
     }
 
+    @objc private func captureScreenText() {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { [weak self] in self?.screenText.start() }
+    }
+
     @objc private func showClipboard() {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { [weak self] in self?.clipboardWindow.show() }
     }
@@ -461,8 +485,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private func englishLayout() -> LayoutMap? {
         SystemLayouts.enabledLayouts().first { $0.map.language == "en" }?.map
     }
-
-    private static let greyFlagLanguages: Set<String> = ["ru"]
 
     private static func flag(language: String, layoutID: String?) -> String? {
         language == "pt" && layoutID?.contains("Brazilian") == true ? "🇧🇷" : LanguageFlags.emoji[language]
@@ -488,15 +510,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         // Problems take priority over the flag.
         let warning: String? = monitor?.isRunning != true ? "keyboard.badge.exclamationmark"
             : secureInputActive ? "lock.circle" : nil
-        if warning == nil, settings.showFlag, let language = SystemLayouts.currentLanguage(),
-           Self.greyFlagLanguages.contains(language),
-           let image = NSImage(systemSymbolName: "flag.fill", accessibilityDescription: language.uppercased()) {
-            item.length = NSStatusItem.squareLength
-            button.title = ""
-            image.isTemplate = false
-            button.image = image.withSymbolConfiguration(.init(paletteColors: [.systemGray]))
-            return
-        }
         if warning == nil, settings.showFlag, let language = SystemLayouts.currentLanguage() {
             let flag = Self.flag(language: language, layoutID: shownLayoutID)
             item.length = NSStatusItem.variableLength

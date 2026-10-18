@@ -2,6 +2,14 @@
 
 extension Translations {
     public static let chinese: [String: String] = [
+        "Text from the Screen…": "屏幕上的文字…",
+        "Allow Klavko to record the screen: System Settings → Privacy & Security → Screen & System Audio Recording. Then restart Klavko and try again.": "请允许 Klavko 录制屏幕：系统设置 → 隐私与安全性 → 录屏与系统录音。然后重新启动 Klavko 再试一次。",
+        "No text found in the selected area.": "所选区域中未找到文字。",
+        "Original": "原文",
+        "Text from the screen": "屏幕上的文字",
+        "Recognized on this Mac": "在这台 Mac 上识别",
+        "Selected text": "所选文本",
+        "Text from the screen (read and translate)": "屏幕上的文字（识别并翻译）",
         "My language": "我的语言",
         "Translate into": "翻译为",
         "Text in my language is translated into the chosen language, text in any other language into mine. The languages can also be changed right in the translation panel.": "我的语言的文本会翻译为所选语言，任何其他语言的文本会翻译为我的语言。也可以直接在翻译面板中更改语言。",
@@ -146,7 +154,6 @@ extension Translations {
         "The macOS translator doesn’t support this language pair.": "macOS 翻译不支持此语言对。",
         "Nothing to translate.": "没有可翻译的内容。",
         "Couldn’t translate: ": "无法翻译： ",
-        "Klavko · Translation": "Klavko · 翻译",
         "Translate the other way": "反向翻译",
         "Translation needs macOS 15 Sequoia or later.": "翻译需要 macOS 15 Sequoia 或更高版本。",
         "Select some text first, then press the hotkey.": "请先选中一些文本，然后按下快捷键。",

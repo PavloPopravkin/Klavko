@@ -61,10 +61,9 @@ public struct TranslationDirection: Equatable, Sendable {
 
 /// The flag shown for a language (menu bar, translation panel); one place for all of them.
 public enum LanguageFlags {
-    /// Arabic has no single country: it shows "AR". Russian shows a grey flag in the menu bar,
-    /// a plain "RU" in text.
+    /// Arabic shows the flag usually used for it, Saudi Arabia's. Russian has no flag: it shows "RU".
     public static let emoji = ["uk": "🇺🇦", "en": "🇺🇸", "de": "🇩🇪", "fr": "🇫🇷", "es": "🇪🇸", "it": "🇮🇹",
-                               "pt": "🇵🇹", "pl": "🇵🇱", "tr": "🇹🇷", "el": "🇬🇷", "he": "🇮🇱"]
+                               "pt": "🇵🇹", "pl": "🇵🇱", "tr": "🇹🇷", "el": "🇬🇷", "he": "🇮🇱", "ar": "🇸🇦"]
 
     /// The flag, or the language code in capitals.
     public static func label(_ language: String) -> String { emoji[language] ?? language.uppercased() }

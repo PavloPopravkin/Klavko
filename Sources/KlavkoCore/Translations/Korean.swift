@@ -2,6 +2,14 @@
 
 extension Translations {
     public static let korean: [String: String] = [
+        "Text from the Screen…": "화면의 텍스트…",
+        "Allow Klavko to record the screen: System Settings → Privacy & Security → Screen & System Audio Recording. Then restart Klavko and try again.": "Klavko가 화면을 기록하도록 허용하세요: 시스템 설정 → 개인정보 보호 및 보안 → 화면 및 시스템 오디오 녹음. 그런 다음 Klavko를 다시 시작하고 다시 시도하세요.",
+        "No text found in the selected area.": "선택한 영역에서 텍스트를 찾지 못했습니다.",
+        "Original": "원문",
+        "Text from the screen": "화면의 텍스트",
+        "Recognized on this Mac": "이 Mac에서 인식됨",
+        "Selected text": "선택한 텍스트",
+        "Text from the screen (read and translate)": "화면의 텍스트(읽고 번역)",
         "My language": "내 언어",
         "Translate into": "번역할 언어",
         "Text in my language is translated into the chosen language, text in any other language into mine. The languages can also be changed right in the translation panel.": "내 언어로 된 텍스트는 선택한 언어로, 다른 언어로 된 텍스트는 내 언어로 번역됩니다. 언어는 번역 패널에서 바로 바꿀 수도 있습니다.",
@@ -146,7 +154,6 @@ extension Translations {
         "The macOS translator doesn’t support this language pair.": "macOS 번역기가 이 언어 쌍을 지원하지 않습니다.",
         "Nothing to translate.": "번역할 내용이 없습니다.",
         "Couldn’t translate: ": "번역하지 못했습니다: ",
-        "Klavko · Translation": "Klavko · 번역",
         "Translate the other way": "반대 방향으로 번역",
         "Translation needs macOS 15 Sequoia or later.": "번역하려면 macOS 15 Sequoia 이상이 필요합니다.",
         "Select some text first, then press the hotkey.": "먼저 텍스트를 선택한 다음 단축키를 누르세요.",

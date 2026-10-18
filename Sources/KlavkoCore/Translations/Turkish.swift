@@ -2,6 +2,14 @@
 
 extension Translations {
     public static let turkish: [String: String] = [
+        "Text from the Screen…": "Ekrandan metin…",
+        "Allow Klavko to record the screen: System Settings → Privacy & Security → Screen & System Audio Recording. Then restart Klavko and try again.": "Klavko’nun ekranı kaydetmesine izin verin: Sistem Ayarları → Gizlilik ve Güvenlik → Ekran ve Sistem Sesi Kaydı. Sonra Klavko’yu yeniden başlatıp tekrar deneyin.",
+        "No text found in the selected area.": "Seçilen alanda metin bulunamadı.",
+        "Original": "Orijinal",
+        "Text from the screen": "Ekrandan metin",
+        "Recognized on this Mac": "Bu Mac’te tanındı",
+        "Selected text": "Seçili metin",
+        "Text from the screen (read and translate)": "Ekrandan metin (oku ve çevir)",
         "My language": "Dilim",
         "Translate into": "Şu dile çevir",
         "Text in my language is translated into the chosen language, text in any other language into mine. The languages can also be changed right in the translation panel.": "Benim dilimdeki metin seçilen dile, başka herhangi bir dildeki metin benim dilime çevrilir. Diller doğrudan çeviri panelinde de değiştirilebilir.",
@@ -146,7 +154,6 @@ extension Translations {
         "The macOS translator doesn’t support this language pair.": "macOS çevirmeni bu dil çiftini desteklemiyor.",
         "Nothing to translate.": "Çevrilecek bir şey yok.",
         "Couldn’t translate: ": "Çevrilemedi: ",
-        "Klavko · Translation": "Klavko · Çeviri",
         "Translate the other way": "Diğer yöne çevir",
         "Translation needs macOS 15 Sequoia or later.": "Çeviri için macOS 15 Sequoia veya sonrası gerekir.",
         "Select some text first, then press the hotkey.": "Önce biraz metin seçin, sonra kısayola basın.",
