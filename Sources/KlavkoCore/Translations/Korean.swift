@@ -2,6 +2,8 @@
 
 extension Translations {
     public static let korean: [String: String] = [
+        "What’s new": "새로운 기능",
+        "All changes on GitHub": "GitHub에서 모든 변경 사항 보기",
         "Text from the Screen…": "화면의 텍스트…",
         "Allow Klavko to record the screen: System Settings → Privacy & Security → Screen & System Audio Recording. Then restart Klavko and try again.": "Klavko가 화면을 기록하도록 허용하세요: 시스템 설정 → 개인정보 보호 및 보안 → 화면 및 시스템 오디오 녹음. 그런 다음 Klavko를 다시 시작하고 다시 시도하세요.",
         "No text found in the selected area.": "선택한 영역에서 텍스트를 찾지 못했습니다.",

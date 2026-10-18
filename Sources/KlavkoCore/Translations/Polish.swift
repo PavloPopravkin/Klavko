@@ -2,6 +2,8 @@
 
 extension Translations {
     public static let polish: [String: String] = [
+        "What’s new": "Co nowego",
+        "All changes on GitHub": "Wszystkie zmiany na GitHubie",
         "Text from the Screen…": "Tekst z ekranu…",
         "Allow Klavko to record the screen: System Settings → Privacy & Security → Screen & System Audio Recording. Then restart Klavko and try again.": "Pozwól Klavko nagrywać ekran: Ustawienia systemowe → Prywatność i ochrona → Nagrywanie ekranu i dźwięku systemowego. Potem uruchom ponownie Klavko i spróbuj jeszcze raz.",
         "No text found in the selected area.": "W wybranym obszarze nie znaleziono tekstu.",

@@ -275,24 +275,41 @@ private struct UpdatePromptView: View {
     let onLater: () -> Void
     let onSkip: () -> Void
 
+    private var changes: [String] {
+        ReleaseNotes.whatsNew(release.notes, english: AppLanguage.current != .ukrainian)
+    }
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 12) {
             HStack(spacing: 10) {
-                Image(nsImage: NSApp.applicationIconImage).resizable().frame(width: 36, height: 36)
+                Image(nsImage: NSApp.applicationIconImage).resizable().frame(width: 40, height: 40)
                 VStack(alignment: .leading, spacing: 2) {
                     Text(tr("Доступна нова версія Klavko", "A new version of Klavko is available"))
                         .font(.system(size: 13, weight: .semibold))
-                    Text("\(release.version) · " + tr("у вас", "you have") + " \(current)")
+                    Text(release.version + " · " + tr("у вас", "you have") + " " + current)
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
             }
-            if let summary = Self.summary(release.notes) {
-                Text(summary)
-                    .font(.callout)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(4)
-                    .fixedSize(horizontal: false, vertical: true)
+            if !changes.isEmpty {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(tr("Що нового", "What’s new"))
+                        .font(.system(size: 12, weight: .semibold))
+                    ForEach(Array(changes.enumerated()), id: \.offset) { _, change in
+                        HStack(alignment: .firstTextBaseline, spacing: 6) {
+                            Text("•").foregroundStyle(Color.accentColor)
+                            Text(change)
+                                .font(.callout)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                    }
+                    Link(tr("Усі зміни на GitHub", "All changes on GitHub"), destination: release.page)
+                        .font(.caption)
+                        .padding(.top, 2)
+                }
+                .padding(10)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(RoundedRectangle(cornerRadius: 8).fill(Color.primary.opacity(0.05)))
             }
             HStack {
                 Button(tr("Пропустити", "Skip"), action: onSkip)
@@ -305,15 +322,38 @@ private struct UpdatePromptView: View {
             }
         }
         .padding(14)
-        .frame(width: 320)
+        .frame(width: 360)
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
     }
+}
 
-    /// The "what's fixed / what's new" part of the release notes, without Markdown marks.
-    static func summary(_ notes: String) -> String? {
-        let lines = notes.components(separatedBy: .newlines).map { $0.trimmingCharacters(in: .whitespaces) }
-        let line = lines.first { $0.contains("0.") && ($0.lowercased().contains("виправлено") || $0.lowercased().contains("нове")) }
-            ?? lines.first { !$0.isEmpty }
-        return line?.replacingOccurrences(of: "**", with: "").replacingOccurrences(of: "`", with: "")
+extension UpdatePrompt {
+    /// Developer check of the prompt's look with sample release notes.
+    static func snapshot(to url: URL) {
+        let notes = """
+        **Що нового в 0.13.0:**
+        - **Текст з екрана** (⌃Q): виділіть область екрана — Klavko прочитає текст і перекладе його; перемикач покаже оригінал.
+        - Переклад між 12 мовами: пару за замовчуванням вибирають у налаштуваннях, а мови можна змінити прямо у вікні перекладу.
+        - Інтерфейс ще 10 мовами; перемикання розкладки й голосовий ввід для 13 мов.
+        - Вікно оновлення показує, що нового.
+        """
+        let release = Updater.Release(version: "0.13.0", notes: notes,
+                                      archive: URL(string: "https://example.com/Klavko.zip")!, sha256: nil,
+                                      page: Updater.releasesPage)
+        let view = UpdatePromptView(release: release, current: "0.12.0", onUpdate: {}, onLater: {}, onSkip: {})
+            .padding(20)
+            .background(Color(white: 0.85))
+        let hosting = NSHostingView(rootView: view)
+        hosting.frame = NSRect(origin: .zero, size: hosting.fittingSize)
+        let window = NSWindow(contentRect: hosting.frame, styleMask: [.borderless], backing: .buffered, defer: false)
+        window.contentView = hosting
+        window.orderBack(nil)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            if let bitmap = hosting.bitmapImageRepForCachingDisplay(in: hosting.bounds) {
+                hosting.cacheDisplay(in: hosting.bounds, to: bitmap)
+                try? bitmap.representation(using: .png, properties: [:])?.write(to: url)
+            }
+            NSApp.terminate(nil)
+        }
     }
 }

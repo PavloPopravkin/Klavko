@@ -760,3 +760,32 @@ final class TranslationPairTests: XCTestCase {
         XCTAssertFalse(TranslationDirection.languages.contains("el"))
     }
 }
+
+final class ReleaseNotesTests: XCTestCase {
+    func testWhatsNewList() {
+        let notes = """
+        Klavko — безкоштовний помічник.
+
+        **Що нового в 0.13.0:**
+        - **Текст з екрана** (⌃Q): виділіть область — Klavko прочитає й перекладе текст.
+        - Переклад між будь-якими мовами, вибір мов прямо у вікні перекладу.
+
+        **What’s new in 0.13.0:**
+        - Text from the screen (⌃Q).
+
+        **Завантаження:** файл `Klavko-0.13.0.zip` нижче.
+        """
+        XCTAssertEqual(ReleaseNotes.whatsNew(notes), [
+            "Текст з екрана (⌃Q): виділіть область — Klavko прочитає й перекладе текст.",
+            "Переклад між будь-якими мовами, вибір мов прямо у вікні перекладу.",
+        ])
+        XCTAssertEqual(ReleaseNotes.whatsNew(notes, english: true), ["Text from the screen (⌃Q)."])
+    }
+
+    func testHeadingWithTextAfterIt() {
+        let notes = "Опис.\n\n**Що нового в 0.12.0:** автоматичні оновлення.\n\nЯкщо у вас вже стоїть старіша версія…"
+        XCTAssertEqual(ReleaseNotes.whatsNew(notes), ["автоматичні оновлення."])
+        XCTAssertEqual(ReleaseNotes.whatsNew(notes, english: true), ["автоматичні оновлення."])
+        XCTAssertEqual(ReleaseNotes.plain("[подякувати автору](https://x.y) ❤️"), "подякувати автору ❤️")
+    }
+}

@@ -2,6 +2,8 @@
 
 extension Translations {
     public static let turkish: [String: String] = [
+        "What’s new": "Yenilikler",
+        "All changes on GitHub": "Tüm değişiklikler GitHub’da",
         "Text from the Screen…": "Ekrandan metin…",
         "Allow Klavko to record the screen: System Settings → Privacy & Security → Screen & System Audio Recording. Then restart Klavko and try again.": "Klavko’nun ekranı kaydetmesine izin verin: Sistem Ayarları → Gizlilik ve Güvenlik → Ekran ve Sistem Sesi Kaydı. Sonra Klavko’yu yeniden başlatıp tekrar deneyin.",
         "No text found in the selected area.": "Seçilen alanda metin bulunamadı.",

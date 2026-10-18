@@ -2,6 +2,8 @@
 
 extension Translations {
     public static let italian: [String: String] = [
+        "What’s new": "Novità",
+        "All changes on GitHub": "Tutte le modifiche su GitHub",
         "Text from the Screen…": "Testo dallo schermo…",
         "Allow Klavko to record the screen: System Settings → Privacy & Security → Screen & System Audio Recording. Then restart Klavko and try again.": "Consenti a Klavko di registrare lo schermo: Impostazioni di Sistema → Privacy e sicurezza → Registrazione schermo e audio di sistema. Poi riavvia Klavko e riprova.",
         "No text found in the selected area.": "Nessun testo trovato nell’area selezionata.",

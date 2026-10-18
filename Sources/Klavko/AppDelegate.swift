@@ -234,6 +234,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                 NSApp.terminate(nil)
             }
         }
+        // Developer check of the update prompt: --snapshot-update <file.png>.
+        if let index = CommandLine.arguments.firstIndex(of: "--snapshot-update"), index + 1 < CommandLine.arguments.count {
+            UpdatePrompt.snapshot(to: URL(fileURLWithPath: CommandLine.arguments[index + 1]))
+        }
         // Developer check of the translation panel: --snapshot-translation <file.png>.
         if let index = CommandLine.arguments.firstIndex(of: "--snapshot-translation"), index + 1 < CommandLine.arguments.count {
             translator.snapshot(to: URL(fileURLWithPath: CommandLine.arguments[index + 1]))
