@@ -243,10 +243,17 @@ struct SettingsView: View {
 
                 case .voice:
                     Section {
-                        Picker(tr("Я говорю", "I speak"), selection: $settings.voiceLanguage) {
-                            Text(tr("Українською та англійською", "Ukrainian and English")).tag("auto")
-                            Text(tr("Лише українською", "Ukrainian only")).tag("uk")
-                            Text(tr("Лише англійською", "English only")).tag("en")
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text(tr("Я говорю", "I speak"))
+                            FlowLayout(spacing: 6) {
+                                ForEach(Settings.speechLanguages, id: \.self) { code in
+                                    ChipToggle(title: AppLanguage.current.locale.localizedString(forLanguageCode: code)?
+                                                    .capitalized(with: AppLanguage.current.locale) ?? code,
+                                               isOn: settings.voiceLanguages.contains(code)) {
+                                        settings.toggleVoiceLanguage(code)
+                                    }
+                                }
+                            }
                         }
                         HStack {
                             Text(tr("Модель розпізнавання", "Recognition model"))
@@ -269,12 +276,12 @@ struct SettingsView: View {
                     } footer: {
                         Text(tr("Натисніть гарячу клавішу «Голосовий ввід» (за замовчуванням fn), говоріть, натисніть її ще раз — "
                                 + "текст з’явиться в місці курсора. Esc скасовує. Розпізнає модель NVIDIA Parakeet Ultra на цьому Mac "
-                                + "(з розділовими знаками); російську вона ніколи не вставить — такий результат перевіряє український "
-                                + "розпізнавач macOS. Поки модель не завантажена, працює вбудоване розпізнавання macOS.",
+                                + "(з розділовими знаками; турецьку, іврит і арабську — macOS). Російська вставляється, лише якщо "
+                                + "її вибрано вище. Поки модель не завантажена, працює вбудоване розпізнавання macOS.",
                                 "Press the “Voice input” hotkey (fn by default), speak, press it again — the text appears at the "
                                 + "cursor. Esc cancels. Speech is recognized by the NVIDIA Parakeet Ultra model on this Mac "
-                                + "(with punctuation); it never inserts Russian — such a result is redone by the macOS Ukrainian "
-                                + "recognizer. Until the model is downloaded, the built-in macOS recognition is used."))
+                                + "(with punctuation; Turkish, Hebrew and Arabic by macOS). Russian is inserted only if it is "
+                                + "chosen above. Until the model is downloaded, the built-in macOS recognition is used."))
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }

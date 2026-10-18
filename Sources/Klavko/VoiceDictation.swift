@@ -127,7 +127,14 @@ final class VoiceDictation: ObservableObject {
         }
     }
 
-    private func begin(_ code: String) {
+    private func begin(_ preferred: String) {
+        // macOS may not have the on-device model for a language yet: listen in the next one the user speaks.
+        var code = preferred
+        if Self.recognizer(code) == nil, let available = others.first(where: { Self.recognizer($0) != nil }) {
+            others = others.filter { $0 != available }
+            code = available
+            languageTitle = Self.title(code)
+        }
         guard let recognizer = Self.recognizer(code) else {
             stage = .failed(tr("Розпізнавання мовлення на пристрої недоступне. Увімкніть Диктування в System Settings → Keyboard, щоб macOS завантажила мовні моделі.",
                            "On-device speech recognition isn’t available. Turn on Dictation in System Settings → Keyboard so macOS downloads the language models."))
@@ -137,7 +144,7 @@ final class VoiceDictation: ObservableObject {
                                       isListening: { [weak self] in self?.stage == .listening },
                                       changed: { [weak self] in self?.update() })
         live = recognition
-        fanout.startRecording(keep: !others.isEmpty || parakeet?.isDownloaded == true)
+        fanout.startRecording(keep: !others.isEmpty || parakeet?.isDownloaded == true || google() != nil)
         let meter = meter
         fanout.onLevel = { level in
             DispatchQueue.main.async { MainActor.assumeIsolated { meter.push(level) } }
@@ -160,7 +167,7 @@ final class VoiceDictation: ObservableObject {
     private func update() {
         guard let live else { return }
         // With Parakeet the panel shows its text (in whatever language is spoken), not macOS's guess.
-        if !(parakeet?.isDownloaded ?? false) { text = VoiceVocabulary.apply(live.text, rules: vocabulary()) }
+        if !(parakeet?.isDownloaded == true && parakeetUsable) { text = VoiceVocabulary.apply(live.text, rules: vocabulary()) }
         if live.failedForGood, stage == .listening {
             stopAudio()
             stage = .failed(tr("Розпізнавання мовлення не працює. Перевірте мікрофон і Диктування в System Settings → Keyboard.",
@@ -191,7 +198,7 @@ final class VoiceDictation: ObservableObject {
             finishWithGoogle(google, liveResult: (language: live.language, text: heard))
             return
         }
-        if let parakeet, parakeet.isDownloaded, fanout.hasRecording {
+        if let parakeet, parakeet.isDownloaded, parakeetUsable, fanout.hasRecording {
             finishWithParakeet(parakeet, liveResult: (language: live.language, text: heard))
             return
         }
@@ -246,6 +253,7 @@ final class VoiceDictation: ObservableObject {
         }
         secondPassRunning = true
         let ukrainianAllowed = allowed.contains("uk")
+        let russianAllowed = allowed.contains("ru")
         let hint = parakeetHint
         let current = session
         Task { [weak self] in
@@ -254,7 +262,7 @@ final class VoiceDictation: ObservableObject {
                 guard let self else { return }
                 var text = try await parakeetText(parakeet, file: file, hint: hint)
                 var language = "parakeet"
-                if LanguageGuess.looksRussian(text) || (text.isEmpty && ukrainianAllowed) {
+                if (LanguageGuess.looksRussian(text) && !russianAllowed) || (text.isEmpty && ukrainianAllowed) {
                     Log.engine.notice("Parakeet result unusable; redoing with the Ukrainian recognizer")
                     text = ukrainianAllowed ? await Self.recognize(file: file, language: "uk") : ""
                     language = "uk (macOS)"
@@ -279,6 +287,8 @@ final class VoiceDictation: ObservableObject {
     /// version with more real words wins.
     private func parakeetText(_ parakeet: ParakeetEngine, file: URL, hint: Language?) async throws -> String {
         let text = try await parakeet.transcribe(file: file, language: hint)
+        // The checks below are for telling Ukrainian from English; with other languages, Parakeet's own pick stands.
+        guard Set(allowed).isSubset(of: ["uk", "en"]) else { return text }
         guard hint == nil, allowed.contains("uk"), !text.isEmpty, !LanguageGuess.looksRussian(text) else { return text }
         let foreign = LanguageGuess.looksForeignLatin(text)
         let cyrillic = text.unicodeScalars.contains { (0x0400...0x04FF).contains($0.value) }
@@ -307,15 +317,24 @@ final class VoiceDictation: ObservableObject {
         return "auto: \(raw)\nuk: \(ukrainian)\nfinal: \(final)"
     }
 
-    /// Only one language spoken: rule out the other alphabet outright.
+    /// Languages Parakeet recognizes (of those voice input offers).
+    private static let parakeetLanguages: Set<String> = ["uk", "en", "ru", "de", "fr", "es", "it", "pt", "pl", "el"]
+
+    /// Parakeet knows a language the user speaks (not just Turkish, Hebrew or Arabic).
+    private var parakeetUsable: Bool { allowed.contains(where: Self.parakeetLanguages.contains) }
+
+    /// All languages spoken share one alphabet: rule out the others outright (that's all the hint does).
     private var parakeetHint: Language? {
-        allowed == ["uk"] ? .ukrainian : allowed == ["en"] ? .english : nil
+        let spoken = allowed.filter(Self.parakeetLanguages.contains)
+        let languages = spoken.compactMap(Language.init(rawValue:))
+        guard let first = languages.first, languages.allSatisfy({ $0.script == first.script }) else { return nil }
+        return first
     }
 
     /// While listening, recognizes the recording so far with Parakeet again and again, for the panel.
     /// Each pass waits a bit longer than the last one took, so long dictation doesn't hog the Mac.
     private func schedulePreview(after delay: TimeInterval) {
-        guard let parakeet, parakeet.isDownloaded else { return }
+        guard let parakeet, parakeet.isDownloaded, parakeetUsable else { return }
         let current = session
         DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak self] in
             guard let self, session == current, stage == .listening else { return }
@@ -326,7 +345,7 @@ final class VoiceDictation: ObservableObject {
                 defer { try? FileManager.default.removeItem(at: file) }
                 let heard = (try? await self?.parakeetText(parakeet, file: file, hint: hint)) ?? ""
                 guard let self, session == current, stage == .listening else { return }
-                if !heard.isEmpty, !LanguageGuess.looksRussian(heard) {
+                if !heard.isEmpty, !LanguageGuess.looksRussian(heard) || allowed.contains("ru") {
                     text = VoiceVocabulary.apply(heard, rules: vocabulary())
                 }
                 schedulePreview(after: max(0.7, Date().timeIntervalSince(started) * 1.5))
@@ -431,13 +450,18 @@ final class VoiceDictation: ObservableObject {
     }
 
     private static func recognizer(_ code: String) -> SFSpeechRecognizer? {
-        guard let recognizer = SFSpeechRecognizer(locale: Locale(identifier: code == "uk" ? "uk-UA" : "en-US")),
+        guard let recognizer = SFSpeechRecognizer(locale: Locale(identifier: locales[code] ?? code)),
               recognizer.supportsOnDeviceRecognition else { return nil }
         return recognizer
     }
 
+    private static let locales = ["uk": "uk-UA", "en": "en-US", "ru": "ru-RU", "de": "de-DE", "fr": "fr-FR", "es": "es-ES",
+                                  "it": "it-IT", "pt": "pt-BR", "pl": "pl-PL", "tr": "tr-TR", "el": "el-GR", "he": "he-IL",
+                                  "ar": "ar-SA"]
+
+    /// The language's name in the interface language ("українська", "Russian").
     private static func title(_ code: String) -> String {
-        code == "uk" ? tr("українська", "Ukrainian") : tr("англійська", "English")
+        AppLanguage.current.locale.localizedString(forLanguageCode: code) ?? code
     }
 
     // Audio and recognition callbacks come on background threads, so they're built outside the main actor.

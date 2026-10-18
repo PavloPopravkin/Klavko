@@ -34,6 +34,7 @@ final class Settings: ObservableObject {
         static let clipboardKeepDays = "clipboardKeepDays"
         static let clipboardIgnoredApps = "clipboardIgnoredApps"
         static let voiceLanguage = "voiceLanguage"
+        static let voiceLanguages = "voiceLanguages"
         static let voiceEngine = "voiceEngine"
         static let googleSmart = "googleSmart"
         static let googleModel = "googleModel"
@@ -115,9 +116,24 @@ final class Settings: ObservableObject {
         }
     }
 
-    /// The languages the user speaks: "auto" (Ukrainian and English), "uk" or "en". Never Russian.
-    @Published var voiceLanguage: String {
-        didSet { defaults.set(voiceLanguage, forKey: Key.voiceLanguage) }
+    /// Languages the user speaks, for voice input on this Mac ("uk", "en", "ru"…; never empty).
+    /// Russian is inserted only if it is here. Google AI recognizes any language anyway.
+    @Published var voiceLanguages: [String] {
+        didSet {
+            if voiceLanguages.isEmpty { voiceLanguages = ["uk"] }
+            defaults.set(voiceLanguages, forKey: Key.voiceLanguages)
+        }
+    }
+
+    /// Languages voice input can be set to: those of the keyboard layouts.
+    static let speechLanguages = ["uk", "en", "ru", "de", "fr", "es", "it", "pt", "pl", "tr", "el", "he", "ar"]
+
+    func toggleVoiceLanguage(_ code: String) {
+        if voiceLanguages.contains(code) {
+            voiceLanguages.removeAll { $0 == code }
+        } else {
+            voiceLanguages.append(code)
+        }
     }
 
     /// Who recognizes speech: "local" (on this Mac) or "google" (Google AI, with the user's key).
@@ -290,8 +306,12 @@ final class Settings: ObservableObject {
             ?? .systemDefault
         interfaceLanguage = language
         AppLanguage.current = language
-        let storedVoice = defaults.string(forKey: Key.voiceLanguage) ?? "auto"
-        voiceLanguage = ["auto", "uk", "en"].contains(storedVoice) ? storedVoice : "auto"
+        // Before 0.13 it was one choice: "auto" (Ukrainian and English), "uk" or "en".
+        let oldVoice = defaults.string(forKey: Key.voiceLanguage)
+        let storedVoices = (defaults.stringArray(forKey: Key.voiceLanguages) ?? [])
+            .filter(Self.speechLanguages.contains)
+        voiceLanguages = !storedVoices.isEmpty ? storedVoices
+            : oldVoice == "uk" || oldVoice == "en" ? [oldVoice!] : ["uk", "en"]
         voiceEngine = defaults.string(forKey: Key.voiceEngine) == "google" ? "google" : "local"
         googleSmart = defaults.bool(forKey: Key.googleSmart)
         googleModel = defaults.string(forKey: Key.googleModel)

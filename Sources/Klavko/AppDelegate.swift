@@ -51,7 +51,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             return Self.appsWithOwnLists.contains(bundleID)
         }
         dictation.languages = { [unowned self] in
-            settings.voiceLanguage == "auto" ? ["uk", "en"] : [settings.voiceLanguage]
+            settings.voiceLanguages
         }
         // Between two plausible results, the one in the layout's language.
         dictation.preferredLanguage = { SystemLayouts.currentLanguage() ?? "uk" }
