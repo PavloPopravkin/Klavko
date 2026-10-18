@@ -85,7 +85,6 @@ extension Translations {
         "Sound when a typo is fixed": "Ton bei Tippfehler-Korrektur",
         "Don’t fix automatically in these apps": "In diesen Apps nicht automatisch korrigieren",
         "None": "Keine",
-        "Remove": "Entfernen",
         "Fix the keyboard layout automatically": "Tastaturlayout automatisch korrigieren",
         "Switch while the word is still being typed": "Schon während der Eingabe des Wortes umschalten",
         "Switch words in capitals (abbreviations)": "Wörter in Großbuchstaben umschalten (Abkürzungen)",

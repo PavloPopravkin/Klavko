@@ -85,7 +85,6 @@ extension Translations {
         "Sound when a typo is fixed": "修正拼写错误时播放声音",
         "Don’t fix automatically in these apps": "在这些应用中不自动修正",
         "None": "无",
-        "Remove": "移除",
         "Fix the keyboard layout automatically": "自动修正键盘布局",
         "Switch while the word is still being typed": "在单词仍在输入时就切换",
         "Switch words in capitals (abbreviations)": "切换全大写单词（缩写）",

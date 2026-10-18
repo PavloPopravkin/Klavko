@@ -85,7 +85,6 @@ extension Translations {
         "Sound when a typo is fixed": "タイプミス修正時にサウンドを鳴らす",
         "Don’t fix automatically in these apps": "これらのアプリでは自動修正しない",
         "None": "なし",
-        "Remove": "削除",
         "Fix the keyboard layout automatically": "キーボードレイアウトを自動修正",
         "Switch while the word is still being typed": "単語の入力中に切り替える",
         "Switch words in capitals (abbreviations)": "大文字の単語（略語）も切り替える",

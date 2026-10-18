@@ -85,7 +85,6 @@ extension Translations {
         "Sound when a typo is fixed": "Yazım hatası düzeltilince ses çal",
         "Don’t fix automatically in these apps": "Bu uygulamalarda otomatik düzeltme",
         "None": "Yok",
-        "Remove": "Kaldır",
         "Fix the keyboard layout automatically": "Klavye düzenini otomatik düzelt",
         "Switch while the word is still being typed": "Kelime hâlâ yazılırken değiştir",
         "Switch words in capitals (abbreviations)": "Büyük harfli kelimeleri değiştir (kısaltmalar)",

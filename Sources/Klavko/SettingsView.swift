@@ -57,17 +57,34 @@ struct SettingsView: View {
         newException = ""
     }
 
-    private func addIgnoredApp() {
+    /// Lets the user pick apps in /Applications; `add` gets each one not yet in `existing`.
+    private func pickApps(adding existing: [String], add: (String) -> Void) {
         let openPanel = NSOpenPanel()
         openPanel.allowedContentTypes = [.application]
         openPanel.directoryURL = URL(fileURLWithPath: "/Applications")
         openPanel.allowsMultipleSelection = true
         guard openPanel.runModal() == .OK else { return }
         for url in openPanel.urls {
-            if let bundleID = Bundle(url: url)?.bundleIdentifier, !settings.clipboardIgnoredApps.contains(bundleID) {
-                settings.toggleClipboardIgnored(bundleID)
-            }
+            if let bundleID = Bundle(url: url)?.bundleIdentifier, !existing.contains(bundleID) { add(bundleID) }
         }
+    }
+
+    /// Apps as small chips with their icons, wrapping onto new lines, and an "Add App…" button.
+    private func appList(_ bundleIDs: [String], remove: @escaping (String) -> Void, add: @escaping () -> Void) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            if bundleIDs.isEmpty {
+                Text(tr("Немає", "None")).foregroundStyle(.secondary)
+            } else {
+                FlowLayout(spacing: 6) {
+                    ForEach(bundleIDs, id: \.self) { bundleID in
+                        AppChip(name: Self.appName(bundleID), icon: Self.appIcon(bundleID)) { remove(bundleID) }
+                    }
+                }
+            }
+            Button(tr("Додати програму…", "Add App…"), action: add)
+                .controlSize(.small)
+        }
+        .padding(.vertical, 2)
     }
 
     private func addSpelling() {
@@ -104,16 +121,8 @@ struct SettingsView: View {
                     }
 
                     Section(tr("Не виправляти автоматично в програмах", "Don’t fix automatically in these apps")) {
-                        if settings.excludedApps.isEmpty {
-                            Text(tr("Немає", "None")).foregroundStyle(.secondary)
-                        }
-                        ForEach(settings.excludedApps, id: \.self) { bundleID in
-                            HStack {
-                                Text(Self.appName(bundleID))
-                                Spacer()
-                                Button(tr("Прибрати", "Remove")) { settings.toggleExcluded(bundleID) }
-                            }
-                        }
+                        appList(settings.excludedApps, remove: { settings.toggleExcluded($0) },
+                                add: { pickApps(adding: settings.excludedApps) { settings.toggleExcluded($0) } })
                     }
 
                 case .layout:
@@ -430,17 +439,8 @@ struct SettingsView: View {
                             .foregroundStyle(.secondary)
                     }
                     Section(tr("Не записувати з програм", "Don’t record from these apps")) {
-                        if settings.clipboardIgnoredApps.isEmpty {
-                            Text(tr("Немає", "None")).foregroundStyle(.secondary)
-                        }
-                        ForEach(settings.clipboardIgnoredApps, id: \.self) { bundleID in
-                            HStack {
-                                Text(Self.appName(bundleID))
-                                Spacer()
-                                Button(tr("Прибрати", "Remove")) { settings.toggleClipboardIgnored(bundleID) }
-                            }
-                        }
-                        Button(tr("Додати програму…", "Add App…")) { addIgnoredApp() }
+                        appList(settings.clipboardIgnoredApps, remove: { settings.toggleClipboardIgnored($0) },
+                                add: { pickApps(adding: settings.clipboardIgnoredApps) { settings.toggleClipboardIgnored($0) } })
                     }
                 case .hotkeys:
                     Section {
@@ -544,9 +544,25 @@ struct SettingsView: View {
         }
     }
 
+    /// Names for apps in the default lists, shown even when they aren't installed.
+    private static let knownApps = [
+        "com.googlecode.iterm2": "iTerm2", "com.microsoft.VSCode": "Visual Studio Code",
+        "com.todesktop.230313mzl4w4u92": "Cursor", "dev.zed.Zed": "Zed", "com.sublimetext.4": "Sublime Text",
+        "com.apple.Terminal": "Terminal", "com.apple.dt.Xcode": "Xcode", "com.1password.1password": "1Password",
+        "com.agilebits.onepassword7": "1Password 7", "com.bitwarden.desktop": "Bitwarden",
+        "com.apple.keychainaccess": "Keychain Access", "com.apple.Passwords": "Passwords",
+        "org.keepassxc.keepassxc": "KeePassXC",
+    ]
+
     static func appName(_ bundleID: String) -> String {
-        guard let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID) else { return bundleID }
+        guard let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID) else {
+            return knownApps[bundleID] ?? bundleID
+        }
         return FileManager.default.displayName(atPath: url.path).replacingOccurrences(of: ".app", with: "")
+    }
+
+    static func appIcon(_ bundleID: String) -> NSImage? {
+        NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID).map { NSWorkspace.shared.icon(forFile: $0.path) }
     }
 }
 
@@ -642,6 +658,34 @@ private struct ChipToggle: View {
                 .foregroundStyle(isOn ? Color.white : Color.primary)
         }
         .buttonStyle(.plain)
+    }
+}
+
+/// An app with its icon and a × to remove it.
+private struct AppChip: View {
+    let name: String
+    let icon: NSImage?
+    let onRemove: () -> Void
+
+    var body: some View {
+        HStack(spacing: 5) {
+            if let icon {
+                Image(nsImage: icon).resizable().frame(width: 16, height: 16)
+            } else {
+                Image(systemName: "app.dashed").font(.system(size: 12)).foregroundStyle(.secondary).frame(width: 16, height: 16)
+            }
+            Text(name).font(.system(size: 12))
+            Button(action: onRemove) {
+                Image(systemName: "xmark").font(.system(size: 9, weight: .bold))
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(.secondary)
+            .help(trFormat("Прибрати «%@»", "Remove “%@”", name))
+        }
+        .padding(.leading, 5)
+        .padding(.trailing, 7)
+        .padding(.vertical, 3)
+        .background(Capsule().fill(Color.secondary.opacity(0.15)))
     }
 }
 
