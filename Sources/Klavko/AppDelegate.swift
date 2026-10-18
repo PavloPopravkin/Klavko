@@ -75,8 +75,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         // Used once its model is downloaded (opt-in, from Settings → Voice input); macOS recognition until then.
         dictation.parakeet = parakeet
         dictation.google = { [unowned self] in
-            guard settings.voiceEngine == "google", GeminiKey.load() != nil else { return nil }
-            return (google, settings.googleModel ?? GeminiTranscriber.fallbackModel, settings.googleSmart)
+            guard settings.voiceEngine == "google", let key = GeminiKey.load() else { return nil }
+            return (google, key, settings.googleModel ?? GeminiTranscriber.fallbackModel, settings.googleSmart)
         }
         clipboard.isEnabled = { [unowned self] in settings.clipboardEnabled }
         clipboard.keepDays = { [unowned self] in settings.clipboardKeepDays }

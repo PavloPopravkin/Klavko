@@ -43,8 +43,8 @@ final class GeminiTranscriber: @unchecked Sendable {
 
     /// The text of `file` (the recording, CAF). `smart`: the model drops fillers ("ну", "е-е") and
     /// self-corrections; otherwise word for word. `vocabulary`: words to recognize as written.
-    func transcribe(file: URL, model: String, smart: Bool, vocabulary: [String]) async throws -> String {
-        guard let key = GeminiKey.load() else { throw Failure.noKey }
+    func transcribe(file: URL, key: String, model: String, smart: Bool, vocabulary: [String]) async throws -> String {
+        guard !key.isEmpty else { throw Failure.noKey }
         let flac = try Self.flac(from: file)
         let duration = (try? AVAudioFile(forReading: file)).map { Double($0.length) / $0.fileFormat.sampleRate } ?? 10
         let deadline = 30 + duration / 4

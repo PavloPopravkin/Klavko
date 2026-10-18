@@ -31,7 +31,7 @@ final class VoiceDictation: ObservableObject {
     var parakeet: ParakeetEngine?
     /// Google AI, when the user chose it and saved a key: it then recognizes the finished recording
     /// (any language, Russian too); the recognizers on this Mac stay the fallback.
-    var google: () -> (transcriber: GeminiTranscriber, model: String, smart: Bool)? = { nil }
+    var google: () -> (transcriber: GeminiTranscriber, key: String, model: String, smart: Bool)? = { nil }
     /// The language to listen in first (the keyboard layout's).
     var preferredLanguage: () -> String = { "uk" }
     /// The user's spellings ("зсу" → "ЗСУ"), applied to everything recognized.
@@ -204,7 +204,7 @@ final class VoiceDictation: ObservableObject {
 
     /// Recognizes the whole recording with Google AI. If that fails (no internet, quota), Parakeet or the
     /// live macOS result is used, so the dictation is never lost.
-    private func finishWithGoogle(_ google: (transcriber: GeminiTranscriber, model: String, smart: Bool),
+    private func finishWithGoogle(_ google: (transcriber: GeminiTranscriber, key: String, model: String, smart: Bool),
                                   liveResult: (language: String, text: String)) {
         guard let file = fanout.writeRecording() else {
             complete(with: liveResult.text, language: liveResult.language)
@@ -217,7 +217,7 @@ final class VoiceDictation: ObservableObject {
         Task { [weak self] in
             defer { try? FileManager.default.removeItem(at: file) }
             do {
-                let text = try await google.transcriber.transcribe(file: file, model: google.model,
+                let text = try await google.transcriber.transcribe(file: file, key: google.key, model: google.model,
                                                                     smart: google.smart, vocabulary: words)
                 guard let self, session == current else { return }
                 complete(with: text, language: "google")

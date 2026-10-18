@@ -1,0 +1,7 @@
+Klavko
+
+Sources/Klavko/GeminiTranscriber.swift is based on code from Jot
+(https://github.com/ammaarreshi/jot), Copyright 2026 Google LLC,
+licensed under the Apache License, Version 2.0:
+https://www.apache.org/licenses/LICENSE-2.0
+It was modified for Klavko.
