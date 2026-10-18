@@ -551,7 +551,7 @@ private struct RemovableChip: View {
             }
             .buttonStyle(.plain)
             .foregroundStyle(.secondary)
-            .help(tr("Прибрати «\(title)»", "Remove “\(title)”"))
+            .help(trFormat("Прибрати «%@»", "Remove “%@”", title))
         }
         .padding(.leading, 8)
         .padding(.trailing, 6)

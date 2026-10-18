@@ -69,7 +69,7 @@ public struct ClipItem: Codable, Hashable, Identifiable, Sendable {
         case .image: return tr("Зображення", "Image")
         case .files:
             let names = text.split(separator: "\n").map { ($0 as NSString).lastPathComponent }
-            return names.count == 1 ? names[0] : "\(names.first ?? "") " + tr("і ще", "and") + " \(names.count - 1)" + tr("", " more")
+            return names.count == 1 ? names[0] : trFormat("%@ і ще %@", "%@ and %@ more", names.first ?? "", String(names.count - 1))
         case .text, .link:
             let line = text.split(whereSeparator: \.isNewline).first.map(String.init) ?? ""
             return line.trimmingCharacters(in: .whitespaces).isEmpty ? tr("(пробіли)", "(spaces)") : line.trimmingCharacters(in: .whitespaces)

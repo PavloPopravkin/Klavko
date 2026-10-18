@@ -332,7 +332,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         } else if secureInputActive {
             menu.addItem(.separator())
             let owner = Self.secureInputOwner().map { "«\($0)»" } ?? tr("іншій програмі", "another app")
-            menu.addItem(disabledItem(tr("⚠️ Захищене введення в \(owner)", "⚠️ Secure input in \(owner)")))
+            menu.addItem(disabledItem(trFormat("⚠️ Захищене введення в %@", "⚠️ Secure input in %@", owner)))
             menu.addItem(disabledItem(tr("     Klavko зараз не бачить клавіатуру", "     Klavko can’t see the keyboard now")))
         }
 
@@ -346,7 +346,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
         if let app = NSWorkspace.shared.frontmostApplication, let bundleID = app.bundleIdentifier,
            bundleID != Bundle.main.bundleIdentifier {
-            let exclude = item(tr("Не виправляти в «\(app.localizedName ?? bundleID)»", "Don’t Fix in “\(app.localizedName ?? bundleID)”"), #selector(toggleExcluded(_:)))
+            let exclude = item(trFormat("Не виправляти в «%@»", "Don’t Fix in “%@”", app.localizedName ?? bundleID), #selector(toggleExcluded(_:)))
             exclude.representedObject = bundleID
             exclude.state = settings.isExcluded(bundleID) ? .on : .off
             menu.addItem(exclude)
@@ -354,7 +354,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
 
         menu.addItem(.separator())
         if let release = updater.available {
-            menu.addItem(item(tr("⬆︎ Оновити Klavko до \(release.version)", "⬆︎ Update Klavko to \(release.version)"),
+            menu.addItem(item(trFormat("⬆︎ Оновити Klavko до %@", "⬆︎ Update Klavko to %@", release.version),
                               #selector(installUpdate)))
             menu.addItem(.separator())
         }

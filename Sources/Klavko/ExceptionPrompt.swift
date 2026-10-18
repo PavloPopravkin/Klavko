@@ -66,8 +66,8 @@ private struct ExceptionPromptView: View {
             Text("Klavko")
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(.secondary)
-            Text(tr("Ви вже двічі скасували виправлення слова «\(word)». Додати його до винятків, щоб Klavko більше його не змінював?",
-                     "You have undone the fix of “\(word)” twice. Add it to the exceptions so Klavko leaves it alone?"))
+            Text(trFormat("Ви вже двічі скасували виправлення слова «%@». Додати його до винятків, щоб Klavko більше його не змінював?",
+                           "You have undone the fix of “%@” twice. Add it to the exceptions so Klavko leaves it alone?", word))
                 .font(.callout)
                 .fixedSize(horizontal: false, vertical: true)
             HStack {
