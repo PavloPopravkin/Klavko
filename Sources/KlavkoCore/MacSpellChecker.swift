@@ -21,7 +21,15 @@ public final class MacSpellChecker: SpellChecking {
         return found
     }
 
+    /// Languages whose macOS spell check passes any string ("λνπφη" is "correct" Greek), while their
+    /// completions are real: a word counts as known there when its own completions include it.
+    private static let knownByCompletions: Set<String> = ["el", "he", "ar"]
+
     public func isValid(_ word: String, language: String) -> Bool {
+        if Self.knownByCompletions.contains(language) {
+            let lowered = word.lowercased()
+            return completions(for: lowered, language: language).contains { $0.lowercased() == lowered }
+        }
         let language = dictionary(language)
         let range = checker.checkSpelling(of: word, startingAt: 0, language: language,
                                           wrap: false, inSpellDocumentWithTag: 0, wordCount: nil)
@@ -59,6 +67,9 @@ public final class MacSpellChecker: SpellChecking {
     /// One pass over all words instead of a call per word (hundreds of candidates in a few ms).
     public func validWords(among words: [String], language: String) -> Set<String> {
         guard !words.isEmpty else { return [] }
+        if Self.knownByCompletions.contains(language) {
+            return Set(words.filter { isValid($0, language: language) })
+        }
         let language = dictionary(language)
         // A fixed language: automatic detection would judge each candidate in whatever language it resembles.
         checker.automaticallyIdentifiesLanguages = false
