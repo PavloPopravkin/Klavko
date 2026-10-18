@@ -710,10 +710,13 @@ final class SwitchEngine {
         guard autoSwitchAllowed, config.switchWhileTyping, !wordLocked,
               buffer.count >= analyzer.minimumPrefixLength, buffer.count <= 7,
               let typed = pair.current.map.render(buffer),
-              let found = candidates(for: buffer, pair).first(where: { option in
+              case let fitting = candidates(for: buffer, pair).filter({ option in
                   analyzer.shouldConvertPrefix(typed: typed, typedLanguage: option.pair.current.map.language,
                                                alternative: option.text, alternativeLanguage: option.pair.alternative.map.language)
-              })
+              }),
+              // Three letters often start words in several languages ("auo…": Greek "αθο…", French "quo…"):
+              // switch now only if they all read the same ("при…" in Ukrainian and Russian), else at the word's end.
+              let found = fitting.first, fitting.allSatisfy({ $0.text == found.text })
         else { return false }
         let (pair, alternative) = found
 
