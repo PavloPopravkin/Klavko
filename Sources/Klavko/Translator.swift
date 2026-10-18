@@ -43,7 +43,7 @@ final class Translator: ObservableObject {
         // Without the clipboard where the app allows it; ⌘C (clipboard restored) elsewhere.
         if let selection = SelectionConverter.accessibleSelection() {
             self.selection = selection
-            translate(selection.text, TranslationDirection(for: selection.text))
+            translate(selection.text, direction(for: selection.text))
             showPanel()
             return
         }
@@ -52,7 +52,7 @@ final class Translator: ObservableObject {
             MainActor.assumeIsolated {
                 guard let self else { return }
                 if let text, !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                    self.translate(text, TranslationDirection(for: text))
+                    self.translate(text, direction(for: text))
                 } else {
                     self.job = nil
                     self.stage = .noSelection
@@ -60,6 +60,14 @@ final class Translator: ObservableObject {
                 self.showPanel()
             }
         }
+    }
+
+    /// From the selection's language to English, or from English into the user's own language: the first
+    /// non-English keyboard layout's (Ukrainian if there is none).
+    private func direction(for text: String) -> TranslationDirection {
+        let languages = SystemLayouts.enabledLayouts().map(\.map.language)
+        let home = languages.first { $0 != "en" } ?? "uk"
+        return TranslationDirection(for: text, home: home, languages: languages)
     }
 
     /// The same text the other way round, for when the guess was wrong.
@@ -153,7 +161,7 @@ final class Translator: ObservableObject {
     func check(_ text: String, writeTo url: URL) {
         sourceApp = nil
         anchor = NSEvent.mouseLocation
-        translate(text, TranslationDirection(for: text))
+        translate(text, direction(for: text))
         showPanel()
         Task { @MainActor in
             for _ in 0..<600 {

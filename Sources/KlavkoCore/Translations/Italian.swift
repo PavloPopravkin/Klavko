@@ -184,7 +184,6 @@ extension Translations {
         "Switch the layout of the selection or typed text": "Cambia il layout della selezione o del testo digitato",
         "Undo or redo a fix": "Annulla o ripristina una correzione",
         "Change case (word or selection)": "Cambia maiuscole/minuscole (parola o selezione)",
-        "Translate the selection (Ukr. ↔ Eng.)": "Traduci la selezione (ucr. ↔ ingl.)",
         "Voice input (start / insert)": "Input vocale (avvia / inserisci)",
         "No Google AI key.": "Nessuna chiave Google AI.",
         "Google rejected the key.": "Google ha rifiutato la chiave.",
@@ -202,5 +201,6 @@ extension Translations {
         "Recognition with Google AI": "Riconoscimento con Google AI",
         "With Google AI the recording is sent to Google (with your key) when you finish, and any language is recognized, Russian too. The key is kept in the Keychain. If Google can’t be reached, this Mac recognizes the text. As in the Jot app.": "Con Google AI, al termine la registrazione viene inviata a Google (con la tua chiave) e riconosciuta in qualsiasi lingua, anche in russo. La chiave è conservata nel Keychain. Se Google non è raggiungibile, il testo viene riconosciuto da questo Mac. Come nell’app Jot.",
         "Press the “Voice input” hotkey (fn by default), speak, press it again — the text appears at the cursor. Esc cancels. Speech is recognized by the NVIDIA Parakeet Ultra model on this Mac (with punctuation; Turkish, Hebrew and Arabic by macOS). Russian is inserted only if it is chosen above. Until the model is downloaded, the built-in macOS recognition is used.": "Premi la scorciatoia “Input vocale” (per impostazione predefinita fn), parla e premila di nuovo: il testo appare dove si trova il cursore. Esc annulla. La voce è riconosciuta dal modello NVIDIA Parakeet Ultra su questo Mac (con punteggiatura; turco, ebraico e arabo da macOS). Il russo viene inserito solo se è selezionato qui sopra. Finché il modello non è scaricato, viene usato il riconoscimento integrato di macOS.",
+        "The exception is Google AI recognition, if you turn it on in the Voice settings: then recordings are sent to Google.": "Fa eccezione il riconoscimento con Google AI, se lo attivi nelle impostazioni Voce: in quel caso le registrazioni vengono inviate a Google.",
     ]
 }

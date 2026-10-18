@@ -129,7 +129,9 @@ struct AboutSection: View {
                     "Everything runs on this Mac. What you type, dictate, translate and copy is never sent anywhere. "
                     + "The internet is needed only once: to download the speech recognition model (from Hugging Face) "
                     + "and the translation languages (from Apple). Klavko also checks GitHub now and then for a new "
-                    + "version (you can turn that off above)."))
+                    + "version (you can turn that off above).")
+                 + " " + tr("Виняток — розпізнавання через Google AI, якщо ви ввімкнули його в налаштуваннях голосу: тоді записи надсилаються в Google.",
+                            "The exception is Google AI recognition, if you turn it on in the Voice settings: then recordings are sent to Google."))
                 .font(.callout)
                 .fixedSize(horizontal: false, vertical: true)
         } header: {

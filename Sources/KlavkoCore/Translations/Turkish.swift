@@ -184,7 +184,6 @@ extension Translations {
         "Switch the layout of the selection or typed text": "Seçimin veya yazılan metnin düzenini değiştir",
         "Undo or redo a fix": "Bir düzeltmeyi geri al veya yinele",
         "Change case (word or selection)": "Büyük/küçük harfi değiştir (kelime veya seçim)",
-        "Translate the selection (Ukr. ↔ Eng.)": "Seçimi çevir (Ukr. ↔ İng.)",
         "Voice input (start / insert)": "Sesli giriş (başlat / ekle)",
         "No Google AI key.": "Google AI anahtarı yok.",
         "Google rejected the key.": "Google anahtarı reddetti.",
@@ -202,5 +201,6 @@ extension Translations {
         "Recognition with Google AI": "Google AI ile tanıma",
         "With Google AI the recording is sent to Google (with your key) when you finish, and any language is recognized, Russian too. The key is kept in the Keychain. If Google can’t be reached, this Mac recognizes the text. As in the Jot app.": "Google AI ile kayıt, bitirdiğinde (anahtarınızla) Google’a gönderilir ve Rusça dahil her dilde tanınır. Anahtar Keychain’de saklanır. Google’a ulaşılamazsa metni bu Mac tanır. Jot uygulamasındaki gibi.",
         "Press the “Voice input” hotkey (fn by default), speak, press it again — the text appears at the cursor. Esc cancels. Speech is recognized by the NVIDIA Parakeet Ultra model on this Mac (with punctuation; Turkish, Hebrew and Arabic by macOS). Russian is inserted only if it is chosen above. Until the model is downloaded, the built-in macOS recognition is used.": "“Sesli giriş” kısayoluna basın (varsayılan fn), konuşun, tekrar basın — metin imlecin olduğu yere eklenir. Esc iptal eder. Konuşmayı bu Mac’teki NVIDIA Parakeet Ultra modeli tanır (noktalama işaretleriyle; Türkçe, İbranice ve Arapça macOS tarafından). Rusça yalnızca yukarıda seçilmişse eklenir. Model indirilene kadar macOS’un yerleşik tanıması kullanılır.",
+        "The exception is Google AI recognition, if you turn it on in the Voice settings: then recordings are sent to Google.": "Tek istisna, Ses ayarlarında açarsanız Google AI ile tanımadır: bu durumda kayıtlar Google’a gönderilir.",
     ]
 }

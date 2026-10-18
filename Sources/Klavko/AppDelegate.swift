@@ -461,13 +461,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         SystemLayouts.enabledLayouts().first { $0.map.language == "en" }?.map
     }
 
-    /// Arabic has no single country: it shows "AR". Russian shows a grey flag (`greyFlagLanguages`).
-    private static let flags = ["uk": "🇺🇦", "en": "🇺🇸", "de": "🇩🇪", "fr": "🇫🇷", "es": "🇪🇸", "it": "🇮🇹",
-                                "pt": "🇵🇹", "pl": "🇵🇱", "tr": "🇹🇷", "el": "🇬🇷", "he": "🇮🇱"]
     private static let greyFlagLanguages: Set<String> = ["ru"]
 
     private static func flag(language: String, layoutID: String?) -> String? {
-        language == "pt" && layoutID?.contains("Brazilian") == true ? "🇧🇷" : flags[language]
+        language == "pt" && layoutID?.contains("Brazilian") == true ? "🇧🇷" : LanguageFlags.emoji[language]
     }
 
     /// Apps that continue "- " and "1." lists themselves.

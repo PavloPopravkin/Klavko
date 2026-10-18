@@ -761,7 +761,7 @@ final class SwitchEngine {
         switch action {
         case .convertWord:
             if let fix = recentFix, fix.immediate, !fix.conversion.isFormatting {
-                undo(fix)
+                if !cycleToNextLayout(fix) { undo(fix) }
             } else if let fix = undone, fix.conversion.scope == .word {
                 redo(fix)
             } else {
@@ -825,6 +825,29 @@ final class SwitchEngine {
             reset()
             SelectionConverter.transform { CaseCycle.next($0) } onDone: { [weak self] in self?.onFix(.formatting) }
         }
+    }
+
+    /// ⇧⇧ again right after a layout fix, with more than two layouts: the next likeliest layout instead
+    /// ("ghbdsn" → "привіт" → "привыт"); after the last one, the next press goes back to what was typed.
+    private func cycleToNextLayout(_ placed: PlacedFix) -> Bool {
+        let fix = placed.conversion
+        guard fix.kind == .layout, fix.scope == .word, let current = fix.to, placed.end == visible.count,
+              fix.original.count == fix.converted.count else { return false }
+        let order = LayoutChoice.alternatives(to: fix.from.map, among: layouts.map(\.map), recent: recentLayoutIDs)
+        guard let index = order.firstIndex(where: { $0.id == current.map.id }) else { return false }
+        for map in order.dropFirst(index + 1) {
+            guard let next = layouts.first(where: { $0.map.id == map.id }) else { continue }
+            let converted = LayoutConverter.convert(fix.original, from: fix.from.map, to: next.map)
+            guard converted.count == fix.converted.count, converted != fix.converted, converted != fix.original else { continue }
+            apply(Conversion(original: fix.original, converted: converted, from: fix.from, to: next,
+                             automatic: false, scope: .word),
+                  onScreen: fix.converted.count)
+            // Mid-word the rest of the word is typed in the new layout; a finished word leaves the next one free.
+            if !buffer.isEmpty { wordLocked = true }
+            Log.engine.notice("Switched the word on to the next layout: \(next.map.language, privacy: .public)")
+            return true
+        }
+        return false
     }
 
     private func convertWord() {

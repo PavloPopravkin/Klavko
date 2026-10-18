@@ -1,28 +1,56 @@
 import Foundation
 
-/// Which way to translate a selection: Ukrainian ↔ English, never anything else.
-public enum TranslationDirection: Equatable, Sendable {
-    case ukrainianToEnglish
-    case englishToUkrainian
+import NaturalLanguage
 
-    /// Mostly Cyrillic letters → into English; otherwise → into Ukrainian.
-    public init(for text: String) {
-        var cyrillic = 0
-        var latin = 0
-        for scalar in text.unicodeScalars where CharacterSet.letters.contains(scalar) {
-            switch scalar.value {
-            case 0x0400...0x04FF: cyrillic += 1
-            case 0x0041...0x005A, 0x0061...0x007A, 0x00C0...0x024F: latin += 1
-            default: break
-            }
-        }
-        self = cyrillic > latin ? .ukrainianToEnglish : .englishToUkrainian
+/// Which way to translate a selection: from the language it's written in to English, or from English
+/// into the user's own language ("home").
+public struct TranslationDirection: Equatable, Sendable {
+    public let source: String
+    public let target: String
+
+    public init(source: String, target: String) {
+        self.source = source
+        self.target = target
     }
 
-    public var source: String { self == .ukrainianToEnglish ? "uk" : "en" }
-    public var target: String { self == .ukrainianToEnglish ? "en" : "uk" }
-    public var reversed: TranslationDirection { self == .ukrainianToEnglish ? .englishToUkrainian : .ukrainianToEnglish }
-    public var title: String { self == .ukrainianToEnglish ? "🇺🇦 → 🇺🇸" : "🇺🇸 → 🇺🇦" }
+    public static let ukrainianToEnglish = TranslationDirection(source: "uk", target: "en")
+    public static let englishToUkrainian = TranslationDirection(source: "en", target: "uk")
+
+    /// English (or no letters) → into `home`; any other language → into English.
+    /// `languages`: the ones to tell apart (the keyboard layouts'); `home` and English always count.
+    public init(for text: String, home: String = "uk", languages: [String] = []) {
+        let home = home == "en" ? "uk" : home
+        let source = Self.language(of: text, among: [home, "en"] + languages) ?? "en"
+        self = source == "en" ? TranslationDirection(source: "en", target: home)
+            : TranslationDirection(source: source, target: "en")
+    }
+
+    /// The language `text` is written in, of `candidates`; nil when it has no letters.
+    static func language(of text: String, among candidates: [String]) -> String? {
+        let letters = text.unicodeScalars.filter { CharacterSet.letters.contains($0) }
+        guard !letters.isEmpty else { return nil }
+        let recognizer = NLLanguageRecognizer()
+        recognizer.languageConstraints = Array(Set(candidates)).map { NLLanguage(rawValue: $0) }
+        recognizer.processString(text)
+        if let best = recognizer.dominantLanguage?.rawValue, candidates.contains(best) { return best }
+        // The recognizer had nothing to go on: Cyrillic is the home language, anything else English.
+        let cyrillic = letters.filter { (0x0400...0x04FF).contains($0.value) }.count
+        return cyrillic * 2 > letters.count ? candidates.first : "en"
+    }
+
+    public var reversed: TranslationDirection { TranslationDirection(source: target, target: source) }
+    public var title: String { LanguageFlags.label(source) + " → " + LanguageFlags.label(target) }
+}
+
+/// The flag shown for a language (menu bar, translation panel); one place for all of them.
+public enum LanguageFlags {
+    /// Arabic has no single country: it shows "AR". Russian shows a grey flag in the menu bar,
+    /// a plain "RU" in text.
+    public static let emoji = ["uk": "🇺🇦", "en": "🇺🇸", "de": "🇩🇪", "fr": "🇫🇷", "es": "🇪🇸", "it": "🇮🇹",
+                               "pt": "🇵🇹", "pl": "🇵🇱", "tr": "🇹🇷", "el": "🇬🇷", "he": "🇮🇱"]
+
+    /// The flag, or the language code in capitals.
+    public static func label(_ language: String) -> String { emoji[language] ?? language.uppercased() }
 }
 
 /// Text split into lines so a translation keeps the selection's line breaks, blank lines,

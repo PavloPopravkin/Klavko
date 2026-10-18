@@ -6,7 +6,13 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 CONFIG="${CONFIG:-release}"
-ARCHS=(--arch arm64 --arch x86_64)
+# Universal needs Xcode's build system; with Command Line Tools only, build for this Mac's architecture.
+if [ -x /Library/Developer/SharedFrameworks/XCBuild.framework/Versions/A/Support/xcbuild ] || xcodebuild -version >/dev/null 2>&1; then
+    ARCHS=(--arch arm64 --arch x86_64)
+else
+    ARCHS=(--arch "$(uname -m)")
+    echo "No Xcode: building for $(uname -m) only"
+fi
 
 swift build -c "$CONFIG" "${ARCHS[@]}"
 BIN_DIR="$(swift build -c "$CONFIG" "${ARCHS[@]}" --show-bin-path)"
@@ -31,7 +37,14 @@ if [ "$IDENTITY" = "-" ]; then
     # signature's requirement: name the app by its identifier, so an update keeps the permission.
     REQUIREMENTS=(--requirements '=designated => identifier "app.klavko.Klavko"')
 fi
-codesign --force --options runtime --entitlements Resources/Klavko.entitlements ${REQUIREMENTS[@]+"${REQUIREMENTS[@]}"} \
-    --sign "$IDENTITY" "$APP"
+if ! codesign --force --options runtime --entitlements Resources/Klavko.entitlements ${REQUIREMENTS[@]+"${REQUIREMENTS[@]}"} \
+    --sign "$IDENTITY" "$APP"; then
+    [ "$IDENTITY" = "-" ] && exit 1
+    # The certificate's key is out of reach (a locked keychain over SSH): sign ad hoc instead.
+    echo "Signing with $IDENTITY failed; signing ad hoc"
+    IDENTITY="-"
+    codesign --force --options runtime --entitlements Resources/Klavko.entitlements \
+        --requirements '=designated => identifier "app.klavko.Klavko"' --sign - "$APP"
+fi
 
 echo "Built $APP (signed with: $IDENTITY)"

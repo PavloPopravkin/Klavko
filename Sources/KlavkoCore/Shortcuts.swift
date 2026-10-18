@@ -90,7 +90,7 @@ public enum HotkeyAction: String, Codable, CaseIterable, Sendable {
         case .convertText: tr("Змінити розкладку виділеного або набраного", "Switch the layout of the selection or typed text")
         case .undo: tr("Скасувати або повернути виправлення", "Undo or redo a fix")
         case .changeCase: tr("Змінити регістр (слово або виділене)", "Change case (word or selection)")
-        case .translate: tr("Перекласти виділене (укр. ↔ англ.)", "Translate the selection (Ukr. ↔ Eng.)")
+        case .translate: tr("Перекласти виділене", "Translate Selection")
         case .clipboard: tr("Історія буфера обміну", "Clipboard history")
         case .voice: tr("Голосовий ввід (почати / вставити)", "Voice input (start / insert)")
         }
