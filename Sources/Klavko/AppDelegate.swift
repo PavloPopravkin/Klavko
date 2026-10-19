@@ -283,7 +283,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                                             correctSpelling: settings.correctSpelling,
                                             spaceAfterPunctuation: settings.spaceAfterPunctuation,
                                             autoCapitalize: settings.autoCapitalize,
-                                            typography: settings.typography,
+                                            dashes: settings.dashes,
+                                            smartQuotes: settings.smartQuotes,
+                                            symbols: settings.symbols,
                                             listContinuation: settings.listContinuation,
                                             replacements: settings.replacements,
                                             exceptions: Set(settings.exceptions))

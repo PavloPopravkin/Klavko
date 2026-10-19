@@ -22,7 +22,11 @@ final class Settings: ObservableObject {
         static let correctSpelling = "correctTypos"
         static let spaceAfterPunctuation = "spaceAfterPunctuation"
         static let autoCapitalize = "autoCapitalize"
+        /// Before 0.14 one switch for all typography; now only read to carry its value over.
         static let typography = "typography"
+        static let dashes = "dashes"
+        static let smartQuotes = "smartQuotes"
+        static let symbols = "symbols"
         static let listContinuation = "listContinuation"
         static let replacements = "replacements"
         static let voiceVocabulary = "voiceVocabulary"
@@ -90,8 +94,19 @@ final class Settings: ObservableObject {
         didSet { defaults.set(autoCapitalize, forKey: Key.autoCapitalize); onChange?() }
     }
 
-    @Published var typography: Bool {
-        didSet { defaults.set(typography, forKey: Key.typography); onChange?() }
+    /// "так - ні" → "так — ні".
+    @Published var dashes: Bool {
+        didSet { defaults.set(dashes, forKey: Key.dashes); onChange?() }
+    }
+
+    /// A straight " → «» / “”.
+    @Published var smartQuotes: Bool {
+        didSet { defaults.set(smartQuotes, forKey: Key.smartQuotes); onChange?() }
+    }
+
+    /// "..." → "…", (c) (r) (tm) → © ® ™.
+    @Published var symbols: Bool {
+        didSet { defaults.set(symbols, forKey: Key.symbols); onChange?() }
     }
 
     @Published var listContinuation: Bool {
@@ -277,6 +292,7 @@ final class Settings: ObservableObject {
     }
 
     init() {
+        let oldTypography = defaults.object(forKey: Key.typography) as? Bool ?? true
         defaults.register(defaults: [
             Key.enabled: true,
             Key.switchWhileTyping: true,
@@ -286,7 +302,10 @@ final class Settings: ObservableObject {
             Key.correctSpelling: true,
             Key.spaceAfterPunctuation: true,
             Key.autoCapitalize: true,
-            Key.typography: true,
+            // Typography was one switch before 0.14: whoever turned it off keeps all three off.
+            Key.dashes: oldTypography,
+            Key.smartQuotes: oldTypography,
+            Key.symbols: oldTypography,
             Key.listContinuation: true,
             Key.showFlag: true,
             Key.playSound: true,
@@ -318,7 +337,9 @@ final class Settings: ObservableObject {
         correctSpelling = defaults.bool(forKey: Key.correctSpelling)
         spaceAfterPunctuation = defaults.bool(forKey: Key.spaceAfterPunctuation)
         autoCapitalize = defaults.bool(forKey: Key.autoCapitalize)
-        typography = defaults.bool(forKey: Key.typography)
+        dashes = defaults.bool(forKey: Key.dashes)
+        smartQuotes = defaults.bool(forKey: Key.smartQuotes)
+        symbols = defaults.bool(forKey: Key.symbols)
         listContinuation = defaults.bool(forKey: Key.listContinuation)
         let language = defaults.string(forKey: Key.interfaceLanguage).flatMap(AppLanguage.init(rawValue:))
             ?? .systemDefault

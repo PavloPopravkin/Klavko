@@ -31,7 +31,7 @@ Requirements: macOS 14 or later (translation needs macOS 15), at least two keybo
 ### Typos and formatting
 - Obvious typos are fixed after the word: `teh` → `the`, `pertty` → `pretty`, `HEllo` → `Hello` (stuck Shift). Doubtful words, names mid-sentence and words with digits stay as they are.
 - A missing space after punctuation: `Hi,there` → `Hi, there`.
-- A capital at the start of a sentence; `...` → `…`, `"` → `“”` / `«»`, ` - ` → ` — `, `(c)` → `©`; lists `- ` and `1. ` continue after Return.
+- A capital at the start of a sentence; `...` → `…`, `"` → `“”` / `«»`, ` - ` → ` — `, `(c)` → `©`; lists `- ` and `1. ` continue after Return. Each of these has its own switch in Settings.
 - Your own replacements: `ty` → `thank you`, `:)` → `🙂`.
 
 ### Voice input

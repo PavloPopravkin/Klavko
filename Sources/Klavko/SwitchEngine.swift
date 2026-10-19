@@ -29,7 +29,9 @@ final class SwitchEngine {
         var correctSpelling = true
         var spaceAfterPunctuation = true
         var autoCapitalize = true
-        var typography = true
+        var dashes = true
+        var smartQuotes = true
+        var symbols = true
         var listContinuation = true
         /// The user's own replacements ("сп" → "спасибі").
         var replacements: [Replacement] = []
@@ -284,7 +286,7 @@ final class SwitchEngine {
             reset()
             return true
         }
-        if typedCharacter == "\"" && formattingAllowed(config.typography) {
+        if typedCharacter == "\"" && formattingAllowed(config.smartQuotes) {
             return handleStraightQuote(pair)
         }
         if pair.current.map.isWordCharacter(keystroke) || alternatives.contains(where: { $0.map.isWordCharacter(keystroke) }) {
@@ -382,7 +384,7 @@ final class SwitchEngine {
     /// The key being typed is its last character and hasn't reached the screen. Returns true if replaced.
     private func replaceTypedSequence(_ pair: Pair) -> Bool {
         var rules = config.replacements.filter { !$0.isWord }
-        if formattingAllowed(config.typography) { rules += Typography.builtIn }
+        if formattingAllowed(config.symbols) { rules += Typography.builtIn }
         guard !excludedNow, !rules.isEmpty,
               let rule = Typography.immediateMatch(in: String(visible.suffix(20)), rules: rules) else { return false }
         apply(Conversion(original: rule.from, converted: rule.to, from: pair.current, to: nil,
@@ -434,7 +436,7 @@ final class SwitchEngine {
             return false
         }
         // "так - ні" → "так — ні".
-        if formattingAllowed(config.typography) {
+        if formattingAllowed(config.dashes) {
             let hyphens = Typography.dashHyphens(before: String(visible.dropLast().suffix(20)))
             if hyphens > 0 {
                 apply(Conversion(original: String(repeating: "-", count: hyphens) + " ", converted: "— ",
