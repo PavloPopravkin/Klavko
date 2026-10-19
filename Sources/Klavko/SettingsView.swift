@@ -230,10 +230,19 @@ struct SettingsView: View {
                             Text(tr("Після «.» «!» «?», на новому рядку та на початку тексту. Скорочення («т.д.», «напр.») не враховуються.",
                                     "After “.” “!” “?”, on a new line and at the start of the text. Abbreviations (“e.g.”, “etc.”) don’t count."))
                         }
-                        Toggle(isOn: $settings.typography) {
-                            Text(tr("Типографські символи", "Typographic characters"))
-                            Text(tr("... → …   \" → « » (укр.) / “ ” (англ.)   « - » → « — »   (c) (r) (tm) → © ® ™",
-                                    "... → …   \" → “ ” (Eng.) / « » (Ukr.)   « - » → « — »   (c) (r) (tm) → © ® ™"))
+                        Toggle(isOn: $settings.dashes) {
+                            Text(tr("Довге тире", "Long dash"))
+                            Text(tr("« - » і « -- » між словами → « — ». Дефіс у словах і «- пункт» на початку рядка не змінюються.",
+                                    "“ - ” and “ -- ” between words → “ — ”. Hyphens in words and “- item” at the start of a line stay."))
+                        }
+                        Toggle(isOn: $settings.smartQuotes) {
+                            Text(tr("Типографські лапки", "Curly quotes"))
+                            Text(tr("\" → « » (укр.) / “ ” (англ.) / „ “ (нім.)",
+                                    "\" → “ ” (Eng.) / « » (Ukr.) / „ “ (Ger.)"))
+                        }
+                        Toggle(isOn: $settings.symbols) {
+                            Text(tr("Три крапки та знаки", "Ellipsis and signs"))
+                            Text(tr("... → …   (c) (r) (tm) → © ® ™", "... → …   (c) (r) (tm) → © ® ™"))
                         }
                         Toggle(isOn: $settings.listContinuation) {
                             Text(tr("Продовжувати списки", "Continue lists"))
