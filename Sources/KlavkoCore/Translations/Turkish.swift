@@ -88,8 +88,6 @@ extension Translations {
         "Fix the keyboard layout automatically": "Klavye düzenini otomatik düzelt",
         "Switch while the word is still being typed": "Kelime hâlâ yazılırken değiştir",
         "Switch words in capitals (abbreviations)": "Büyük harfli kelimeleri değiştir (kısaltmalar)",
-        "Mid-sentence, wait for the end of the word": "Cümle ortasında kelimenin bitmesini bekle",
-        "After a word in the layout’s language, a word is switched only once it is whole and real: a typo at its start doesn’t throw it into another language.": "Düzenin dilindeki bir kelimeden sonra bir kelime ancak tamamlanıp gerçek bir kelime olduğunda değiştirilir: başındaki bir yazım hatası onu başka bir dile atmaz.",
         "Switch into these languages only by hand": "Bu dillere yalnızca elle geç",
         "For a language you rarely write in: many of its words are words of your main one too, so Klavko can’t tell which of the two you meant. A hotkey still switches into it.": "Seyrek yazdığınız bir dil için: kelimelerinin çoğu ana dilinizde de var, bu yüzden Klavko hangisini kastettiğinizi anlayamaz. Kısayol tuşu yine de ona geçer.",
         "Check the word after": "Kelimeyi şundan sonra denetle",

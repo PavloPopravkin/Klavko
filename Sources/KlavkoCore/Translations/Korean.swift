@@ -88,8 +88,6 @@ extension Translations {
         "Fix the keyboard layout automatically": "키보드 입력기를 자동으로 수정",
         "Switch while the word is still being typed": "단어를 입력하는 도중에 전환",
         "Switch words in capitals (abbreviations)": "대문자 단어 전환(약어)",
-        "Mid-sentence, wait for the end of the word": "문장 중간에서는 단어가 끝날 때까지 기다리기",
-        "After a word in the layout’s language, a word is switched only once it is whole and real: a typo at its start doesn’t throw it into another language.": "자판과 같은 언어의 단어 뒤에서는 단어가 완성되고 실제 단어일 때만 전환합니다. 단어 앞부분의 오타로 다른 언어로 바뀌지 않습니다.",
         "Switch into these languages only by hand": "이 언어로는 수동으로만 전환",
         "For a language you rarely write in: many of its words are words of your main one too, so Klavko can’t tell which of the two you meant. A hotkey still switches into it.": "드물게 쓰는 언어용: 그 단어 중 상당수가 주 언어에도 있어서 Klavko가 둘 중 어느 쪽인지 알 수 없습니다. 단축키로는 여전히 전환됩니다.",
         "Check the word after": "단어 확인 시점",
