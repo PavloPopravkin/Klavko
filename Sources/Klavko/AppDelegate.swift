@@ -278,6 +278,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                                             autoSwitch: settings.isEnabled,
                                             triggers: settings.triggers,
                                             switchWhileTyping: settings.switchWhileTyping,
+                                            waitInSentence: settings.waitInSentence,
                                             backspaceUndo: settings.backspaceUndo,
                                             convertAbbreviations: settings.convertAbbreviations,
                                             correctSpelling: settings.correctSpelling,

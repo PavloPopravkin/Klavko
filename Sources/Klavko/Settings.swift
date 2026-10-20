@@ -8,6 +8,7 @@ final class Settings: ObservableObject {
     private enum Key {
         static let enabled = "enabled"
         static let switchWhileTyping = "switchWhileTyping"
+        static let waitInSentence = "waitInSentence"
         static let triggers = "triggers"
         static let backspaceUndo = "backspaceUndo"
         static let showFlag = "showFlag"
@@ -65,6 +66,10 @@ final class Settings: ObservableObject {
 
     @Published var switchWhileTyping: Bool {
         didSet { defaults.set(switchWhileTyping, forKey: Key.switchWhileTyping); onChange?() }
+    }
+
+    @Published var waitInSentence: Bool {
+        didSet { defaults.set(waitInSentence, forKey: Key.waitInSentence); onChange?() }
     }
 
     @Published private(set) var triggers: Set<SwitchTrigger> {
@@ -294,6 +299,7 @@ final class Settings: ObservableObject {
         defaults.register(defaults: [
             Key.enabled: true,
             Key.switchWhileTyping: true,
+            Key.waitInSentence: false,
             Key.triggers: SwitchTrigger.allCases.map(\.rawValue),
             Key.backspaceUndo: true,
             Key.convertAbbreviations: false,
@@ -325,6 +331,7 @@ final class Settings: ObservableObject {
         ])
         isEnabled = defaults.bool(forKey: Key.enabled)
         switchWhileTyping = defaults.bool(forKey: Key.switchWhileTyping)
+        waitInSentence = defaults.bool(forKey: Key.waitInSentence)
         triggers = Set((defaults.stringArray(forKey: Key.triggers) ?? []).compactMap(SwitchTrigger.init(rawValue:)))
         backspaceUndo = defaults.bool(forKey: Key.backspaceUndo)
         convertAbbreviations = defaults.bool(forKey: Key.convertAbbreviations)

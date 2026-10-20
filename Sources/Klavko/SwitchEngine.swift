@@ -24,6 +24,8 @@ final class SwitchEngine {
         var autoSwitch = true
         var triggers: Set<SwitchTrigger> = Set(SwitchTrigger.allCases)
         var switchWhileTyping = true
+        /// Mid-sentence, after a word in the current layout's language, switch only once the word is finished.
+        var waitInSentence = false
         var backspaceUndo = true
         var convertAbbreviations = false
         var correctSpelling = true
@@ -744,6 +746,10 @@ final class SwitchEngine {
         guard autoSwitchAllowed, config.switchWhileTyping, !wordLocked,
               buffer.count >= analyzer.minimumPrefixLength, buffer.count <= 7,
               let typed = pair.current.map.render(buffer),
+              // A typo early in a word of the sentence's language often starts a word of another one
+              // ("дго…" for "дого…" reads "luj…"): then only a whole real word decides, at the end.
+              !(config.waitInSentence && !isSentenceStart(beforeLast: typed.count - 1)
+                && languageOfPreviousWord(beforeLast: typed.count - 1) == pair.current.map.language),
               case let fitting = candidates(for: buffer, pair, automatic: true).filter({ option in
                   analyzer.shouldConvertPrefix(typed: typed, typedLanguage: option.pair.current.map.language,
                                                alternative: option.text, alternativeLanguage: option.pair.alternative.map.language)
