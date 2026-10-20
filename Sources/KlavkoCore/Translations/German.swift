@@ -88,6 +88,8 @@ extension Translations {
         "Fix the keyboard layout automatically": "Tastaturlayout automatisch korrigieren",
         "Switch while the word is still being typed": "Schon während der Eingabe des Wortes umschalten",
         "Switch words in capitals (abbreviations)": "Wörter in Großbuchstaben umschalten (Abkürzungen)",
+        "Switch into these languages only by hand": "In diese Sprachen nur von Hand wechseln",
+        "For a language you rarely write in: many of its words are words of your main one too, so Klavko can’t tell which of the two you meant. A hotkey still switches into it.": "Für eine Sprache, in der Sie selten schreiben: Viele ihrer Wörter gibt es auch in Ihrer Hauptsprache, daher kann Klavko nicht erkennen, welche der beiden Sie meinten. Ein Kurzbefehl wechselt trotzdem dorthin.",
         "Check the word after": "Wort prüfen nach",
         "Backspace right after a fix undoes it": "Rückschritttaste direkt nach einer Korrektur macht sie rückgängig",
         "Automatic layout switching": "Automatische Layout-Umschaltung",

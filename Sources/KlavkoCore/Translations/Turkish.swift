@@ -88,6 +88,8 @@ extension Translations {
         "Fix the keyboard layout automatically": "Klavye düzenini otomatik düzelt",
         "Switch while the word is still being typed": "Kelime hâlâ yazılırken değiştir",
         "Switch words in capitals (abbreviations)": "Büyük harfli kelimeleri değiştir (kısaltmalar)",
+        "Switch into these languages only by hand": "Bu dillere yalnızca elle geç",
+        "For a language you rarely write in: many of its words are words of your main one too, so Klavko can’t tell which of the two you meant. A hotkey still switches into it.": "Seyrek yazdığınız bir dil için: kelimelerinin çoğu ana dilinizde de var, bu yüzden Klavko hangisini kastettiğinizi anlayamaz. Kısayol tuşu yine de ona geçer.",
         "Check the word after": "Kelimeyi şundan sonra denetle",
         "Backspace right after a fix undoes it": "Düzeltmeden hemen sonra Backspace onu geri alır",
         "Automatic layout switching": "Otomatik düzen değiştirme",

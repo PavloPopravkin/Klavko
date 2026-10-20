@@ -18,6 +18,7 @@ final class Settings: ObservableObject {
         static let loginItemConfigured = "loginItemConfigured"
         static let loginItemPath = "loginItemPath"
         static let convertAbbreviations = "convertAbbreviations"
+        static let manualLanguages = "manualLanguages"
         static let exceptions = "exceptions"
         static let correctSpelling = "correctTypos"
         static let spaceAfterPunctuation = "spaceAfterPunctuation"
@@ -76,6 +77,19 @@ final class Settings: ObservableObject {
 
     @Published var convertAbbreviations: Bool {
         didSet { defaults.set(convertAbbreviations, forKey: Key.convertAbbreviations); onChange?() }
+    }
+
+    /// Languages Klavko never switches into by itself, only by a hotkey ("uk", "ru"…; empty by default).
+    @Published private(set) var manualLanguages: [String] {
+        didSet { defaults.set(manualLanguages, forKey: Key.manualLanguages); onChange?() }
+    }
+
+    func toggleManualLanguage(_ code: String) {
+        if manualLanguages.contains(code) {
+            manualLanguages.removeAll { $0 == code }
+        } else {
+            manualLanguages.append(code)
+        }
     }
 
     @Published var correctSpelling: Bool {
@@ -314,6 +328,7 @@ final class Settings: ObservableObject {
         triggers = Set((defaults.stringArray(forKey: Key.triggers) ?? []).compactMap(SwitchTrigger.init(rawValue:)))
         backspaceUndo = defaults.bool(forKey: Key.backspaceUndo)
         convertAbbreviations = defaults.bool(forKey: Key.convertAbbreviations)
+        manualLanguages = defaults.stringArray(forKey: Key.manualLanguages) ?? []
         exceptions = defaults.stringArray(forKey: Key.exceptions) ?? []
         correctSpelling = defaults.bool(forKey: Key.correctSpelling)
         spaceAfterPunctuation = defaults.bool(forKey: Key.spaceAfterPunctuation)

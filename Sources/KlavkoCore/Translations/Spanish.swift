@@ -88,6 +88,8 @@ extension Translations {
         "Fix the keyboard layout automatically": "Corregir la distribución del teclado automáticamente",
         "Switch while the word is still being typed": "Cambiar mientras se escribe la palabra",
         "Switch words in capitals (abbreviations)": "Cambiar palabras en mayúsculas (siglas)",
+        "Switch into these languages only by hand": "Cambiar a estos idiomas solo a mano",
+        "For a language you rarely write in: many of its words are words of your main one too, so Klavko can’t tell which of the two you meant. A hotkey still switches into it.": "Para un idioma en el que escribes poco: muchas de sus palabras también existen en tu idioma principal, así que Klavko no puede saber cuál de los dos querías. Un atajo sigue cambiando a él.",
         "Check the word after": "Comprobar la palabra tras",
         "Backspace right after a fix undoes it": "Retroceso justo después de una corrección la deshace",
         "Automatic layout switching": "Cambio automático de distribución",
