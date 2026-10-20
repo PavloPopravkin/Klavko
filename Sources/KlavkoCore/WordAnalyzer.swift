@@ -32,21 +32,26 @@ public struct WordAnalyzer {
 
     /// For a finished word. `typed` is what appeared on screen in `typedLanguage`;
     /// `alternative` is the same keystrokes rendered in `alternativeLanguage`.
-    /// `contextLanguage`: the language of the word before it, if known.
+    /// `context`: what the text before it says about its language.
+    /// `sameScript`: both languages use one alphabet (Ukrainian and Russian, English and French).
     public func shouldConvert(typed: String, typedLanguage: String,
                               alternative: String, alternativeLanguage: String,
-                              contextLanguage: String? = nil) -> Bool {
+                              context: LanguageContext = LanguageContext(), sameScript: Bool = false) -> Bool {
         if typed.contains(where: \.isNumber) { return false }
 
         let typedWord = TextRules.coreWord(typed)
         let alternativeWord = TextRules.coreWord(alternative)
         if exceptions.contains(typedWord.lowercased()) { return false }
         if !convertAbbreviations && TextRules.isAllCaps(typedWord) { return false }
+        // No word starts with a comma, period or semicolon: a letter typed on that key ("бин" is ",by")
+        // means the word is in the typed layout, whatever the rest spells.
+        if let first = alternative.first, ",.;".contains(first), typed.first?.isLetter == true { return false }
 
         if !alternativeWord.isEmpty, alternativeWord.count <= ShortWords.maxLength {
+            // In one alphabet a short word is too often a real word of both: only the text around it decides.
+            if sameScript && !context.favors(alternativeLanguage, over: typedLanguage) { return false }
             return shouldConvertShort(typedWord, typedLanguage: typedLanguage,
-                                      alternativeWord, alternativeLanguage: alternativeLanguage,
-                                      contextLanguage: contextLanguage)
+                                      alternativeWord, alternativeLanguage: alternativeLanguage, context: context)
         }
         guard alternativeWord.count >= minimumLength else { return false }
 
@@ -62,13 +67,13 @@ public struct WordAnalyzer {
     }
 
     /// One to three letters ("ye" -> "ну"): see `ShortWords`.
-    /// A single letter ("z" -> "я") also needs the previous word to be in the other language.
+    /// A single letter ("z" -> "я") also needs the text before it to be in the other language.
     private func shouldConvertShort(_ typedWord: String, typedLanguage: String,
                                     _ alternativeWord: String, alternativeLanguage: String,
-                                    contextLanguage: String?) -> Bool {
+                                    context: LanguageContext) -> Bool {
         guard ShortWords.isCommon(alternativeWord, language: alternativeLanguage) else { return false }
-        // In the middle of a sentence in the other language, trust the context.
-        if contextLanguage == alternativeLanguage { return true }
+        // In the middle of text in the other language, trust the context.
+        if context.favors(alternativeLanguage, over: typedLanguage) { return true }
         // A single letter is too ambiguous without it.
         if alternativeWord.count < minimumLength { return false }
         if ShortWords.isCommon(typedWord, language: typedLanguage) { return false }
@@ -79,9 +84,13 @@ public struct WordAnalyzer {
 
     /// For a word still being typed: switch when no word starts like the typed text
     /// but many words start like the alternative ("ghb" vs "при").
+    /// After text in the typed language it waits for the whole word: a typo in the first letters
+    /// often starts a word of another language ("дго…" for "дого…" reads "luj…").
     public func shouldConvertPrefix(typed: String, typedLanguage: String,
-                                    alternative: String, alternativeLanguage: String) -> Bool {
+                                    alternative: String, alternativeLanguage: String,
+                                    context: LanguageContext = LanguageContext()) -> Bool {
         if typed.contains(where: \.isNumber) { return false }
+        if context.favors(typedLanguage, over: alternativeLanguage) { return false }
 
         let typedWord = TextRules.coreWord(typed)
         let typedLower = typedWord.lowercased()

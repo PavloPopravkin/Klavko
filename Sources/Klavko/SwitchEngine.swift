@@ -24,8 +24,6 @@ final class SwitchEngine {
         var autoSwitch = true
         var triggers: Set<SwitchTrigger> = Set(SwitchTrigger.allCases)
         var switchWhileTyping = true
-        /// Mid-sentence, after a word in the current layout's language, switch only once the word is finished.
-        var waitInSentence = false
         var backspaceUndo = true
         var convertAbbreviations = false
         var correctSpelling = true
@@ -110,6 +108,8 @@ final class SwitchEngine {
     private var alternatives: [Layout] = []
     /// Layout IDs in the order they were last typed in, latest first.
     private var recentLayoutIDs: [String] = []
+    /// The languages of words seen in the language context, so each is looked up once.
+    private var wordLanguages: [String: Set<String>] = [:]
     /// One checker for both, so its completion cache is shared.
     private let spellChecker = MacSpellChecker()
     private lazy var analyzer = WordAnalyzer(spellChecker: spellChecker)
@@ -190,6 +190,7 @@ final class SwitchEngine {
 
     func reloadLayouts() {
         layouts = SystemLayouts.enabledLayouts()
+        wordLanguages = [:]
         Log.engine.notice("Layouts: \(self.layouts.map(\.map.id).joined(separator: ", "), privacy: .public)")
     }
 
@@ -700,17 +701,13 @@ final class SwitchEngine {
     private func autoConvert(_ word: [Keystroke], _ pair: Pair, typedTrail: String,
                              alternativeTrail: (LayoutMap) -> String) -> Bool {
         guard autoSwitchAllowed, !word.isEmpty, let typed = pair.current.map.render(word) else { return false }
-        let context = languageOfPreviousWord(beforeLast: typed.count + typedTrail.count)
+        let context = languageContext(beforeLast: typed.count + typedTrail.count)
         // The first layout in which the keys spell a real word.
         guard let found = candidates(for: word, pair, automatic: true).first(where: { option in
-            // The same alphabet (English and French, Ukrainian and Russian): a short word there is
-            // too often a real word of both, so only the sentence around it decides.
-            if option.pair.alternative.map.script == pair.current.map.script,
-               TextRules.coreWord(option.text).count <= ShortWords.maxLength,
-               context != option.pair.alternative.map.language { return false }
-            return analyzer.shouldConvert(typed: typed, typedLanguage: option.pair.current.map.language,
+            analyzer.shouldConvert(typed: typed, typedLanguage: option.pair.current.map.language,
                                    alternative: option.text, alternativeLanguage: option.pair.alternative.map.language,
-                                   contextLanguage: context)
+                                   context: context,
+                                   sameScript: option.pair.alternative.map.script == pair.current.map.script)
         }) else { return false }
         let (pair, alternative) = found
 
@@ -748,13 +745,12 @@ final class SwitchEngine {
         guard autoSwitchAllowed, config.switchWhileTyping, !wordLocked,
               buffer.count >= analyzer.minimumPrefixLength, buffer.count <= 7,
               let typed = pair.current.map.render(buffer),
-              // A typo early in a word of the sentence's language often starts a word of another one
-              // ("дго…" for "дого…" reads "luj…"): then only a whole real word decides, at the end.
-              !(config.waitInSentence && !isSentenceStart(beforeLast: typed.count - 1)
-                && languageOfPreviousWord(beforeLast: typed.count - 1) == pair.current.map.language),
+              // The letters typed so far are on screen; the context is before them.
+              case let context = languageContext(beforeLast: typed.count - 1),
               case let fitting = candidates(for: buffer, pair, automatic: true).filter({ option in
                   analyzer.shouldConvertPrefix(typed: typed, typedLanguage: option.pair.current.map.language,
-                                               alternative: option.text, alternativeLanguage: option.pair.alternative.map.language)
+                                               alternative: option.text, alternativeLanguage: option.pair.alternative.map.language,
+                                               context: context)
               }),
               // Three letters often start words in several languages ("auo…": Greek "αθο…", French "quo…"):
               // switch now only if they all read the same ("при…" in Ukrainian and Russian), else at the word's end.
@@ -1129,25 +1125,17 @@ final class SwitchEngine {
         return true
     }
 
-    /// The language of the word before the last `count` characters, by the layout that types its letters
-    /// (the current one first, then the likeliest alternatives); nil if there is none.
-    private func languageOfPreviousWord(beforeLast count: Int) -> String? {
-        guard count <= visible.count else { return nil }
-        let before = visible.dropLast(count).suffix(60).reversed().drop { !$0.isLetter }
-        let word = String(before.prefix { $0.isLetter }.reversed()).lowercased()
-        guard !word.isEmpty else { return nil }
-        let current = layouts.first { $0.map.id == SystemLayouts.currentLayoutID() }
-        let typing = ((current.map { [$0] } ?? []) + automaticAlternatives + alternatives).filter { layout in
-            word.allSatisfy { layout.map.keystroke(for: String($0)) != nil }
+    /// What the text before the last `count` characters says about its language.
+    private func languageContext(beforeLast count: Int) -> LanguageContext {
+        guard count >= 0, count <= visible.count else { return LanguageContext() }
+        let maps = layouts.map(\.map)
+        return LanguageContext.of(visible.dropLast(count).suffix(120)) { word in
+            if let known = wordLanguages[word] { return known }
+            if wordLanguages.count > 500 { wordLanguages.removeAll() }
+            let found = LanguageContext.languages(of: word, among: maps, spellChecker: spellChecker)
+            wordLanguages[word] = found
+            return found
         }
-        // Several layouts type it (Ukrainian and Russian share most letters): the one whose dictionary knows it.
-        if typing.count > 1, let known = typing.first(where: { spellChecker.isValid(word, language: $0.map.language) }) {
-            return known.map.language
-        }
-        if let first = typing.first { return first.map.language }
-        // No layout types it all ("café" with é typed through Option): go by its alphabet.
-        let script = word.compactMap { Script(of: String($0)) }.first
-        return ((current.map { [$0] } ?? []) + automaticAlternatives + alternatives).first { $0.map.script == script }?.map.language
     }
 
     /// The pair with each alternative layout in turn (likeliest first) and what the keys type in it,

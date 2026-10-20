@@ -355,7 +355,7 @@ final class ShortWordTests: XCTestCase {
         let other = layouts.first { $0.language != language }!
         let typed = LayoutConverter.convert(word, from: intended, to: other)
         return analyzer.shouldConvert(typed: typed, typedLanguage: other.language,
-                                      alternative: word, alternativeLanguage: language, contextLanguage: context)
+                                      alternative: word, alternativeLanguage: language, context: LanguageContext(context))
     }
 
     func testSwitchesCommonTwoLetterWords() {
@@ -374,7 +374,7 @@ final class ShortWordTests: XCTestCase {
             let alternative = LayoutConverter.convert(typed, from: english, to: ukrainian)
             XCTAssertFalse(analyzer.shouldConvert(typed: typed, typedLanguage: "en",
                                                   alternative: alternative, alternativeLanguage: "uk",
-                                                  contextLanguage: "uk"), typed)
+                                                  context: LanguageContext("uk")), typed)
         }
     }
 
@@ -787,5 +787,85 @@ final class ReleaseNotesTests: XCTestCase {
         XCTAssertEqual(ReleaseNotes.whatsNew(notes), ["автоматичні оновлення."])
         XCTAssertEqual(ReleaseNotes.whatsNew(notes, english: true), ["автоматичні оновлення."])
         XCTAssertEqual(ReleaseNotes.plain("[подякувати автору](https://x.y) ❤️"), "подякувати автору ❤️")
+    }
+}
+
+/// Dictionaries per language, to test the sentence rules exactly.
+private final class LanguageSpellChecker: SpellChecking {
+    let words: [String: Set<String>]
+
+    init(_ words: [String: Set<String>]) { self.words = words }
+
+    func isValid(_ word: String, language: String) -> Bool { words[language]?.contains(word.lowercased()) == true }
+    func hasCompletions(_ prefix: String, language: String) -> Bool { !completions(for: prefix, language: language).isEmpty }
+    func completions(for prefix: String, language: String) -> [String] {
+        (words[language] ?? []).filter { $0.hasPrefix(prefix.lowercased()) }.sorted()
+    }
+    func correction(for word: String, language: String, context: String) -> String? { nil }
+    func guesses(for word: String, language: String, context: String) -> [String] { [] }
+    func validWords(among candidates: [String], language: String) -> Set<String> {
+        Set(candidates.filter { isValid($0, language: language) })
+    }
+}
+
+final class LanguageContextTests: XCTestCase {
+    func testTakesTheLastLineOnly() {
+        XCTAssertEqual(LanguageContext.lastWords(of: Array("Hello there.\nЯ сегодня. Дома "), limit: 6), ["дома", "сегодня", "я"])
+        XCTAssertEqual(LanguageContext.lastWords(of: Array("раз два три четыре"), limit: 2), ["четыре", "три"])
+        XCTAssertEqual(LanguageContext.lastWords(of: Array("це м'ята, "), limit: 6), ["м'ята", "це"])
+        XCTAssertEqual(LanguageContext.lastWords(of: Array("Готово.\n"), limit: 6), [])
+        XCTAssertEqual(LanguageContext.lastWords(of: Array("Готово. "), limit: 6), ["готово"])
+    }
+
+    func testWordsOfBothLanguagesDontTipTheBalance() {
+        var context = LanguageContext()
+        context.add(["ru", "uk"])          // дома
+        XCTAssertFalse(context.favors("ru", over: "uk"))
+        XCTAssertTrue(context.favors("ru", over: "en"))
+        context.add(["ru"])                // сегодня
+        XCTAssertTrue(context.favors("ru", over: "uk"))
+        XCTAssertFalse(LanguageContext().favors("ru", over: "en"))
+    }
+}
+
+final class ContextRuleTests: XCTestCase {
+    // "дгс" (a typo for "дог…") starts "luck" on the English keys.
+    let checker = LanguageSpellChecker([
+        "ru": ["договор", "сегодня", "я"],
+        "en": ["luck", "lucky"],
+    ])
+    lazy var analyzer = WordAnalyzer(spellChecker: checker)
+    let russian = LanguageContext("ru")
+
+    func testWaitsForTheWholeWordInASentenceOfTheTypedLanguage() {
+        XCTAssertTrue(analyzer.shouldConvertPrefix(typed: "дгс", typedLanguage: "ru", alternative: "luc", alternativeLanguage: "en"))
+        XCTAssertFalse(analyzer.shouldConvertPrefix(typed: "дгс", typedLanguage: "ru", alternative: "luc",
+                                                    alternativeLanguage: "en", context: russian))
+        // A sentence in the other language still lets it switch early.
+        XCTAssertTrue(analyzer.shouldConvertPrefix(typed: "дгс", typedLanguage: "ru", alternative: "luc",
+                                                   alternativeLanguage: "en", context: LanguageContext("en")))
+    }
+
+    func testAWholeWordStillSwitchesMidSentence() {
+        XCTAssertTrue(analyzer.shouldConvert(typed: "дгсл", typedLanguage: "ru", alternative: "luck",
+                                             alternativeLanguage: "en", context: russian))
+    }
+
+    func testAWordDoesNotStartWithPunctuation() {
+        // "бин" (a typo for "был") is ",by" on the English keys: the comma key was pressed as a letter.
+        let checker = LanguageSpellChecker(["ru": ["был"], "en": ["by"]])
+        XCTAssertFalse(WordAnalyzer(spellChecker: checker).shouldConvert(typed: "бинс", typedLanguage: "ru",
+                                                                        alternative: ",byc", alternativeLanguage: "en"))
+    }
+
+    func testShortWordsOfOneAlphabetNeedTheSentence() {
+        let both = LanguageSpellChecker(["ru": [], "uk": []])
+        let analyzer = WordAnalyzer(spellChecker: both)
+        let ukrainian = LanguageContext("uk")
+        // "що" typed in the Russian layout is "шо"; only a Ukrainian sentence makes it Ukrainian.
+        XCTAssertFalse(analyzer.shouldConvert(typed: "шо", typedLanguage: "ru", alternative: "що",
+                                              alternativeLanguage: "uk", sameScript: true))
+        XCTAssertTrue(analyzer.shouldConvert(typed: "шо", typedLanguage: "ru", alternative: "що",
+                                             alternativeLanguage: "uk", context: ukrainian, sameScript: true))
     }
 }

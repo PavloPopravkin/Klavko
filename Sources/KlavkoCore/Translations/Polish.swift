@@ -88,8 +88,6 @@ extension Translations {
         "Fix the keyboard layout automatically": "Automatycznie poprawiaj układ klawiatury",
         "Switch while the word is still being typed": "Przełączaj już w trakcie pisania słowa",
         "Switch words in capitals (abbreviations)": "Przełączaj słowa pisane wielkimi literami (skróty)",
-        "Mid-sentence, wait for the end of the word": "W środku zdania czekaj na koniec słowa",
-        "After a word in the layout’s language, a word is switched only once it is whole and real: a typo at its start doesn’t throw it into another language.": "Po słowie w języku układu słowo jest przełączane dopiero, gdy jest całe i prawdziwe: literówka na jego początku nie przerzuca go do innego języka.",
         "Switch into these languages only by hand": "Przełączaj na te języki tylko ręcznie",
         "For a language you rarely write in: many of its words are words of your main one too, so Klavko can’t tell which of the two you meant. A hotkey still switches into it.": "Dla języka, w którym piszesz rzadko: wiele jego słów istnieje też w Twoim głównym, więc Klavko nie zgadnie, o który z nich chodziło. Skrót klawiszowy nadal na niego przełącza.",
         "Check the word after": "Sprawdzaj słowo po",

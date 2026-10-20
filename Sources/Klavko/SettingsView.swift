@@ -130,13 +130,6 @@ struct SettingsView: View {
                         Toggle(tr("Автоматично виправляти розкладку", "Fix the keyboard layout automatically"), isOn: $settings.isEnabled)
                         Toggle(tr("Перемикати вже під час набору слова", "Switch while the word is still being typed"), isOn: $settings.switchWhileTyping)
                             .disabled(!settings.isEnabled)
-                        Toggle(tr("Посеред речення чекати кінця слова", "Mid-sentence, wait for the end of the word"), isOn: $settings.waitInSentence)
-                            .disabled(!settings.isEnabled || !settings.switchWhileTyping)
-                            .padding(.leading, 20)
-                            .help(tr("Після слова тією ж мовою, що й розкладка, слово перемикається лише тоді, коли воно ціле і справжнє: "
-                                     + "помилка на початку слова («дго…») не перекидає його в іншу мову.",
-                                     "After a word in the layout’s language, a word is switched only once it is whole and real: "
-                                     + "a typo at its start doesn’t throw it into another language."))
                         Toggle(tr("Перемикати слова з великих літер (абревіатури)", "Switch words in capitals (abbreviations)"), isOn: $settings.convertAbbreviations)
                             .disabled(!settings.isEnabled)
                         HStack {
