@@ -141,6 +141,27 @@ struct SettingsView: View {
                                 }
                             }
                         }
+                        // Pointless with two languages: excluding one would turn switching off.
+                        if case let languages = Set(SystemLayouts.enabledLayouts().map(\.map.language)), languages.count > 2 {
+                            VStack(alignment: .leading, spacing: 6) {
+                                Text(tr("Перемикати на ці мови лише вручну", "Switch into these languages only by hand"))
+                                FlowLayout(spacing: 6) {
+                                    ForEach(Translator.ordered(Array(languages)), id: \.self) { code in
+                                        ChipToggle(title: Translator.plainName(code),
+                                                   isOn: settings.manualLanguages.contains(code)) {
+                                            settings.toggleManualLanguage(code)
+                                        }
+                                    }
+                                }
+                                Text(tr("Для мови, якою ви пишете рідко: багато її слів є й в основній («дома», «мама»), "
+                                        + "тож Klavko не вгадає, яку з двох ви мали на увазі. Гаряча клавіша перемикає й на неї.",
+                                        "For a language you rarely write in: many of its words are words of your main one too, "
+                                        + "so Klavko can’t tell which of the two you meant. A hotkey still switches into it."))
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            .disabled(!settings.isEnabled)
+                        }
                         Toggle(tr("Backspace одразу після виправлення скасовує його", "Backspace right after a fix undoes it"), isOn: $settings.backspaceUndo)
                     } header: {
                         Text(tr("Автоматичне перемикання розкладки", "Automatic layout switching"))

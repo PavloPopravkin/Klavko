@@ -37,6 +37,9 @@ final class SwitchEngine {
         var replacements: [Replacement] = []
         /// Lowercased words never to convert or correct.
         var exceptions: Set<String> = []
+        /// Languages Klavko never switches into by itself ("uk" for someone who writes in Russian and only
+        /// now and then in Ukrainian: their words are mostly real words of both). A hotkey still converts into them.
+        var manualLanguages: Set<String> = []
     }
 
     /// True while a shortcut is being recorded: Klavko must not react to any key.
@@ -165,6 +168,10 @@ final class SwitchEngine {
     }
 
     private var autoSwitchAllowed: Bool { config.autoSwitch && !excludedNow }
+    /// The alternatives Klavko may switch into by itself, likeliest first.
+    private var automaticAlternatives: [Layout] {
+        alternatives.filter { !config.manualLanguages.contains($0.map.language) }
+    }
     private var spellingAllowed: Bool { config.correctSpelling && !excludedNow }
 
     /// The first dictionary lookups are slow (loading); do them before the user types.
@@ -545,15 +552,15 @@ final class SwitchEngine {
     /// so the next word decides ("ш love" → "I love"). `mark`: the punctuation typed right after it, if any.
     private func rememberLoneLetter(_ word: [Keystroke], _ pair: Pair,
                                     mark: (typed: Character, converted: Character)?) {
-        guard autoSwitchAllowed, word.count == 1,
-              let typed = pair.current.map.render(word), let converted = pair.alternative.map.render(word),
+        guard autoSwitchAllowed, word.count == 1, let alternative = automaticAlternatives.first,
+              let typed = pair.current.map.render(word), let converted = alternative.map.render(word),
               ShortWords.isLoneLetterCandidate(typed: typed, typedLanguage: pair.current.map.language,
-                                               alternative: converted, alternativeLanguage: pair.alternative.map.language),
+                                               alternative: converted, alternativeLanguage: alternative.map.language),
               let typedCharacter = typed.first,
-              let convertedCharacter = Self.englishI(converted, language: pair.alternative.map.language).first
+              let convertedCharacter = Self.englishI(converted, language: alternative.map.language).first
         else { return }
         loneLetter = LoneLetter(index: visible.count - 2, typed: typedCharacter, converted: convertedCharacter,
-                                mark: mark, language: pair.alternative.map.language)
+                                mark: mark, language: alternative.map.language)
     }
 
     /// The word after a lone letter is finished (or was just converted). If it is in the letter's
@@ -646,7 +653,7 @@ final class SwitchEngine {
         guard autoSwitchAllowed, let typed = pair.current.map.render(word) else { return false }
         let core = TextRules.coreWord(typed)
         // Cheap checks first: most words read differently in every other layout (Ukrainian vs English).
-        let same = alternatives.filter { $0.map.render(word) == typed }
+        let same = automaticAlternatives.filter { $0.map.render(word) == typed }
         // Short words are too often words of both; a capitalized word mid-sentence is likely a name;
         // the user's exceptions are never touched.
         guard !same.isEmpty, core.count > ShortWords.maxLength, !core.contains(where: \.isNumber),
@@ -693,7 +700,7 @@ final class SwitchEngine {
         guard autoSwitchAllowed, !word.isEmpty, let typed = pair.current.map.render(word) else { return false }
         let context = languageOfPreviousWord(beforeLast: typed.count + typedTrail.count)
         // The first layout in which the keys spell a real word.
-        guard let found = candidates(for: word, pair).first(where: { option in
+        guard let found = candidates(for: word, pair, automatic: true).first(where: { option in
             // The same alphabet (English and French, Ukrainian and Russian): a short word there is
             // too often a real word of both, so only the sentence around it decides.
             if option.pair.alternative.map.script == pair.current.map.script,
@@ -739,7 +746,7 @@ final class SwitchEngine {
         guard autoSwitchAllowed, config.switchWhileTyping, !wordLocked,
               buffer.count >= analyzer.minimumPrefixLength, buffer.count <= 7,
               let typed = pair.current.map.render(buffer),
-              case let fitting = candidates(for: buffer, pair).filter({ option in
+              case let fitting = candidates(for: buffer, pair, automatic: true).filter({ option in
                   analyzer.shouldConvertPrefix(typed: typed, typedLanguage: option.pair.current.map.language,
                                                alternative: option.text, alternativeLanguage: option.pair.alternative.map.language)
               }),
@@ -1124,7 +1131,7 @@ final class SwitchEngine {
         let word = String(before.prefix { $0.isLetter }.reversed()).lowercased()
         guard !word.isEmpty else { return nil }
         let current = layouts.first { $0.map.id == SystemLayouts.currentLayoutID() }
-        let typing = ((current.map { [$0] } ?? []) + alternatives).filter { layout in
+        let typing = ((current.map { [$0] } ?? []) + automaticAlternatives + alternatives).filter { layout in
             word.allSatisfy { layout.map.keystroke(for: String($0)) != nil }
         }
         // Several layouts type it (Ukrainian and Russian share most letters): the one whose dictionary knows it.
@@ -1134,14 +1141,15 @@ final class SwitchEngine {
         if let first = typing.first { return first.map.language }
         // No layout types it all ("café" with é typed through Option): go by its alphabet.
         let script = word.compactMap { Script(of: String($0)) }.first
-        return ((current.map { [$0] } ?? []) + alternatives).first { $0.map.script == script }?.map.language
+        return ((current.map { [$0] } ?? []) + automaticAlternatives + alternatives).first { $0.map.script == script }?.map.language
     }
 
     /// The pair with each alternative layout in turn (likeliest first) and what the keys type in it,
     /// skipping layouts where they type exactly the same (English and German share most keys).
-    private func candidates(for word: [Keystroke], _ pair: Pair) -> [(pair: Pair, text: String)] {
+    /// `automatic`: only the layouts Klavko may switch into by itself.
+    private func candidates(for word: [Keystroke], _ pair: Pair, automatic: Bool = false) -> [(pair: Pair, text: String)] {
         guard let typed = pair.current.map.render(word) else { return [] }
-        return alternatives.compactMap { layout in
+        return (automatic ? automaticAlternatives : alternatives).compactMap { layout in
             guard let text = layout.map.render(word), text != typed else { return nil }
             return ((pair.current, layout), text)
         }

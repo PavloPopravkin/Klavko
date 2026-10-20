@@ -288,7 +288,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
                                             symbols: settings.symbols,
                                             listContinuation: settings.listContinuation,
                                             replacements: settings.replacements,
-                                            exceptions: Set(settings.exceptions))
+                                            exceptions: Set(settings.exceptions),
+                                            manualLanguages: Set(settings.manualLanguages))
         updateIcon()
     }
 

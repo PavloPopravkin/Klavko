@@ -88,6 +88,8 @@ extension Translations {
         "Fix the keyboard layout automatically": "キーボードレイアウトを自動修正",
         "Switch while the word is still being typed": "単語の入力中に切り替える",
         "Switch words in capitals (abbreviations)": "大文字の単語（略語）も切り替える",
+        "Switch into these languages only by hand": "これらの言語へは手動でのみ切り替える",
+        "For a language you rarely write in: many of its words are words of your main one too, so Klavko can’t tell which of the two you meant. A hotkey still switches into it.": "めったに書かない言語向け：その単語の多くはメインの言語にもあるため、Klavko はどちらの意味か判断できません。ショートカットでは引き続き切り替えられます。",
         "Check the word after": "単語を確認するタイミング：",
         "Backspace right after a fix undoes it": "修正直後の Backspace で取り消す",
         "Automatic layout switching": "レイアウトの自動切り替え",
