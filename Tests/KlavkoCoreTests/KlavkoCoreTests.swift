@@ -791,7 +791,7 @@ final class ReleaseNotesTests: XCTestCase {
 }
 
 /// Dictionaries per language, to test the sentence rules exactly.
-private final class LanguageSpellChecker: SpellChecking {
+final class LanguageSpellChecker: SpellChecking {
     let words: [String: Set<String>]
 
     init(_ words: [String: Set<String>]) { self.words = words }
