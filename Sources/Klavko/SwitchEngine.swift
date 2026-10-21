@@ -171,8 +171,11 @@ final class SwitchEngine {
 
     private var autoSwitchAllowed: Bool { config.autoSwitch && !excludedNow }
     /// The alternatives Klavko may switch into by itself, likeliest first.
+    /// Only with more than two languages, as in Settings: with two, leaving one out would turn switching off,
+    /// and a language marked while a third layout was on would stay hidden there after that layout is removed.
     private var automaticAlternatives: [Layout] {
-        alternatives.filter { !config.manualLanguages.contains($0.map.language) }
+        guard !config.manualLanguages.isEmpty, Set(layouts.map(\.map.language)).count > 2 else { return alternatives }
+        return alternatives.filter { !config.manualLanguages.contains($0.map.language) }
     }
     private var spellingAllowed: Bool { config.correctSpelling && !excludedNow }
 
@@ -745,8 +748,9 @@ final class SwitchEngine {
         guard autoSwitchAllowed, config.switchWhileTyping, !wordLocked,
               buffer.count >= analyzer.minimumPrefixLength, buffer.count <= 7,
               let typed = pair.current.map.render(buffer),
-              // The letters typed so far are on screen; the context is before them.
-              case let context = languageContext(beforeLast: typed.count - 1),
+              // `visible` already ends with the whole word, this letter included: the context is before it.
+              // (Counting one letter less would read the word's first letter, "і" or "в", as a word of its own.)
+              case let context = languageContext(beforeLast: typed.count),
               case let fitting = candidates(for: buffer, pair, automatic: true).filter({ option in
                   analyzer.shouldConvertPrefix(typed: typed, typedLanguage: option.pair.current.map.language,
                                                alternative: option.text, alternativeLanguage: option.pair.alternative.map.language,
