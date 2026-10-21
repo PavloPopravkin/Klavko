@@ -50,6 +50,13 @@ public enum VoiceVocabulary {
     /// Words the user changed in dictated text: compares what was inserted with the text there now
     /// (the field around the insertion) and returns each word replaced by one other word.
     /// Rewritten phrases, additions, deletions and punctuation-only changes are not corrections.
+    /// The same word with exactly one letter in another case.
+    static func differsInOneLettersCase(_ a: String, _ b: String) -> Bool {
+        let x = Array(a), y = Array(b)
+        guard x.count == y.count else { return false }
+        return zip(x, y).filter { $0 != $1 }.count == 1
+    }
+
     public static func corrections(inserted: String, now current: String) -> [Replacement] {
         let old = words(inserted)
         let new = words(current)
@@ -82,8 +89,9 @@ public enum VoiceVocabulary {
         }
         // With where each one starts in the dictated text, so they come out in reading order.
         var found: [(at: Int, rule: Replacement)] = []
-        // Case-only changes are matches in the alignment ("зсу" = "ЗСУ"); they count too.
-        for pair in pairs where old[pair.old] != new[pair.new] {
+        // Case-only changes are matches in the alignment ("зсу" = "ЗСУ"); they count too,
+        // except one letter's case ("київ" → "Київ", "Ми" → "ми"): that's just a capital, not a spelling.
+        for pair in pairs where old[pair.old] != new[pair.new] && !differsInOneLettersCase(old[pair.old], new[pair.new]) {
             found.append((pair.old, Replacement(from: old[pair.old], to: new[pair.new])))
         }
         // Real gaps: matched words on both sides inside the dictated text; one word for one word.

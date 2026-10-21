@@ -680,6 +680,15 @@ final class VoiceVocabularyTests: XCTestCase {
         XCTAssertEqual(VoiceVocabulary.corrections(inserted: "Я буду о десятій", now: "Я буду о десятій."), [])
         XCTAssertEqual(VoiceVocabulary.corrections(inserted: "Я буду о десятій", now: "Зовсім інший текст тут"), [])
     }
+
+    func testOneLettersCaseIsNotACorrection() {
+        // A capital put in or taken out by hand is not a spelling to learn.
+        XCTAssertEqual(VoiceVocabulary.corrections(inserted: "Ми були в київ вчора", now: "Ми були в Київ вчора"), [])
+        XCTAssertEqual(VoiceVocabulary.corrections(inserted: "Ну Ми підемо завтра", now: "Ну ми підемо завтра"), [])
+        // A whole word in capitals is: an abbreviation.
+        XCTAssertEqual(VoiceVocabulary.corrections(inserted: "Він служить у зсу давно", now: "Він служить у ЗСУ давно"),
+                       [Replacement(from: "зсу", to: "ЗСУ")])
+    }
 }
 
 final class VoiceCorrectionOrderTests: XCTestCase {

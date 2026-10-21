@@ -124,6 +124,12 @@ final class SwitchEngine {
     private var buffer: [Keystroke] = []
     /// The current word was already converted or reverted: don't touch it again.
     private var wordLocked = false
+    /// Klavko switched the layout of the word while it was typed ("GHb" → "ПРи…"): at its end only a stuck
+    /// Shift is still fixed.
+    private var convertedMidWord = false
+    /// The user went back into the word with Backspace (into a fix, or to a finished word): it is theirs now,
+    /// and nothing in it is fixed automatically.
+    private var editedByUser = false
     /// Something was typed since the caret last jumped (so `buffer` holds letters the user just typed,
     /// not a word picked up from the text around the caret).
     private var typedSinceJump = false
@@ -380,11 +386,11 @@ final class SwitchEngine {
         // Only a word just typed gets checked; one picked up from the surrounding text is the user's own.
         let word = closesTypedWord ? buffer : []
         let locked = wordLocked
+        let caseOnly = onlyCaseLeft
         endWord()
         lastWord = []
         appendVisible("\"")
-        let fixed = config.triggers.contains(.punctuation) && !locked
-            && fixFinishedWord(word, pair, typedTrail: "\"", alternativeTrail: { _ in "\"" })
+        let fixed = config.triggers.contains(.punctuation) && finishWord(locked: locked, caseOnly: caseOnly, word, pair, typedTrail: "\"", alternativeTrail: { _ in "\"" })
         let language = pair.current.map.language
         let quote = closesTypedWord ? Typography.quote(after: "x", language: language)
             : opensWord ? Typography.quote(after: "", language: language)
@@ -426,24 +432,36 @@ final class SwitchEngine {
             contextLength = min(contextLength, visible.count)
             // Back at the end of the previous word (or at the start of what we've seen): pick it up again.
             resumeWordBeforeCaret()
+            // Going back into a finished word is editing it: it's the user's word now, no automatic fixes.
+            if !buffer.isEmpty { markEditedByUser() }
         } else {
             // Deleting into text typed before we started watching: we don't know its letters,
             // and the user is editing it by hand. Leave it alone until the next word.
             wordLocked = true
         }
         if let lone = loneLetter, visible.count <= lone.index + 1 { loneLetter = nil }
-        // Deleting into the latest fix: it's the user's text now.
-        if let fix = recentFix, visible.count < fix.end { recentFix = nil }
+        // Deleting into the latest fix: it's the user's text now, and Klavko doesn't fix it again
+        // (a word it doesn't know would otherwise be "fixed" each time it's retyped).
+        if let fix = recentFix, visible.count < fix.end {
+            recentFix = nil
+            markEditedByUser()
+        }
         return true
+    }
+
+    private func markEditedByUser() {
+        editedByUser = true
+        wordLocked = true
     }
 
     private func handleSpace(_ keystroke: Keystroke, _ pair: Pair) -> Bool {
         typedSinceJump = true
         let word = buffer
         let locked = wordLocked
+        let caseOnly = onlyCaseLeft
         endWord()
         appendVisible(" ")
-        if config.triggers.contains(.space), !locked, fixFinishedWord(word, pair, typedTrail: " ", alternativeTrail: { _ in " " }) {
+        if config.triggers.contains(.space), finishWord(locked: locked, caseOnly: caseOnly, word, pair, typedTrail: " ", alternativeTrail: { _ in " " }) {
             settleLoneLetter(afterFixedWord: true, word, pair, pendingCharacters: 0)
             return false
         }
@@ -468,12 +486,12 @@ final class SwitchEngine {
     private func handleLineBreak(_ keyCode: UInt16, shift: Bool, _ pair: Pair) -> Bool {
         let word = buffer
         let locked = wordLocked
+        let caseOnly = onlyCaseLeft
         let trigger: SwitchTrigger = keyCode == KeyCode.tab ? .tab : .enter
         // Read the line before anything is retyped: the list marker at its start doesn't change.
         let list = keyCode != KeyCode.tab && !shift && formattingAllowed(config.listContinuation) && !appContinuesLists()
             ? currentLineBeforeCaret().flatMap(ListContinuation.action) : nil
-        let fixed = config.triggers.contains(trigger) && !locked
-            && fixFinishedWord(word, pair, typedTrail: "", alternativeTrail: { _ in "" })
+        let fixed = config.triggers.contains(trigger) && finishWord(locked: locked, caseOnly: caseOnly, word, pair, typedTrail: "", alternativeTrail: { _ in "" })
         let letterSettled = settleLoneLetter(afterFixedWord: fixed, word, pair, pendingCharacters: 0)
         reset()
 
@@ -532,11 +550,12 @@ final class SwitchEngine {
         typedSinceJump = true
         let word = buffer
         let locked = wordLocked
+        let caseOnly = onlyCaseLeft
         endWord()
         lastWord = []
         appendVisible(typedCharacter)
-        if config.triggers.contains(.punctuation), !locked,
-           fixFinishedWord(word, pair, typedTrail: typedCharacter,
+        if config.triggers.contains(.punctuation),
+           finishWord(locked: locked, caseOnly: caseOnly, word, pair, typedTrail: typedCharacter,
                            alternativeTrail: { $0.character(for: keystroke) ?? alternativeCharacter }) {
             settleLoneLetter(afterFixedWord: true, word, pair, pendingCharacters: 0)
             return false
@@ -741,7 +760,9 @@ final class SwitchEngine {
         }) else { return false }
         let (pair, alternative) = found
 
-        let converted = Self.englishI(alternative, language: pair.alternative.map.language)
+        var converted = Self.englishI(alternative, language: pair.alternative.map.language)
+        // "GHbdsn" → "Привіт", not "ПРивіт": the stuck Shift goes with the wrong layout.
+        if spellingAllowed { converted = Self.stuckShiftFixed(converted) }
         apply(Conversion(original: typed + typedTrail, converted: converted + alternativeTrail(pair.alternative.map),
                          from: pair.current, to: pair.alternative, automatic: true, scope: .word),
               onScreen: typed.count)
@@ -793,6 +814,7 @@ final class SwitchEngine {
                          to: pair.alternative, automatic: true, scope: .word),
               onScreen: typed.count - 1)
         wordLocked = true
+        convertedMidWord = true
         // The word after "z " turned out Ukrainian: the letter is "я".
         if loneLetter?.language == pair.alternative.map.language {
             settleLoneLetter(afterFixedWord: true, buffer, pair, pendingCharacters: 0)
@@ -1131,6 +1153,37 @@ final class SwitchEngine {
         reportRevertInWord()
         buffer = []
         wordLocked = false
+        convertedMidWord = false
+        editedByUser = false
+    }
+
+    /// The word is locked only by Klavko's own switch while typing: its case may still be fixed.
+    private var onlyCaseLeft: Bool { wordLocked && convertedMidWord && !editedByUser }
+
+    /// `fixFinishedWord` for an open word; after Klavko's own switch mid-word, only a stuck Shift.
+    private func finishWord(locked: Bool, caseOnly: Bool, _ word: [Keystroke], _ pair: Pair, typedTrail: String,
+                            alternativeTrail: (LayoutMap) -> String) -> Bool {
+        if !locked { return fixFinishedWord(word, pair, typedTrail: typedTrail, alternativeTrail: alternativeTrail) }
+        return caseOnly && fixStuckShift(word, pair, trail: typedTrail)
+    }
+
+    /// "ПРивіт" (the layout already switched while typing): "Привіт".
+    private func fixStuckShift(_ word: [Keystroke], _ pair: Pair, trail: String) -> Bool {
+        guard spellingAllowed, let typed = pair.current.map.render(word) else { return false }
+        let fixed = Self.stuckShiftFixed(typed)
+        guard fixed != typed else { return false }
+        apply(Conversion(original: typed + trail, converted: fixed + trail, from: pair.current, to: nil,
+                         automatic: true, scope: .word),
+              onScreen: typed.count)
+        Log.engine.notice("Fixed a stuck Shift after switching, \(word.count) chars")
+        return true
+    }
+
+    /// `text` with its word's stuck Shift fixed ("ПРивіт," → "Привіт,"), or as it is.
+    private static func stuckShiftFixed(_ text: String) -> String {
+        let core = TextRules.coreWord(text)
+        guard let fixed = TypoCorrector.stuckShiftFix(core), let range = text.range(of: core) else { return text }
+        return text.replacingCharacters(in: range, with: fixed)
     }
 
     private func appendVisible(_ character: String) {
