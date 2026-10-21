@@ -130,6 +130,9 @@ final class SwitchEngine {
     /// The user went back into the word with Backspace (into a fix, or to a finished word): it is theirs now,
     /// and nothing in it is fixed automatically.
     private var editedByUser = false
+    /// The user deleted Klavko's fix: the text before it, and when. A word typed again in that place
+    /// within a minute is theirs too (otherwise deleting a fix and retyping the word brings the fix back).
+    private var rejectedFix: (before: String, at: Date)?
     /// Something was typed since the caret last jumped (so `buffer` holds letters the user just typed,
     /// not a word picked up from the text around the caret).
     private var typedSinceJump = false
@@ -323,6 +326,7 @@ final class SwitchEngine {
         defer { typedSinceJump = true }
         // After a click, app switch or restart we don't know what's before the caret: look.
         if buffer.isEmpty && visible.isEmpty { readContextBeforeCaret() }
+        if buffer.isEmpty { claimRejectedSpot() }
 
         var keystroke = keystroke
         var character = typedCharacter
@@ -445,8 +449,20 @@ final class SwitchEngine {
         if let fix = recentFix, visible.count < fix.end {
             recentFix = nil
             markEditedByUser()
+            let start = min(max(0, fix.end - fix.conversion.converted.count), visible.count)
+            rejectedFix = (String(visible[..<start].suffix(30)), Date())
         }
         return true
+    }
+
+    /// A word starts where the user deleted Klavko's fix a moment ago: it's their word, leave it as typed.
+    private func claimRejectedSpot() {
+        guard let rejected = rejectedFix else { return }
+        guard Date().timeIntervalSince(rejected.at) < 60 else { rejectedFix = nil; return }
+        if String(visible.suffix(30)) == rejected.before {
+            rejectedFix = nil
+            markEditedByUser()
+        }
     }
 
     private func markEditedByUser() {
