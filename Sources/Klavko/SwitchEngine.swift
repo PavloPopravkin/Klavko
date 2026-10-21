@@ -155,6 +155,8 @@ final class SwitchEngine {
         /// A punctuation mark right after it ("S?" -> "І,"), switched along with it.
         let mark: (typed: Character, converted: Character)?
         let language: String
+        /// Words after it that may still decide: words of both languages ("у", "так") don't.
+        var wordsLeft = 4
     }
     private var loneLetter: LoneLetter?
 
@@ -558,10 +560,15 @@ final class SwitchEngine {
     /// so the next word decides ("ш love" → "I love"). `mark`: the punctuation typed right after it, if any.
     private func rememberLoneLetter(_ word: [Keystroke], _ pair: Pair,
                                     mark: (typed: Character, converted: Character)?) {
-        guard autoSwitchAllowed, word.count == 1, let alternative = automaticAlternatives.first,
-              let typed = pair.current.map.render(word), let converted = alternative.map.render(word),
-              ShortWords.isLoneLetterCandidate(typed: typed, typedLanguage: pair.current.map.language,
-                                               alternative: converted, alternativeLanguage: alternative.map.language),
+        guard autoSwitchAllowed, word.count == 1, let typed = pair.current.map.render(word),
+              // The first layout where the key is a word ("э" is "'" in English but "є" in Ukrainian).
+              let alternative = automaticAlternatives.first(where: { layout in
+                  layout.map.render(word).map {
+                      ShortWords.isLoneLetterCandidate(typed: typed, typedLanguage: pair.current.map.language,
+                                                       alternative: $0, alternativeLanguage: layout.map.language)
+                  } ?? false
+              }),
+              let converted = alternative.map.render(word),
               let typedCharacter = typed.first,
               let convertedCharacter = Self.englishI(converted, language: alternative.map.language).first
         else { return }
@@ -569,16 +576,18 @@ final class SwitchEngine {
                                 mark: mark, language: alternative.map.language)
     }
 
-    /// The word after a lone letter is finished (or was just converted). If it is in the letter's
-    /// other language, switch the letter too. `pendingCharacters`: how many characters at the end of
+    /// A word after a lone letter is finished (or was just converted). If it is in the letter's
+    /// other language, switch the letter too ("э у мене" → "є у мене"); a word of both languages ("у")
+    /// leaves it to the next ones. `pendingCharacters`: how many characters at the end of
     /// `visible` haven't reached the screen yet (the Space being typed); Klavko then types them itself.
     /// Returns true when it retyped text (the key being typed must then be swallowed).
     @discardableResult
     private func settleLoneLetter(afterFixedWord fixed: Bool, _ word: [Keystroke], _ pair: Pair,
                                   pendingCharacters: Int) -> Bool {
         // A space or more punctuation after the letter isn't the next word yet.
-        guard let lone = loneLetter, fixed || !word.isEmpty else { return false }
+        guard var lone = loneLetter, fixed || !word.isEmpty else { return false }
         loneLetter = nil
+        guard lone.index < visible.count, visible[lone.index] == lone.typed else { return false }
 
         let language: String
         if fixed {
@@ -586,12 +595,27 @@ final class SwitchEngine {
         } else {
             guard let typed = pair.current.map.render(word) else { return false }
             let core = TextRules.coreWord(typed)
-            guard !core.isEmpty, spellChecker.isValid(core, language: pair.current.map.language)
-                    || ShortWords.isCommon(core, language: pair.current.map.language) else { return false }
-            language = pair.current.map.language
+            guard !core.isEmpty else { return false }
+            func known(_ language: String) -> Bool {
+                spellChecker.isValid(core, language: language) || ShortWords.isCommon(core.lowercased(), language: language)
+            }
+            let inTyped = known(pair.current.map.language)
+            // Ukrainian and Russian share most letters: "мене" typed in the Russian layout is a Ukrainian word as it is.
+            let inLetters = known(lone.language)
+            if inLetters != inTyped {
+                language = inLetters ? lone.language : pair.current.map.language
+            } else {
+                // A word of both (or a typo): the next words may still tell.
+                lone.wordsLeft -= 1
+                if lone.wordsLeft > 0 { loneLetter = lone }
+                return false
+            }
+            // The text goes on in the letter's language: so does the layout.
+            if language == lone.language, let target = layouts.first(where: { $0.map.language == language }) {
+                SystemLayouts.select(target.source)
+            }
         }
-        guard language == lone.language,
-              lone.index < visible.count, visible[lone.index] == lone.typed else { return false }
+        guard language == lone.language else { return false }
 
         var after = Array(visible[(lone.index + 1)...])
         if let mark = lone.mark, after.first == mark.typed {
