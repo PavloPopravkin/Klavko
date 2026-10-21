@@ -382,6 +382,18 @@ final class ShortWordTests: XCTestCase {
         XCTAssertFalse(switches("я", from: "uk"))
         XCTAssertTrue(switches("я", from: "uk", context: "uk"))
         XCTAssertTrue(switches("і", from: "uk", context: "uk"))
+        XCTAssertTrue(switches("є", from: "uk", context: "uk"))
+    }
+
+    func testRussianEBecomesUkrainianYeInUkrainianText() {
+        // "э" typed in the Russian layout, alone, after Ukrainian text: it is the Ukrainian "є" ("це є правда").
+        XCTAssertTrue(ShortWords.isCommon("є", language: "uk"))
+        XCTAssertTrue(ShortWords.isLoneLetterCandidate(typed: "э", typedLanguage: "ru", alternative: "є", alternativeLanguage: "uk"))
+        XCTAssertTrue(analyzer.shouldConvert(typed: "э", typedLanguage: "ru", alternative: "є", alternativeLanguage: "uk",
+                                             context: LanguageContext("uk"), sameScript: true))
+        // After Russian text it stays.
+        XCTAssertFalse(analyzer.shouldConvert(typed: "э", typedLanguage: "ru", alternative: "є", alternativeLanguage: "uk",
+                                              context: LanguageContext("ru"), sameScript: true))
     }
 
     func testLoneLetterCandidates() {

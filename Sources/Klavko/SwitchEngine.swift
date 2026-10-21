@@ -666,7 +666,10 @@ final class SwitchEngine {
               !config.exceptions.contains(core.lowercased()),
               core.first?.isUppercase != true || isSentenceStart(beforeLast: typed.count + trail.count),
               !spellChecker.isValid(core, language: pair.current.map.language),
-              let target = same.first(where: { spellChecker.isValid(core, language: $0.map.language) })
+              let target = same.first(where: { spellChecker.isValid(core, language: $0.map.language) }),
+              // A word the typed language's dictionary lacks (a name, a typo, a rare word) in the middle of text
+              // in that language doesn't make the text Russian: switching would turn the next "є" into "э".
+              !languageContext(beforeLast: typed.count + trail.count).favors(pair.current.map.language, over: target.map.language)
         else { return false }
         SystemLayouts.select(target.source)
         onFix(.layout)
